@@ -1,0 +1,98 @@
+.section {
+  width: 100%;
+  max-width: 720px;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.toggleBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color var(--transition);
+}
+
+.toggleBtn:hover {
+  color: var(--text);
+}
+
+.chevron {
+  display: inline-block;
+  font-size: 1.1rem;
+  transition: transform var(--transition);
+  transform: rotate(90deg);
+}
+
+.chevronUp {
+  transform: rotate(-90deg);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  text-align: left;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition), box-shadow var(--transition);
+}
+
+.card:hover {
+  background-color: var(--bg-surface-hover);
+  box-shadow: var(--shadow);
+}
+
+.cardTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardPreview {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardDate {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.loadMore {
+  padding: 10px;
+  font-size: 0.85rem;
+  color: var(--accent);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition);
+}
+
+.loadMore:hover:not(:disabled) {
+  background-color: var(--bg-surface-hover);
+}
+
+.loadMore:disabled {
+  opacity: 0.5;
+}

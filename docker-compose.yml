@@ -1,0 +1,46 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: briefly-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: mongosh --eval "db.runCommand('ping').ok" --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # gemma2:2b — best balance of quality vs resource usage for summarization.
+  # Small (1.6GB), fast inference, coherent summaries. Change the model name
+  # below and in backend application.yml to use a different model (e.g. mistral, llama3).
+  ollama:
+    image: ollama/ollama
+    container_name: briefly-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ollama serve &
+        until ollama ps > /dev/null 2>&1; do sleep 1; done
+        echo "Ollama server is ready, pulling model..."
+        ollama pull gemma2:2b
+        echo "Model pulled. Warming up with a test prompt..."
+        ollama run gemma2:2b "hi" --nowordwrap > /dev/null 2>&1
+        echo "Model ready."
+        wait
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  mongo_data:
+  ollama_data:

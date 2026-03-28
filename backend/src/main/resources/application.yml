@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: briefly
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/briefly
+      auto-index-creation: true
+
+server:
+  port: 8080
+
+ollama:
+  base-url: http://localhost:11434
+  model: gemma2:2b
+  timeout: 120s
+
+article:
+  fetch-timeout: 10s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
