@@ -4,10 +4,23 @@
   margin-top: 24px;
 }
 
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .text {
   font-size: 0.9rem;
   color: var(--text-muted);
-  margin-bottom: 16px;
+}
+
+.timer {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 .skeleton {

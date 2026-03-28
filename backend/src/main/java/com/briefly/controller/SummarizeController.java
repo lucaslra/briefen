@@ -2,9 +2,9 @@ package com.briefly.controller;
 
 import com.briefly.dto.SummarizeRequest;
 import com.briefly.dto.SummarizeResponse;
+import com.briefly.exception.InvalidUrlException;
 import com.briefly.model.Summary;
 import com.briefly.service.SummaryService;
-import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,9 +20,23 @@ public class SummarizeController {
 
     @PostMapping("/summarize")
     public SummarizeResponse summarize(
-            @Valid @RequestBody SummarizeRequest request,
+            @RequestBody SummarizeRequest request,
             @RequestParam(defaultValue = "false") boolean refresh) {
-        Summary summary = summaryService.summarize(request.url(), refresh, request.lengthHint());
+
+        boolean hasUrl = request.url() != null && !request.url().isBlank();
+        boolean hasText = request.text() != null && !request.text().isBlank();
+
+        if (!hasUrl && !hasText) {
+            throw new InvalidUrlException("Either a URL or article text must be provided.");
+        }
+
+        Summary summary;
+        if (hasText) {
+            summary = summaryService.summarizeText(request.text(), request.title(), request.lengthHint());
+        } else {
+            summary = summaryService.summarize(request.url(), refresh, request.lengthHint());
+        }
+
         return SummarizeResponse.from(summary);
     }
 

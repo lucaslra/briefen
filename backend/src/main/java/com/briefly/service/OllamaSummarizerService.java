@@ -113,8 +113,8 @@ public class OllamaSummarizerService {
     }
 
     private String truncateIfNeeded(String text) {
-        // Limit to ~12000 chars to stay within reasonable context window for smaller models
-        int maxChars = 12000;
+        // gemma3:4b supports 128K tokens (~100K words). 60K chars is a safe practical limit.
+        int maxChars = 60000;
         if (text.length() <= maxChars) {
             return text;
         }

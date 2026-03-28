@@ -38,12 +38,45 @@ export function useSummarize() {
     }
   }, [])
 
+  const summarizeText = useCallback(async (text, title = null, lengthHint = null) => {
+    setLoading(true)
+    setError(null)
+
+    const payload = { text }
+    if (title) payload.title = title
+    if (lengthHint) payload.lengthHint = lengthHint
+
+    try {
+      const res = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      const resBody = await res.json()
+
+      if (!res.ok) {
+        const message = parseError(resBody, res.status)
+        setError(message)
+        return null
+      }
+
+      setData(resBody)
+      return resBody
+    } catch (err) {
+      setError(STRINGS.ERROR_NETWORK)
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   const clear = useCallback(() => {
     setData(null)
     setError(null)
   }, [])
 
-  return { summarize, data, setData, loading, error, clear }
+  return { summarize, summarizeText, data, setData, loading, error, clear }
 }
 
 function parseError(body, status) {

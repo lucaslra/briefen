@@ -8,12 +8,18 @@ export const STRINGS = {
   APP_SUBTITLE: 'Article summaries, instantly.',
 
   INPUT_PLACEHOLDER: 'Paste an article URL...',
+  TEXT_PLACEHOLDER: 'Paste the article content here...',
+  TITLE_PLACEHOLDER: 'Article title (optional)',
   SUMMARIZE_BUTTON: 'Summarize',
   PASTE_BUTTON: 'Paste',
   LOADING_TEXT: 'Reading and summarizing\u2026',
 
+  TAB_URL: 'URL',
+  TAB_TEXT: 'Paste Content',
+
   COPY_BUTTON: 'Copy summary',
   COPIED_TEXT: 'Copied!',
+  GENERATED_IN: 'Generated in',
 
   SOURCE_LABEL: 'Source',
 
@@ -25,7 +31,19 @@ export const STRINGS = {
   MAKE_SHORTER: 'Make Shorter',
   MAKE_LONGER: 'Make Longer',
 
+  SETTINGS_TITLE: 'Settings',
+  SETTINGS_BACK: 'Back',
+  SETTINGS_LENGTH_HEADING: 'Summary Length',
+  SETTINGS_LENGTH_SUBHEADING: 'Choose the default length for new summaries.',
+  SETTINGS_LENGTH_SHORT: 'Short',
+  SETTINGS_LENGTH_SHORT_DESC: '1-2 concise paragraphs with only the essential points.',
+  SETTINGS_LENGTH_DEFAULT: 'Standard',
+  SETTINGS_LENGTH_DEFAULT_DESC: '3-6 paragraphs covering key points and takeaways.',
+  SETTINGS_LENGTH_LONG: 'Detailed',
+  SETTINGS_LENGTH_LONG_DESC: '6-10 paragraphs with thorough coverage of all arguments and nuances.',
+
   ERROR_INVALID_URL: 'Please enter a valid HTTP or HTTPS URL.',
+  ERROR_EMPTY_TEXT: 'Please paste some article content to summarize.',
   ERROR_GENERIC: 'Something went wrong. Please try again.',
   ERROR_NETWORK: 'Could not reach the server. Is it running?',
   ERROR_TIMEOUT: 'The request timed out. The article may be too long.',

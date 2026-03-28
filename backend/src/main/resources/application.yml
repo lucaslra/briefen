@@ -11,8 +11,8 @@ server:
 
 ollama:
   base-url: http://localhost:11434
-  model: gemma2:2b
-  timeout: 120s
+  model: gemma3:4b
+  timeout: 300s
 
 article:
   fetch-timeout: 10s

@@ -1,6 +1,7 @@
 package com.briefly.service;
 
 import com.briefly.config.OllamaProperties;
+import com.briefly.exception.InvalidUrlException;
 import com.briefly.model.Summary;
 import com.briefly.repository.SummaryRepository;
 import com.briefly.validation.UrlValidator;
@@ -37,6 +38,9 @@ public class SummaryService {
         this.ollamaProperties = ollamaProperties;
     }
 
+    /**
+     * Summarize from a URL — fetches the article, summarizes, and caches the result.
+     */
     public Summary summarize(String url, boolean refresh, String lengthHint) {
         URI validatedUri = urlValidator.validate(url);
         String normalizedUrl = validatedUri.toString();
@@ -71,6 +75,23 @@ public class SummaryService {
         summary.setCreatedAt(Instant.now());
 
         return repository.save(summary);
+    }
+
+    /**
+     * Summarize from raw pasted text — no URL fetching, no caching.
+     */
+    public Summary summarizeText(String text, String title, String lengthHint) {
+        if (text == null || text.isBlank()) {
+            throw new InvalidUrlException("Article text must not be blank");
+        }
+
+        String effectiveTitle = (title != null && !title.isBlank()) ? title.trim() : "Pasted Article";
+        String summaryText = summarizer.summarize(text, lengthHint);
+
+        // Pasted-text summaries are always transient (no URL to key on)
+        Summary result = new Summary(null, effectiveTitle, summaryText, ollamaProperties.model());
+        log.info("Generated summary from pasted text ({} chars, title='{}')", text.length(), effectiveTitle);
+        return result;
     }
 
     // TODO: Rate limiting should be applied here

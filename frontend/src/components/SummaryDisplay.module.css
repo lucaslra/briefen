@@ -138,6 +138,18 @@
   color: var(--accent);
 }
 
+.pastedLabel {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.elapsed {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .date {
   font-size: 0.75rem;
   color: var(--text-muted);

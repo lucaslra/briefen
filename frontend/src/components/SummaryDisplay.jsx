@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import Markdown from 'react-markdown'
 import { STRINGS, MAX_LENGTH_ADJUSTMENTS } from '../constants/strings'
+import { formatElapsed } from '../hooks/useElapsedTime'
 import styles from './SummaryDisplay.module.css'
 
-export function SummaryDisplay({ data, onMakeShorter, onMakeLonger, loading }) {
+export function SummaryDisplay({ data, onMakeShorter, onMakeLonger, loading, elapsedMs }) {
   const [copied, setCopied] = useState(false)
   const [shorterCount, setShorterCount] = useState(0)
   const [longerCount, setLongerCount] = useState(0)
@@ -55,34 +56,45 @@ export function SummaryDisplay({ data, onMakeShorter, onMakeLonger, loading }) {
         <Markdown>{data.summary}</Markdown>
       </div>
 
-      <div className={styles.adjustButtons}>
-        <button
-          className={styles.adjustBtn}
-          onClick={handleShorter}
-          disabled={shorterCount >= MAX_LENGTH_ADJUSTMENTS || loading}
-        >
-          {STRINGS.MAKE_SHORTER}
-        </button>
-        <button
-          className={styles.adjustBtn}
-          onClick={handleLonger}
-          disabled={longerCount >= MAX_LENGTH_ADJUSTMENTS || loading}
-        >
-          {STRINGS.MAKE_LONGER}
-        </button>
-      </div>
+      {data.url && (
+        <div className={styles.adjustButtons}>
+          <button
+            className={styles.adjustBtn}
+            onClick={handleShorter}
+            disabled={shorterCount >= MAX_LENGTH_ADJUSTMENTS || loading}
+          >
+            {STRINGS.MAKE_SHORTER}
+          </button>
+          <button
+            className={styles.adjustBtn}
+            onClick={handleLonger}
+            disabled={longerCount >= MAX_LENGTH_ADJUSTMENTS || loading}
+          >
+            {STRINGS.MAKE_LONGER}
+          </button>
+        </div>
+      )}
 
       <div className={styles.footer}>
         <div className={styles.meta}>
-          <a
-            href={data.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.source}
-          >
-            {STRINGS.SOURCE_LABEL}: {new URL(data.url).hostname}
-          </a>
+          {data.url ? (
+            <a
+              href={data.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.source}
+            >
+              {STRINGS.SOURCE_LABEL}: {new URL(data.url).hostname}
+            </a>
+          ) : (
+            <span className={styles.pastedLabel}>Pasted content</span>
+          )}
           <span className={styles.date}>{date}</span>
+          {elapsedMs > 0 && (
+            <span className={styles.elapsed}>
+              {STRINGS.GENERATED_IN} {formatElapsed(elapsedMs)}
+            </span>
+          )}
         </div>
         <button className={styles.copyBtn} onClick={handleCopy}>
           {copied ? STRINGS.COPIED_TEXT : STRINGS.COPY_BUTTON}
