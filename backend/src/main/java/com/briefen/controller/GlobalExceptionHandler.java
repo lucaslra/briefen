@@ -1,7 +1,11 @@
 package com.briefen.controller;
 
 import com.briefen.dto.ErrorResponse;
-import com.briefen.exception.*;
+import com.briefen.exception.ArticleExtractionException;
+import com.briefen.exception.ArticleFetchException;
+import com.briefen.exception.InvalidUrlException;
+import com.briefen.exception.SummarizationException;
+import com.briefen.exception.SummaryNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -15,6 +19,12 @@ import org.springframework.web.server.ResponseStatusException;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(SummaryNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(SummaryNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(e.getMessage(), 404));
+    }
 
     @ExceptionHandler(InvalidUrlException.class)
     public ResponseEntity<ErrorResponse> handleInvalidUrl(InvalidUrlException e) {

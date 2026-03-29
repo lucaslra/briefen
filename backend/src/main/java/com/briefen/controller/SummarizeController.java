@@ -1,12 +1,16 @@
 package com.briefen.controller;
 
+import com.briefen.dto.ReadStatusRequest;
 import com.briefen.dto.SummarizeRequest;
 import com.briefen.dto.SummarizeResponse;
 import com.briefen.exception.InvalidUrlException;
 import com.briefen.model.Summary;
 import com.briefen.service.SummaryService;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -43,8 +47,35 @@ public class SummarizeController {
     @GetMapping("/summaries")
     public Page<SummarizeResponse> summaries(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return summaryService.getSummaries(page, size)
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "all") String filter) {
+        return summaryService.getSummaries(page, size, filter)
                 .map(SummarizeResponse::from);
+    }
+
+    @GetMapping("/summaries/unread-count")
+    public Map<String, Long> unreadCount() {
+        return Map.of("count", summaryService.getUnreadCount());
+    }
+
+    @PatchMapping("/summaries/{id}/read-status")
+    public SummarizeResponse updateReadStatus(
+            @PathVariable String id,
+            @RequestBody ReadStatusRequest request) {
+        if (request.isRead() == null) {
+            throw new InvalidUrlException("isRead field is required");
+        }
+        return SummarizeResponse.from(summaryService.updateReadStatus(id, request.isRead()));
+    }
+
+    @PatchMapping("/summaries/read-status/bulk")
+    public Map<String, Long> markAllAsRead() {
+        return Map.of("updated", summaryService.markAllAsRead());
+    }
+
+    @DeleteMapping("/summaries/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteSummary(@PathVariable String id) {
+        summaryService.deleteSummary(id);
     }
 }

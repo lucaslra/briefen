@@ -109,6 +109,22 @@ export const STRINGS = {
   READECK_SEARCH_BUTTON: 'Search',
   READECK_FETCHING: 'Loading\u2026',
   READECK_AUTH_ERROR: 'Readeck API key is invalid. Check your settings.',
+
+  READING_LIST: 'Reading list',
+  READING_LIST_FILTER_ALL: 'All',
+  READING_LIST_FILTER_UNREAD: 'Unread',
+  READING_LIST_FILTER_READ: 'Read',
+  READING_LIST_EMPTY_ALL: 'No summaries yet. Paste an article URL to get started.',
+  READING_LIST_EMPTY_UNREAD: 'You\u2019re all caught up.',
+  READING_LIST_EMPTY_READ: 'Articles you\u2019ve finished will appear here.',
+  READING_LIST_MARK_ALL_READ: 'Mark all as read',
+  READING_LIST_ALL_MARKED: 'All marked as read.',
+  READING_LIST_OPEN_ARTICLE: 'Open article',
+  READING_LIST_DELETE: 'Delete',
+  READING_LIST_DELETE_CONFIRM: 'Delete this summary?',
+  READING_LIST_UPDATE_FAILED: 'Couldn\u2019t update \u2014 try again.',
+  READING_LIST_DELETE_FAILED: 'Couldn\u2019t delete \u2014 try again.',
+  READING_LIST_LOAD_MORE: 'Load more',
 }
 
 /**

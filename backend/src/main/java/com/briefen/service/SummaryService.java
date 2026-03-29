@@ -3,6 +3,7 @@ package com.briefen.service;
 import com.briefen.config.OllamaProperties;
 import com.briefen.exception.InvalidUrlException;
 import com.briefen.exception.SummarizationException;
+import com.briefen.exception.SummaryNotFoundException;
 import com.briefen.model.Summary;
 import com.briefen.model.UserSettings;
 import com.briefen.repository.SummaryRepository;
@@ -11,11 +12,18 @@ import com.briefen.validation.UrlValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -37,6 +45,7 @@ public class SummaryService {
     private final SummaryRepository repository;
     private final UserSettingsRepository settingsRepository;
     private final OllamaProperties ollamaProperties;
+    private final MongoTemplate mongoTemplate;
 
     public SummaryService(UrlValidator urlValidator,
                           ArticleFetcherService articleFetcher,
@@ -44,7 +53,8 @@ public class SummaryService {
                           OpenAiSummarizerService openAiSummarizer,
                           SummaryRepository repository,
                           UserSettingsRepository settingsRepository,
-                          OllamaProperties ollamaProperties) {
+                          OllamaProperties ollamaProperties,
+                          MongoTemplate mongoTemplate) {
         this.urlValidator = urlValidator;
         this.articleFetcher = articleFetcher;
         this.ollamaSummarizer = ollamaSummarizer;
@@ -52,6 +62,7 @@ public class SummaryService {
         this.repository = repository;
         this.settingsRepository = settingsRepository;
         this.ollamaProperties = ollamaProperties;
+        this.mongoTemplate = mongoTemplate;
     }
 
     /**
@@ -85,11 +96,16 @@ public class SummaryService {
         // Upsert: update existing or create new
         Summary summary = repository.findByUrl(normalizedUrl)
                 .orElseGet(Summary::new);
+        boolean isNew = summary.getId() == null;
         summary.setUrl(normalizedUrl);
         summary.setTitle(article.title());
         summary.setSummary(summaryText);
         summary.setModelUsed(effectiveModel);
         summary.setCreatedAt(Instant.now());
+        if (isNew) {
+            summary.setIsRead(false);
+            summary.setSavedAt(summary.getCreatedAt());
+        }
 
         return repository.save(summary);
     }
@@ -127,16 +143,24 @@ public class SummaryService {
 
         // Upsert when a sourceUrl is provided (avoids duplicate key on the unique URL index)
         Summary result;
+        boolean isNew;
         if (effectiveUrl != null) {
-            result = repository.findByUrl(effectiveUrl).orElseGet(Summary::new);
+            var existing = repository.findByUrl(effectiveUrl);
+            result = existing.orElseGet(Summary::new);
+            isNew = existing.isEmpty();
             result.setUrl(effectiveUrl);
         } else {
             result = new Summary();
+            isNew = true;
         }
         result.setTitle(effectiveTitle);
         result.setSummary(summaryText);
         result.setModelUsed(effectiveModel);
         result.setCreatedAt(java.time.Instant.now());
+        if (isNew) {
+            result.setIsRead(false);
+            result.setSavedAt(result.getCreatedAt());
+        }
         result = repository.save(result);
         log.info("Generated and saved summary from pasted text ({} chars, title='{}')", text.length(), effectiveTitle);
         return result;
@@ -164,6 +188,47 @@ public class SummaryService {
 
     public Page<Summary> getSummaries(int page, int size) {
         return repository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size));
+    }
+
+    public Page<Summary> getSummaries(int page, int size, String filter) {
+        PageRequest pageable = PageRequest.of(page, size);
+        Query query = new Query().with(Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        switch (filter) {
+            case "unread" -> query.addCriteria(Criteria.where("isRead").ne(true));
+            case "read" -> query.addCriteria(Criteria.where("isRead").is(true));
+            default -> {} // "all" — no filter
+        }
+
+        long total = mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Summary.class);
+        query.with(pageable);
+        List<Summary> items = mongoTemplate.find(query, Summary.class);
+        return new PageImpl<>(items, pageable, total);
+    }
+
+    public Summary updateReadStatus(String id, boolean isRead) {
+        Summary summary = repository.findById(id)
+                .orElseThrow(() -> new SummaryNotFoundException(id));
+        summary.setIsRead(isRead);
+        return repository.save(summary);
+    }
+
+    public void deleteSummary(String id) {
+        if (!repository.existsById(id)) {
+            throw new SummaryNotFoundException(id);
+        }
+        repository.deleteById(id);
+    }
+
+    public long markAllAsRead() {
+        Query query = new Query(Criteria.where("isRead").ne(true));
+        Update update = new Update().set("isRead", true);
+        return mongoTemplate.updateMulti(query, update, Summary.class).getModifiedCount();
+    }
+
+    public long getUnreadCount() {
+        Query query = new Query(Criteria.where("isRead").ne(true));
+        return mongoTemplate.count(query, Summary.class);
     }
 
     /**

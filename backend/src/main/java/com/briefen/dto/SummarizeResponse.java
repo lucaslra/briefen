@@ -10,7 +10,9 @@ public record SummarizeResponse(
         String title,
         String summary,
         String modelUsed,
-        Instant createdAt
+        Instant createdAt,
+        Boolean isRead,
+        Instant savedAt
 ) {
     public static SummarizeResponse from(Summary summary) {
         return new SummarizeResponse(
@@ -19,7 +21,9 @@ public record SummarizeResponse(
                 summary.getTitle(),
                 summary.getSummary(),
                 summary.getModelUsed(),
-                summary.getCreatedAt()
+                summary.getCreatedAt(),
+                summary.isEffectivelyRead(),
+                summary.getEffectiveSavedAt()
         );
     }
 }

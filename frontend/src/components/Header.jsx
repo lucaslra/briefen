@@ -2,7 +2,7 @@ import { STRINGS } from '../constants/strings'
 import { ThemeToggle } from './ThemeToggle'
 import styles from './Header.module.css'
 
-export function Header({ theme, onToggleTheme, onNavigate, currentPage }) {
+export function Header({ theme, onToggleTheme, onNavigate, currentPage, unreadCount }) {
   return (
     <header className={styles.header}>
       <div className={styles.brand} onClick={() => onNavigate('home')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('home') } }} role="button" tabIndex={0}>
@@ -10,6 +10,24 @@ export function Header({ theme, onToggleTheme, onNavigate, currentPage }) {
         <p className={styles.subtitle}>{STRINGS.APP_SUBTITLE}</p>
       </div>
       <div className={styles.actions}>
+        <div className={styles.iconBtnWrapper}>
+          <button
+            className={`${styles.iconBtn} ${currentPage === 'reading-list' ? styles.iconBtnActive : ''}`}
+            onClick={() => onNavigate(currentPage === 'reading-list' ? 'home' : 'reading-list')}
+            title={STRINGS.READING_LIST}
+            aria-label={STRINGS.READING_LIST}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 4h14" />
+              <path d="M3 8h10" />
+              <path d="M3 12h12" />
+              <path d="M3 16h8" />
+            </svg>
+          </button>
+          {unreadCount > 0 && (
+            <span className={styles.badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>
+          )}
+        </div>
         <button
           className={`${styles.iconBtn} ${currentPage === 'settings' ? styles.iconBtnActive : ''}`}
           onClick={() => onNavigate(currentPage === 'settings' ? 'home' : 'settings')}

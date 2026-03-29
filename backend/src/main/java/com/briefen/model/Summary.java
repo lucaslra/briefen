@@ -20,6 +20,12 @@ public class Summary {
     private String modelUsed;
     private Instant createdAt;
 
+    // Reading list fields. Legacy documents will have these as null.
+    // isRead == null is treated as false (unread) by the service layer.
+    // savedAt == null falls back to createdAt for display and sorting.
+    private Boolean isRead;
+    private Instant savedAt;
+
     public Summary() {}
 
     public Summary(String url, String title, String summary, String modelUsed) {
@@ -28,6 +34,8 @@ public class Summary {
         this.summary = summary;
         this.modelUsed = modelUsed;
         this.createdAt = Instant.now();
+        this.isRead = false;
+        this.savedAt = this.createdAt;
     }
 
     public String getId() { return id; }
@@ -47,4 +55,14 @@ public class Summary {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Boolean getIsRead() { return isRead; }
+    public void setIsRead(Boolean isRead) { this.isRead = isRead; }
+
+    public Instant getSavedAt() { return savedAt; }
+    public void setSavedAt(Instant savedAt) { this.savedAt = savedAt; }
+
+    public boolean isEffectivelyRead() { return Boolean.TRUE.equals(isRead); }
+
+    public Instant getEffectiveSavedAt() { return savedAt != null ? savedAt : createdAt; }
 }

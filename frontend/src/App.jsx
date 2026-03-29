@@ -7,12 +7,14 @@ import { useElapsedTime } from './hooks/useElapsedTime'
 import { useSettings } from './hooks/useSettings'
 import { useNotification } from './hooks/useNotification'
 import { useReadeck } from './hooks/useReadeck'
+import { useUnreadCount } from './hooks/useUnreadCount'
 import { Header } from './components/Header'
 import { UrlInput } from './components/UrlInput'
 import { LoadingSkeleton } from './components/LoadingSkeleton'
 import { SummaryDisplay } from './components/SummaryDisplay'
 import { RecentSummaries } from './components/RecentSummaries'
 import { Settings } from './components/Settings'
+import { ReadingList } from './components/ReadingList'
 
 export default function App() {
   const [page, setPage] = useState('home')
@@ -20,6 +22,7 @@ export default function App() {
   const { settings, updateSetting, updateSettings } = useSettings()
   const { notify } = useNotification()
   const readeck = useReadeck()
+  const { unreadCount, refreshUnreadCount } = useUnreadCount()
   const { summarize, summarizeText, data, setData, loading, error, clear } = useSummarize()
   const mainRef = useRef(null)
   const { summaries, loading: loadingSummaries, hasMore, refresh, loadMore } = useSummaries()
@@ -43,6 +46,7 @@ export default function App() {
     const result = await summarize(url, defaultLengthHint, selectedModel)
     if (result) {
       refresh()
+      refreshUnreadCount()
       if (settings.notificationsEnabled) notify(STRINGS.NOTIFICATION_DONE_TITLE, result.title || STRINGS.NOTIFICATION_DONE_BODY)
     }
   }
@@ -51,6 +55,7 @@ export default function App() {
     const result = await summarizeText(text, title, defaultLengthHint, selectedModel, sourceUrl)
     if (result) {
       refresh()
+      refreshUnreadCount()
       if (settings.notificationsEnabled) notify(STRINGS.NOTIFICATION_DONE_TITLE, title || STRINGS.NOTIFICATION_DONE_BODY)
     }
   }
@@ -86,6 +91,7 @@ export default function App() {
         onToggleTheme={toggleTheme}
         onNavigate={setPage}
         currentPage={page}
+        unreadCount={unreadCount}
       />
 
       <main ref={mainRef} tabIndex={-1} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 20px', paddingBottom: '60px', outline: 'none' }}>
@@ -96,6 +102,8 @@ export default function App() {
             onUpdateSettings={updateSettings}
             onBack={() => setPage('home')}
           />
+        ) : page === 'reading-list' ? (
+          <ReadingList refreshUnreadCount={refreshUnreadCount} />
         ) : (
           <>
             <UrlInput
