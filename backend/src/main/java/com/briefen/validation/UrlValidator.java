@@ -34,14 +34,26 @@ public class UrlValidator {
     }
 
     /**
-     * Validates a base URL for external service integration (e.g., Readeck).
-     * Same checks as article URLs — prevents SSRF via user-configured endpoints.
+     * Validates a base URL for user-configured services (e.g., Readeck).
+     * Only checks scheme and host validity — does NOT block private IPs,
+     * since self-hosted services are typically on the local network.
+     * The user explicitly configures these URLs, so they are trusted.
      */
     public void validateServiceUrl(String url) {
         if (url == null || url.isBlank()) {
             throw new InvalidUrlException("URL must not be empty.");
         }
-        validate(url);
+
+        URI uri;
+        try {
+            uri = URI.create(url.strip());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidUrlException("Malformed URL: " + url);
+        }
+
+        validateScheme(uri);
+        validateHost(uri);
+        // No private IP check — self-hosted services live on the local network
     }
 
     /**

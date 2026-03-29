@@ -28,6 +28,8 @@ export default function App() {
   const defaultLengthHint = settings.defaultLength === 'default' ? null : settings.defaultLength
   const selectedModel = settings.model || null
   const readeckConfigured = !!(settings.readeckApiKey && settings.readeckUrl)
+  // Key changes when readeck config changes, forcing ReadeckBrowser to remount and recheck status
+  const readeckKey = `${settings.readeckApiKey || ''}-${settings.readeckUrl || ''}`
 
   async function handleSubmitUrl(url) {
     const result = await summarize(url, defaultLengthHint, selectedModel)
@@ -90,6 +92,7 @@ export default function App() {
               loading={loading}
               readeck={readeck}
               readeckConfigured={readeckConfigured}
+              readeckKey={readeckKey}
             />
 
             {error && (

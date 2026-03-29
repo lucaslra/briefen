@@ -5,7 +5,7 @@ import styles from './UrlInput.module.css'
 
 const URL_PATTERN = /^https?:\/\/.+/i
 
-export function UrlInput({ onSubmitUrl, onSubmitText, loading, readeck, readeckConfigured }) {
+export function UrlInput({ onSubmitUrl, onSubmitText, loading, readeck, readeckConfigured, readeckKey }) {
   const [mode, setMode] = useState('url') // 'url' | 'text' | 'readeck'
   const [url, setUrl] = useState('')
   const [text, setText] = useState('')
@@ -150,6 +150,7 @@ export function UrlInput({ onSubmitUrl, onSubmitText, loading, readeck, readeckC
         </div>
       ) : (
         <ReadeckBrowser
+          key={readeckKey}
           readeck={readeck}
           onSummarize={handleReadeckSummarize}
           loading={loading}

@@ -10,17 +10,13 @@ export function ReadeckBrowser({ readeck, onSummarize, loading }) {
 
   const [search, setSearch] = useState('')
   const [fetchingId, setFetchingId] = useState(null)
-  const [initialized, setInitialized] = useState(false)
 
-  // Check status and load articles on first render
+  // Check status and load articles every time the tab is shown
   useEffect(() => {
-    if (!initialized) {
-      setInitialized(true)
-      checkStatus().then(isConfigured => {
-        if (isConfigured) fetchArticles()
-      })
-    }
-  }, [initialized, checkStatus, fetchArticles])
+    checkStatus().then(isConfigured => {
+      if (isConfigured) fetchArticles()
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = useCallback((e) => {
     e.preventDefault()
