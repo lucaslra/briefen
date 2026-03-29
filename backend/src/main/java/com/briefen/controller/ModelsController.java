@@ -35,6 +35,11 @@ public class ModelsController {
                                 "id", "gemma3:4b",
                                 "name", "Gemma 3 (4B)",
                                 "description", "More capable with richer understanding. Better at nuance, structure, and source attribution."
+                        ),
+                        Map.of(
+                                "id", "llama3.2:3b",
+                                "name", "Llama 3.2 (3B)",
+                                "description", "Meta's compact model. Strong reasoning and instruction-following with a good balance of speed and quality."
                         )
                 )
         );

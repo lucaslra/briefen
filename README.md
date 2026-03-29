@@ -46,6 +46,15 @@ make backend   # in one terminal
 make frontend  # in another terminal
 ```
 
+### Cleanup
+
+```bash
+make clean      # stop containers, remove mongo data + build artifacts (Ollama weights preserved)
+make clean-all  # full reset — also removes Ollama model weights (re-download required)
+```
+
+`make clean` is safe to run frequently. Use `make clean-all` only when you want a completely fresh state.
+
 ## API
 
 ### Summarize an article

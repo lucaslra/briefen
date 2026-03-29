@@ -1,4 +1,4 @@
-.PHONY: up down backend frontend dev logs clean
+.PHONY: up down backend frontend dev logs clean clean-all
 
 ROOT := $(shell pwd)
 
@@ -26,8 +26,15 @@ dev: up
 logs:
 	docker compose logs -f
 
-## Full cleanup: stop containers, remove volumes, clean builds
+## Stop containers, remove mongo data + build artifacts. Preserves Ollama model weights.
 clean:
+	docker compose down
+	docker volume rm summizer_mongo_data 2>/dev/null || true
+	cd $(ROOT)/backend && ./mvnw clean
+	cd $(ROOT)/frontend && rm -rf node_modules dist
+
+## Full cleanup including Ollama model weights (triggers re-download on next `make up`)
+clean-all:
 	docker compose down -v
 	cd $(ROOT)/backend && ./mvnw clean
 	cd $(ROOT)/frontend && rm -rf node_modules dist

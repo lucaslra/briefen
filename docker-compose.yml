@@ -13,9 +13,8 @@ services:
       retries: 5
       start_period: 10s
 
-  # gemma3:4b — excellent summarization quality with 128K context window.
-  # ~3.3GB download, strong markdown output, great instruction-following.
-  # Change the model name below and in backend application.yml to use a different model.
+  # Available models: gemma2:2b, gemma3:4b, llama3.2:3b
+  # All are pulled on startup. Default model is set in backend application.yml (ollama.model).
   ollama:
     image: ollama/ollama
     container_name: briefen-ollama
@@ -28,11 +27,11 @@ services:
       - |
         ollama serve &
         until ollama ps > /dev/null 2>&1; do sleep 1; done
-        echo "Ollama server is ready, pulling model..."
+        echo "Pulling models..."
+        ollama pull gemma2:2b
         ollama pull gemma3:4b
-        echo "Model pulled. Warming up with a test prompt..."
-        ollama run gemma3:4b "hi" --nowordwrap > /dev/null 2>&1
-        echo "Model ready."
+        ollama pull llama3.2:3b
+        echo "All models ready."
         wait
     healthcheck:
       test: ["CMD", "ollama", "list"]
