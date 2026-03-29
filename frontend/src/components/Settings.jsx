@@ -15,7 +15,7 @@ const TABS = [
   { id: 'preferences', label: STRINGS.SETTINGS_TAB_PREFERENCES },
 ]
 
-export function Settings({ settings, onUpdateSetting, onBack }) {
+export function Settings({ settings, onUpdateSetting, onUpdateSettings, onBack }) {
   const [tab, setTab] = useState('summarization')
   const [providers, setProviders] = useState([])
   const [defaultModel, setDefaultModel] = useState(null)
@@ -84,18 +84,23 @@ export function Settings({ settings, onUpdateSetting, onBack }) {
   const hasReadeck = settings.readeckApiKey != null && settings.readeckApiKey !== ''
       && settings.readeckUrl != null && settings.readeckUrl !== ''
 
-  function handleSaveReadeck() {
+  async function handleSaveReadeck() {
     if (!readeckUrlDraft.trim() || !readeckKeyDraft.trim()) return
-    onUpdateSetting('readeckUrl', readeckUrlDraft.trim().replace(/\/+$/, ''))
-    onUpdateSetting('readeckApiKey', readeckKeyDraft.trim())
-    setReadeckSaved(true)
-    setTimeout(() => setReadeckSaved(false), 2000)
+    try {
+      await onUpdateSettings({
+        readeckUrl: readeckUrlDraft.trim().replace(/\/+$/, ''),
+        readeckApiKey: readeckKeyDraft.trim(),
+      })
+      setReadeckSaved(true)
+      setTimeout(() => setReadeckSaved(false), 2000)
+    } catch {
+      alert('Failed to save Readeck settings. Please check the URL and try again.')
+    }
   }
 
-  function handleRemoveReadeck() {
+  async function handleRemoveReadeck() {
     if (!window.confirm(STRINGS.CONFIRM_REMOVE_READECK)) return
-    onUpdateSetting('readeckUrl', '')
-    onUpdateSetting('readeckApiKey', '')
+    await onUpdateSettings({ readeckUrl: '', readeckApiKey: '' })
     setReadeckUrlDraft('')
     setReadeckKeyDraft('')
   }

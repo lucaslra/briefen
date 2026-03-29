@@ -102,6 +102,18 @@ public class SummaryService {
             throw new InvalidUrlException("Article text must not be blank");
         }
 
+        boolean isLengthAdjustment = lengthHint != null && !lengthHint.isBlank();
+
+        // Check cache by sourceUrl before generating (skip for length adjustments)
+        String effectiveUrl = (sourceUrl != null && !sourceUrl.isBlank()) ? sourceUrl.trim() : null;
+        if (!isLengthAdjustment && effectiveUrl != null) {
+            Optional<Summary> cached = repository.findByUrl(effectiveUrl);
+            if (cached.isPresent()) {
+                log.info("Returning cached summary for source URL: {}", effectiveUrl);
+                return cached.get();
+            }
+        }
+
         String effectiveModel = (model != null && !model.isBlank()) ? model : ollamaProperties.model();
         String summaryText = dispatchSummarize(text, lengthHint, effectiveModel);
 
@@ -112,9 +124,6 @@ public class SummaryService {
             effectiveTitle = parsed.title();
             summaryText = parsed.body();
         }
-
-        // Persist summaries so they appear in recent list. Use sourceUrl for attribution if provided.
-        String effectiveUrl = (sourceUrl != null && !sourceUrl.isBlank()) ? sourceUrl.trim() : null;
 
         // Upsert when a sourceUrl is provided (avoids duplicate key on the unique URL index)
         Summary result;

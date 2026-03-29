@@ -28,14 +28,19 @@ export function ReadeckBrowser({ readeck, onSummarize, loading }) {
     setFetchingId(article.id)
 
     try {
-      // Try to get full article content from Readeck
       const content = await getArticleContent(article.id)
 
-      if (content?.text) {
-        // Summarize the extracted text, passing the title and original URL for attribution
+      if (content?.error) {
+        // Content fetch failed — offer URL fallback if available
+        if (article.url && window.confirm(
+          `Could not fetch article content: ${content.error}\n\nSummarize from URL instead?`
+        )) {
+          onSummarize(null, null, article.url)
+        }
+      } else if (content?.text) {
         onSummarize(content.text, article.title || content.title || null, article.url || null)
       } else if (article.url) {
-        // Fallback: summarize by URL directly
+        // No text returned — fall back to URL
         onSummarize(null, null, article.url)
       }
     } finally {
@@ -75,6 +80,8 @@ export function ReadeckBrowser({ readeck, onSummarize, loading }) {
         <p className={styles.error}>
           {typeof error === 'string' && error.includes('401')
             ? STRINGS.READECK_AUTH_ERROR
+            : typeof error === 'string' && error.includes('429')
+            ? STRINGS.READECK_RATE_LIMITED
             : STRINGS.READECK_ERROR}
         </p>
       )}

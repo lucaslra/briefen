@@ -46,6 +46,10 @@ export function useReadeck() {
 
       if (append) {
         setArticles(prev => [...prev, ...items])
+        if (items.length === 0) {
+          setHasMore(false)
+          return
+        }
       } else {
         setArticles(items)
       }
@@ -65,12 +69,17 @@ export function useReadeck() {
     try {
       const res = await fetch(`/api/readeck/bookmarks/${id}/article`)
       if (res.ok) {
-        return await res.json()
+        const data = await res.json()
+        if (data.error) {
+          return { error: data.error }
+        }
+        return data
       }
+      const text = await res.text()
+      return { error: text || 'Failed to fetch article content' }
     } catch {
-      // ignore
+      return { error: 'Could not connect to Readeck.' }
     }
-    return null
   }, [])
 
   return {

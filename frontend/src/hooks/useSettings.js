@@ -55,24 +55,65 @@ export function useSettings() {
   }, [])
 
   const updateSetting = useCallback((key, value) => {
+    // Optimistic update
     setSettings(prev => {
       const next = { ...prev, [key]: value }
       writeCache(next)
-
-      // Only send the changed field to avoid overwriting masked keys
-      // with their masked representations (e.g., "sk-...abc1").
-      const payload = { [key]: value }
-      fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch(() => {
-        // API save failed — cached value is still fine
-      })
-
       return next
+    })
+
+    // Only send the changed field to avoid overwriting masked keys
+    // with their masked representations (e.g., "sk-...abc1").
+    return fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [key]: value }),
+    }).then(res => {
+      if (!res.ok) return res.text().then(t => { throw new Error(t || 'Save failed') })
+    }).catch(err => {
+      // Revert optimistic update by re-fetching authoritative settings
+      fetch('/api/settings')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data) {
+            const merged = { ...DEFAULTS, ...data }
+            setSettings(merged)
+            writeCache(merged)
+          }
+        })
+        .catch(() => {})
+      throw err
     })
   }, [])
 
-  return { settings, updateSetting }
+  const updateSettings = useCallback((updates) => {
+    // Optimistic update — apply all fields at once
+    setSettings(prev => {
+      const next = { ...prev, ...updates }
+      writeCache(next)
+      return next
+    })
+
+    return fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    }).then(res => {
+      if (!res.ok) return res.text().then(t => { throw new Error(t || 'Save failed') })
+    }).catch(err => {
+      fetch('/api/settings')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data) {
+            const merged = { ...DEFAULTS, ...data }
+            setSettings(merged)
+            writeCache(merged)
+          }
+        })
+        .catch(() => {})
+      throw err
+    })
+  }, [])
+
+  return { settings, updateSetting, updateSettings }
 }

@@ -17,7 +17,7 @@ import { Settings } from './components/Settings'
 export default function App() {
   const [page, setPage] = useState('home')
   const { theme, toggleTheme } = useTheme()
-  const { settings, updateSetting } = useSettings()
+  const { settings, updateSetting, updateSettings } = useSettings()
   const { notify } = useNotification()
   const readeck = useReadeck()
   const { summarize, summarizeText, data, setData, loading, error, clear } = useSummarize()
@@ -49,7 +49,10 @@ export default function App() {
 
   async function handleSubmitText(text, title, sourceUrl = null) {
     const result = await summarizeText(text, title, defaultLengthHint, selectedModel, sourceUrl)
-    if (result && settings.notificationsEnabled) notify(STRINGS.NOTIFICATION_DONE_TITLE, title || STRINGS.NOTIFICATION_DONE_BODY)
+    if (result) {
+      refresh()
+      if (settings.notificationsEnabled) notify(STRINGS.NOTIFICATION_DONE_TITLE, title || STRINGS.NOTIFICATION_DONE_BODY)
+    }
   }
 
   function handleSelectRecent(item) {
@@ -90,6 +93,7 @@ export default function App() {
           <Settings
             settings={settings}
             onUpdateSetting={updateSetting}
+            onUpdateSettings={updateSettings}
             onBack={() => setPage('home')}
           />
         ) : (

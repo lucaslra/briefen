@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -27,10 +29,12 @@ public class ReadeckController {
     private static final Logger log = LoggerFactory.getLogger(ReadeckController.class);
 
     private final UserSettingsRepository settingsRepository;
+    private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
-    public ReadeckController(UserSettingsRepository settingsRepository) {
+    public ReadeckController(UserSettingsRepository settingsRepository, ObjectMapper objectMapper) {
         this.settingsRepository = settingsRepository;
+        this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .followRedirects(HttpClient.Redirect.NEVER) // Prevent redirect-based SSRF
@@ -70,7 +74,7 @@ public class ReadeckController {
             uriBuilder.append("&status=").append(encodeParam(status));
         }
 
-        return proxyGet(uriBuilder.toString(), settings.getReadeckApiKey());
+        return proxyGetWithRetry(uriBuilder.toString(), settings.getReadeckApiKey());
     }
 
     /**
@@ -81,7 +85,7 @@ public class ReadeckController {
         sanitizeId(id);
         var settings = requireReadeck();
         String url = settings.getReadeckUrl() + "/api/bookmarks/" + id;
-        return proxyGet(url, settings.getReadeckApiKey());
+        return proxyGetWithRetry(url, settings.getReadeckApiKey());
     }
 
     /**
@@ -100,7 +104,7 @@ public class ReadeckController {
 
         try {
             @SuppressWarnings("unchecked")
-            var meta = new com.fasterxml.jackson.databind.ObjectMapper().readValue(metaJson, java.util.Map.class);
+            var meta = objectMapper.readValue(metaJson, java.util.Map.class);
             String title = meta.get("title") != null ? meta.get("title").toString() : "";
 
             // Fetch the clean article content from the /article endpoint (NOT /article.html which is a bookmark export)
@@ -137,11 +141,15 @@ public class ReadeckController {
             }
 
             log.info("Extracted article text for bookmark {} ({} chars)", id, textContent.length());
+            if (textContent.isEmpty()) {
+                return Map.of("title", title, "text", "", "metadata", metaJson,
+                        "error", "Article content appears to be empty.");
+            }
             return Map.of("title", title, "text", textContent, "metadata", metaJson);
 
         } catch (Exception e) {
             log.error("Failed to extract Readeck article content for bookmark {}", id, e);
-            return Map.of("metadata", metaJson);
+            return Map.of("metadata", metaJson, "error", "Could not extract article content.");
         }
     }
 
@@ -159,6 +167,20 @@ public class ReadeckController {
         return settings;
     }
 
+    private String proxyGetWithRetry(String url, String apiKey) {
+        try {
+            return proxyGet(url, apiKey);
+        } catch (ResponseStatusException e) {
+            int status = e.getStatusCode().value();
+            if (status == 429 || status == 503) {
+                log.info("Retrying Readeck request after {} for {}", status, sanitizeUrlForLog(url));
+                try { Thread.sleep(500); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+                return proxyGet(url, apiKey);
+            }
+            throw e;
+        }
+    }
+
     private String proxyGet(String url, String apiKey) {
         try {
             var request = HttpRequest.newBuilder()
@@ -170,15 +192,28 @@ public class ReadeckController {
                     .build();
 
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            int status = response.statusCode();
 
-            if (response.statusCode() == 401) {
+            if (status == 401) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "Readeck API key is invalid. Check your settings.");
             }
-            if (response.statusCode() != 200) {
-                log.warn("Readeck returned status {} for {}", response.statusCode(), url);
+            if (status == 403) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Readeck denied access to this resource.");
+            }
+            if (status == 404) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Resource not found on Readeck.");
+            }
+            if (status == 429) {
+                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                        "Readeck is rate-limiting requests. Try again shortly.");
+            }
+            if (status != 200) {
+                log.warn("Readeck returned status {} for {}", status, sanitizeUrlForLog(url));
                 throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                        "Readeck returned status " + response.statusCode());
+                        "Readeck returned status " + status);
             }
 
             return response.body();
@@ -186,7 +221,7 @@ public class ReadeckController {
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to reach Readeck at {}", url, e);
+            log.error("Failed to reach Readeck at {}", sanitizeUrlForLog(url), e);
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
                     "Could not connect to Readeck: " + e.getMessage());
         }
@@ -205,5 +240,13 @@ public class ReadeckController {
 
     private static String encodeParam(String value) {
         return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private static String sanitizeUrlForLog(String url) {
+        try {
+            return URI.create(url).getPath();
+        } catch (Exception e) {
+            return "<malformed-url>";
+        }
     }
 }

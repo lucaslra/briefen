@@ -76,6 +76,7 @@ export const STRINGS = {
   READECK_EMPTY: 'No articles found.',
   READECK_NOT_CONFIGURED: 'Configure Readeck in Settings to browse your saved articles.',
   READECK_ERROR: 'Could not connect to Readeck.',
+  READECK_RATE_LIMITED: 'Readeck is rate-limiting requests. Please wait a moment.',
   READECK_LOAD_MORE: 'Load more',
 
   SETTINGS_NOTIFICATIONS_HEADING: 'Notifications',
