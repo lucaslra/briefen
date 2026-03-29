@@ -56,3 +56,17 @@
   border-color: var(--accent);
   background-color: var(--accent-light);
 }
+
+@media (max-width: 600px) {
+  .header {
+    padding: 20px 0 16px;
+  }
+
+  .title {
+    font-size: 1.4rem;
+  }
+
+  .subtitle {
+    font-size: 0.8rem;
+  }
+}

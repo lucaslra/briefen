@@ -94,6 +94,20 @@ export const STRINGS = {
   ERROR_TIMEOUT: 'The request timed out. The article may be too long.',
   ERROR_EXTRACTION: 'Could not extract article content from this URL.',
   ERROR_BOT_PROTECTION: 'This website uses bot protection and cannot be summarized. Try a different source for the same article.',
+  ERROR_CLIPBOARD: 'Clipboard access denied. Please paste manually with Ctrl+V.',
+
+  CONFIRM_REMOVE_OPENAI: 'Remove your OpenAI API key? Cloud models will no longer be available.',
+  CONFIRM_REMOVE_READECK: 'Remove your Readeck configuration? The Readeck tab will be hidden.',
+
+  RECENT_LOAD_MORE: 'Load more',
+  RECENT_LOADING: 'Loading\u2026',
+  RECENT_EMPTY_HINT: 'Your summaries will appear here.',
+
+  SETTINGS_MODELS_LOADING: 'Loading available models\u2026',
+
+  READECK_SEARCH_BUTTON: 'Search',
+  READECK_FETCHING: 'Loading\u2026',
+  READECK_AUTH_ERROR: 'Readeck API key is invalid. Check your settings.',
 }
 
 /**

@@ -5,7 +5,13 @@ import styles from './RecentSummaries.module.css'
 export function RecentSummaries({ summaries, loading, hasMore, onLoadMore, onSelect }) {
   const [expanded, setExpanded] = useState(false)
 
-  if (summaries.length === 0 && !loading) return null
+  if (summaries.length === 0 && !loading) {
+    return (
+      <section className={styles.section}>
+        <p className={styles.emptyHint}>{STRINGS.RECENT_EMPTY_HINT}</p>
+      </section>
+    )
+  }
 
   return (
     <section className={styles.section}>
@@ -50,7 +56,7 @@ export function RecentSummaries({ summaries, loading, hasMore, onLoadMore, onSel
               onClick={onLoadMore}
               disabled={loading}
             >
-              {loading ? 'Loading\u2026' : 'Load more'}
+              {loading ? STRINGS.RECENT_LOADING : STRINGS.RECENT_LOAD_MORE}
             </button>
           )}
         </div>

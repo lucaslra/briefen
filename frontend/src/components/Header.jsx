@@ -5,7 +5,7 @@ import styles from './Header.module.css'
 export function Header({ theme, onToggleTheme, onNavigate, currentPage }) {
   return (
     <header className={styles.header}>
-      <div className={styles.brand} onClick={() => onNavigate('home')} role="button" tabIndex={0}>
+      <div className={styles.brand} onClick={() => onNavigate('home')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('home') } }} role="button" tabIndex={0}>
         <h1 className={styles.title}>{STRINGS.APP_TITLE}</h1>
         <p className={styles.subtitle}>{STRINGS.APP_SUBTITLE}</p>
       </div>

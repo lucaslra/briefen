@@ -24,9 +24,11 @@ export function Settings({ settings, onUpdateSetting, onBack }) {
   const [readeckUrlDraft, setReadeckUrlDraft] = useState('')
   const [readeckKeyDraft, setReadeckKeyDraft] = useState('')
   const [readeckSaved, setReadeckSaved] = useState(false)
+  const [modelsLoading, setModelsLoading] = useState(true)
   const { supported, permission, requestPermission } = useNotification()
 
   useEffect(() => {
+    setModelsLoading(true)
     fetch('/api/models')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
@@ -36,6 +38,7 @@ export function Settings({ settings, onUpdateSetting, onBack }) {
         }
       })
       .catch(() => {})
+      .finally(() => setModelsLoading(false))
   }, [])
 
   useEffect(() => {
@@ -66,10 +69,11 @@ export function Settings({ settings, onUpdateSetting, onBack }) {
   }
 
   function handleRemoveKey() {
+    if (!window.confirm(STRINGS.CONFIRM_REMOVE_OPENAI)) return
     onUpdateSetting('openaiApiKey', '')
     setKeyDraft('')
     // If the user had an OpenAI model selected, reset to default
-    if (selectedModel && selectedModel.startsWith('gpt-') || selectedModel?.startsWith('o')) {
+    if (selectedModel && (selectedModel.startsWith('gpt-') || selectedModel.startsWith('o'))) {
       onUpdateSetting('model', defaultModel)
     }
     fetch('/api/models').then(r => r.json()).then(data => {
@@ -89,6 +93,7 @@ export function Settings({ settings, onUpdateSetting, onBack }) {
   }
 
   function handleRemoveReadeck() {
+    if (!window.confirm(STRINGS.CONFIRM_REMOVE_READECK)) return
     onUpdateSetting('readeckUrl', '')
     onUpdateSetting('readeckApiKey', '')
     setReadeckUrlDraft('')
@@ -146,10 +151,14 @@ export function Settings({ settings, onUpdateSetting, onBack }) {
             </div>
           </section>
 
-          {visibleProviders.length > 0 && (
+          {(visibleProviders.length > 0 || modelsLoading) && (
             <section className={styles.section}>
               <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_MODEL_HEADING}</h3>
               <p className={styles.sectionDesc}>{STRINGS.SETTINGS_MODEL_SUBHEADING}</p>
+
+              {modelsLoading && visibleProviders.length === 0 && (
+                <p className={styles.providerHint}>{STRINGS.SETTINGS_MODELS_LOADING}</p>
+              )}
 
               {visibleProviders.map(provider => (
                 <div key={provider.id} className={styles.providerGroup}>

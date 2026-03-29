@@ -4,7 +4,7 @@ import { STRINGS, MAX_LENGTH_ADJUSTMENTS } from '../constants/strings'
 import { formatElapsed } from '../hooks/useElapsedTime'
 import styles from './SummaryDisplay.module.css'
 
-export function SummaryDisplay({ data, onMakeShorter, onMakeLonger, onRegenerate, loading, elapsedMs }) {
+export function SummaryDisplay({ data, onMakeShorter, onMakeLonger, onRegenerate, onClear, loading, elapsedMs }) {
   const [copied, setCopied] = useState(false)
   const [shorterCount, setShorterCount] = useState(0)
   const [longerCount, setLongerCount] = useState(0)
@@ -51,7 +51,14 @@ export function SummaryDisplay({ data, onMakeShorter, onMakeLonger, onRegenerate
 
   return (
     <div className={styles.container}>
-      {data.title && <h2 className={styles.title}>{data.title}</h2>}
+      <div className={styles.titleRow}>
+        {data.title && <h2 className={styles.title}>{data.title}</h2>}
+        {onClear && (
+          <button className={styles.clearBtn} onClick={onClear} title="New summary">
+            &times;
+          </button>
+        )}
+      </div>
       <div className={styles.summary}>
         <Markdown>{data.summary}</Markdown>
       </div>

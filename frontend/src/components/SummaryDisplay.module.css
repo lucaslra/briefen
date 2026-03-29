@@ -9,12 +9,40 @@
   box-shadow: var(--shadow);
 }
 
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
 .title {
   font-size: 1.3rem;
   font-weight: 600;
-  margin-bottom: 16px;
   line-height: 1.3;
   color: var(--text);
+  margin-bottom: 0;
+}
+
+.clearBtn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.clearBtn:hover {
+  color: var(--text);
+  border-color: var(--text-secondary);
 }
 
 .summary {
@@ -199,4 +227,36 @@
 .copyBtn:hover {
   background-color: var(--accent);
   color: #fff;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 16px;
+  }
+
+  .footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .footerActions {
+    width: 100%;
+  }
+
+  .adjustButtons {
+    width: 100%;
+  }
+
+  .adjustBtn {
+    flex: 1;
+  }
+
+  .regenerateBtn {
+    flex: 1;
+  }
+
+  .copyBtn {
+    flex: 1;
+  }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { STRINGS } from './constants/strings'
 import { useTheme } from './hooks/useTheme'
 import { useSummarize } from './hooks/useSummarize'
@@ -20,7 +20,8 @@ export default function App() {
   const { settings, updateSetting } = useSettings()
   const { notify } = useNotification()
   const readeck = useReadeck()
-  const { summarize, summarizeText, data, setData, loading, error } = useSummarize()
+  const { summarize, summarizeText, data, setData, loading, error, clear } = useSummarize()
+  const mainRef = useRef(null)
   const { summaries, loading: loadingSummaries, hasMore, refresh, loadMore } = useSummaries()
   const elapsed = useElapsedTime(loading)
 
@@ -30,6 +31,13 @@ export default function App() {
   const readeckConfigured = !!(settings.readeckApiKey && settings.readeckUrl)
   // Key changes when readeck config changes, forcing ReadeckBrowser to remount and recheck status
   const readeckKey = `${settings.readeckApiKey || ''}-${settings.readeckUrl || ''}`
+
+  // Move focus to main content when page changes
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.focus({ preventScroll: true })
+    }
+  }, [page])
 
   async function handleSubmitUrl(url) {
     const result = await summarize(url, defaultLengthHint, selectedModel)
@@ -77,7 +85,7 @@ export default function App() {
         currentPage={page}
       />
 
-      <main style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 20px', paddingBottom: '60px' }}>
+      <main ref={mainRef} tabIndex={-1} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 20px', paddingBottom: '60px', outline: 'none' }}>
         {page === 'settings' ? (
           <Settings
             settings={settings}
@@ -90,26 +98,11 @@ export default function App() {
               onSubmitUrl={handleSubmitUrl}
               onSubmitText={handleSubmitText}
               loading={loading}
+              error={error}
               readeck={readeck}
               readeckConfigured={readeckConfigured}
               readeckKey={readeckKey}
             />
-
-            {error && (
-              <div style={{
-                width: '100%',
-                maxWidth: 720,
-                marginTop: 16,
-                padding: '12px 16px',
-                borderRadius: 8,
-                backgroundColor: 'var(--error-bg)',
-                color: 'var(--error)',
-                fontSize: '0.9rem',
-                border: '1px solid var(--error)',
-              }}>
-                {error}
-              </div>
-            )}
 
             {loading && <LoadingSkeleton elapsed={elapsed} />}
             {!loading && data && (
@@ -120,6 +113,7 @@ export default function App() {
                 onMakeShorter={handleMakeShorter}
                 onMakeLonger={handleMakeLonger}
                 onRegenerate={handleRegenerate}
+                onClear={clear}
               />
             )}
 

@@ -138,3 +138,36 @@
   font-size: 0.85rem;
   color: var(--error);
 }
+
+.errorBox {
+  margin-top: 12px;
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  color: var(--error);
+  background-color: var(--error-bg);
+  border: 1px solid var(--error);
+  border-radius: var(--radius-sm);
+}
+
+@media (max-width: 600px) {
+  .inputRow {
+    flex-wrap: wrap;
+  }
+
+  .input {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .pasteBtn {
+    flex: 1;
+  }
+
+  .submitBtn {
+    flex: 1;
+  }
+
+  .textActions {
+    flex-wrap: wrap;
+  }
+}

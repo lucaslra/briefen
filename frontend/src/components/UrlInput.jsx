@@ -5,7 +5,7 @@ import styles from './UrlInput.module.css'
 
 const URL_PATTERN = /^https?:\/\/.+/i
 
-export function UrlInput({ onSubmitUrl, onSubmitText, loading, readeck, readeckConfigured, readeckKey }) {
+export function UrlInput({ onSubmitUrl, onSubmitText, loading, error, readeck, readeckConfigured, readeckKey }) {
   const [mode, setMode] = useState('url') // 'url' | 'text' | 'readeck'
   const [url, setUrl] = useState('')
   const [text, setText] = useState('')
@@ -43,7 +43,7 @@ export function UrlInput({ onSubmitUrl, onSubmitText, loading, readeck, readeckC
       }
       setValidationError(null)
     } catch {
-      // Clipboard access denied — ignore silently
+      setValidationError(STRINGS.ERROR_CLIPBOARD)
     }
   }
 
@@ -157,8 +157,10 @@ export function UrlInput({ onSubmitUrl, onSubmitText, loading, readeck, readeckC
         />
       )}
 
-      {validationError && (
-        <p className={styles.error}>{validationError}</p>
+      {(validationError || error) && (
+        <div className={styles.errorBox}>
+          {validationError || error}
+        </div>
       )}
     </form>
   )

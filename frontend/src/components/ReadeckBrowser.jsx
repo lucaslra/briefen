@@ -62,10 +62,21 @@ export function ReadeckBrowser({ readeck, onSummarize, loading }) {
           placeholder={STRINGS.READECK_SEARCH_PLACEHOLDER}
           disabled={loading || loadingArticles}
         />
+        <button
+          type="submit"
+          className={styles.searchBtn}
+          disabled={loading || loadingArticles}
+        >
+          {STRINGS.READECK_SEARCH_BUTTON}
+        </button>
       </form>
 
       {error && (
-        <p className={styles.error}>{STRINGS.READECK_ERROR}</p>
+        <p className={styles.error}>
+          {typeof error === 'string' && error.includes('401')
+            ? STRINGS.READECK_AUTH_ERROR
+            : STRINGS.READECK_ERROR}
+        </p>
       )}
 
       {loadingArticles && articles.length === 0 && (
@@ -85,6 +96,7 @@ export function ReadeckBrowser({ readeck, onSummarize, loading }) {
             disabled={loading || fetchingId != null}
           >
             <span className={styles.articleTitle}>
+              {fetchingId === article.id ? STRINGS.READECK_FETCHING + ' ' : ''}
               {article.title || article.url}
             </span>
             <span className={styles.articleMeta}>
