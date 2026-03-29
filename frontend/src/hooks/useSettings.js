@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 
-const STORAGE_KEY = 'briefly-settings'
+const STORAGE_KEY = 'briefen-settings'
 
 const DEFAULTS = {
   defaultLength: 'default', // 'shorter' | 'default' | 'longer'

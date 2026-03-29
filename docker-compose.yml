@@ -1,7 +1,7 @@
 services:
   mongodb:
     image: mongo:7
-    container_name: briefly-mongodb
+    container_name: briefen-mongodb
     ports:
       - "27017:27017"
     volumes:
@@ -18,7 +18,7 @@ services:
   # Change the model name below and in backend application.yml to use a different model.
   ollama:
     image: ollama/ollama
-    container_name: briefly-ollama
+    container_name: briefen-ollama
     ports:
       - "11434:11434"
     volumes:

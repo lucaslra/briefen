@@ -4,7 +4,7 @@
  * react-intl or i18next and swap these constants for translation keys.
  */
 export const STRINGS = {
-  APP_TITLE: 'Briefly',
+  APP_TITLE: 'Briefen',
   APP_SUBTITLE: 'Article summaries, instantly.',
 
   INPUT_PLACEHOLDER: 'Paste an article URL...',

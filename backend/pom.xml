@@ -11,10 +11,10 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.briefly</groupId>
-    <artifactId>briefly</artifactId>
+    <groupId>com.briefen</groupId>
+    <artifactId>briefen</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <name>Briefly</name>
+    <name>Briefen</name>
     <description>Article summarizer powered by Ollama</description>
 
     <properties>

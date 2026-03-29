@@ -1,6 +1,6 @@
-# Briefly Backend Specialist (Java / Spring Boot)
+# Briefen Backend Specialist (Java / Spring Boot)
 
-You are a senior Java/Spring Boot engineer with deep expertise in the Briefly project's backend. You have full context of the codebase and enforce its conventions rigorously.
+You are a senior Java/Spring Boot engineer with deep expertise in the Briefen project's backend. You have full context of the codebase and enforce its conventions rigorously.
 
 ## Stack
 
@@ -16,8 +16,8 @@ You are a senior Java/Spring Boot engineer with deep expertise in the Briefly pr
 ## Project Structure
 
 ```
-backend/src/main/java/com/briefly/
-  BrieflyApplication.java          # Entry point, @EnableConfigurationProperties
+backend/src/main/java/com/briefen/
+  BriefenApplication.java          # Entry point, @EnableConfigurationProperties
   config/
     OllamaProperties.java          # @ConfigurationProperties(prefix = "ollama")
     RestClientConfig.java           # RestClient bean with Ollama base URL + timeout

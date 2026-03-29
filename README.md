@@ -1,6 +1,6 @@
-# Briefly
+# Briefen
 
-**Article summaries, instantly.** Paste a URL to any online article, and Briefly will fetch, read, and summarize it using a local LLM — no API keys, no cloud dependencies.
+**Article summaries, instantly.** Paste a URL to any online article, and Briefen will fetch, read, and summarize it using a local LLM — no API keys, no cloud dependencies.
 
 ## Architecture
 
@@ -12,7 +12,7 @@ Browser (React) → Spring Boot API → Jsoup (fetch article) → Ollama (summar
 |----------------|------------------------------------|
 | Frontend       | React (Vite, pnpm, plain JS)      |
 | Backend        | Java 25, Spring Boot 3.4.4, Maven |
-| LLM            | Ollama (Docker) with gemma2:2b    |
+| LLM            | Ollama (Docker) with gemma3:4b    |
 | Database       | MongoDB 7 (Docker)                |
 | Orchestration  | Docker Compose                    |
 
@@ -67,21 +67,13 @@ GET /api/summaries?page=0&size=10
 
 ## Changing the Ollama Model
 
-The default model is `gemma2:2b`, chosen for its balance of quality and speed for summarization tasks. To change it:
+The default model is `gemma3:4b`, chosen for its excellent summarization quality with 128K context window. To change it:
 
 1. Edit `docker-compose.yml` — change the model name in the `ollama` service command
 2. Edit `backend/src/main/resources/application.yml` — update `ollama.model`
 3. Restart: `make down && make up`
 
-Good alternatives: `mistral` (7B, higher quality), `llama3` (8B), `phi3` (3.8B).
-
-### Model Choice Rationale
-
-**gemma2:2b** was chosen because:
-- Summarization is a constrained task (compress, don't hallucinate) that doesn't require large models
-- At ~1.6GB, it downloads quickly and loads fast — ideal for development
-- It produces coherent, faithful summaries for typical news/blog articles
-- The model is externalized in config, so swapping is a one-line change
+Good alternatives: `gemma2:2b` (faster, lighter), `mistral` (7B, higher quality), `llama3` (8B), `phi3` (3.8B).
 
 ## CSS Approach
 
@@ -99,8 +91,8 @@ summizer/
 ├── Makefile
 ├── backend/
 │   ├── pom.xml
-│   └── src/main/java/com/briefly/
-│       ├── BrieflyApplication.java
+│   └── src/main/java/com/briefen/
+│       ├── BriefenApplication.java
 │       ├── config/          # Ollama properties, RestClient, health indicator
 │       ├── controller/      # REST endpoints, global error handler
 │       ├── dto/             # Request/response records
@@ -114,7 +106,7 @@ summizer/
     └── src/
         ├── App.jsx
         ├── constants/       # Centralized strings
-        ├── hooks/           # useTheme, useSummarize, useSummaries
-        ├── components/      # Header, UrlInput, SummaryDisplay, etc.
+        ├── hooks/           # useTheme, useSummarize, useSummaries, useSettings
+        ├── components/      # Header, UrlInput, SummaryDisplay, Settings, etc.
         └── styles/          # CSS variables, global reset
 ```

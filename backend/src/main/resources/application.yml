@@ -1,9 +1,9 @@
 spring:
   application:
-    name: briefly
+    name: briefen
   data:
     mongodb:
-      uri: mongodb://localhost:27017/briefly
+      uri: mongodb://localhost:27017/briefen
       auto-index-creation: true
 
 server:
