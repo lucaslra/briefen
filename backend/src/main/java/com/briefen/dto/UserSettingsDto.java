@@ -4,9 +4,14 @@ import com.briefen.model.UserSettings;
 
 public record UserSettingsDto(
         String defaultLength,
-        String model
+        String model,
+        boolean notificationsEnabled
 ) {
     public static UserSettingsDto from(UserSettings entity) {
-        return new UserSettingsDto(entity.getDefaultLength(), entity.getModel());
+        return new UserSettingsDto(
+                entity.getDefaultLength(),
+                entity.getModel(),
+                entity.isNotificationsEnabled()
+        );
     }
 }

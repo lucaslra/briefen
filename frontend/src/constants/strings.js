@@ -45,6 +45,15 @@ export const STRINGS = {
   SETTINGS_MODEL_HEADING: 'LLM Model',
   SETTINGS_MODEL_SUBHEADING: 'Choose which model generates your summaries.',
 
+  SETTINGS_NOTIFICATIONS_HEADING: 'Notifications',
+  SETTINGS_NOTIFICATIONS_SUBHEADING: 'Get a browser notification when a summary finishes generating.',
+  SETTINGS_NOTIFICATIONS_ENABLE: 'Enable notifications',
+  SETTINGS_NOTIFICATIONS_DENIED: 'Notifications blocked by browser. Allow them in your browser settings.',
+  SETTINGS_NOTIFICATIONS_UNSUPPORTED: 'Your browser does not support notifications.',
+
+  NOTIFICATION_DONE_TITLE: 'Summary ready',
+  NOTIFICATION_DONE_BODY: 'Your article summary has been generated.',
+
   ERROR_INVALID_URL: 'Please enter a valid HTTP or HTTPS URL.',
   ERROR_EMPTY_TEXT: 'Please paste some article content to summarize.',
   ERROR_GENERIC: 'Something went wrong. Please try again.',

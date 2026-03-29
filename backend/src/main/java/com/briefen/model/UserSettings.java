@@ -20,6 +20,7 @@ public class UserSettings {
 
     private String defaultLength = "default"; // "shorter" | "default" | "longer"
     private String model; // null means use server default from application.yml
+    private boolean notificationsEnabled = false;
     private Instant updatedAt;
 
     public UserSettings() {
@@ -38,6 +39,12 @@ public class UserSettings {
     public String getModel() { return model; }
     public void setModel(String model) {
         this.model = model;
+        this.updatedAt = Instant.now();
+    }
+
+    public boolean isNotificationsEnabled() { return notificationsEnabled; }
+    public void setNotificationsEnabled(boolean notificationsEnabled) {
+        this.notificationsEnabled = notificationsEnabled;
         this.updatedAt = Instant.now();
     }
 

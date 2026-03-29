@@ -33,6 +33,7 @@ public class SettingsController {
         if (dto.model() != null) {
             settings.setModel(dto.model());
         }
+        settings.setNotificationsEnabled(dto.notificationsEnabled());
 
         return UserSettingsDto.from(repository.save(settings));
     }

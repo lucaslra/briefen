@@ -5,6 +5,7 @@ const STORAGE_KEY = 'briefen-settings'
 const DEFAULTS = {
   defaultLength: 'default', // 'shorter' | 'default' | 'longer'
   model: null,              // null means server default
+  notificationsEnabled: false,
 }
 
 /**

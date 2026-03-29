@@ -17,8 +17,12 @@ export function Header({ theme, onToggleTheme, onNavigate, currentPage }) {
           aria-label={STRINGS.SETTINGS_TITLE}
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="10" cy="10" r="3" />
-            <path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M3.4 3.4l1.4 1.4M15.2 15.2l1.4 1.4M3.4 16.6l1.4-1.4M15.2 4.8l1.4-1.4" />
+            <line x1="3" y1="5" x2="17" y2="5" />
+            <line x1="3" y1="10" x2="17" y2="10" />
+            <line x1="3" y1="15" x2="17" y2="15" />
+            <circle cx="7" cy="5" r="2.5" fill="currentColor" stroke="none" />
+            <circle cx="13" cy="10" r="2.5" fill="currentColor" stroke="none" />
+            <circle cx="9" cy="15" r="2.5" fill="currentColor" stroke="none" />
           </svg>
         </button>
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />

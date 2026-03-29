@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { STRINGS } from './constants/strings'
 import { useTheme } from './hooks/useTheme'
 import { useSummarize } from './hooks/useSummarize'
 import { useSummaries } from './hooks/useSummaries'
 import { useElapsedTime } from './hooks/useElapsedTime'
 import { useSettings } from './hooks/useSettings'
+import { useNotification } from './hooks/useNotification'
 import { Header } from './components/Header'
 import { UrlInput } from './components/UrlInput'
 import { LoadingSkeleton } from './components/LoadingSkeleton'
@@ -15,6 +17,7 @@ export default function App() {
   const [page, setPage] = useState('home')
   const { theme, toggleTheme } = useTheme()
   const { settings, updateSetting } = useSettings()
+  const { notify } = useNotification()
   const { summarize, summarizeText, data, setData, loading, error } = useSummarize()
   const { summaries, loading: loadingSummaries, hasMore, refresh, loadMore } = useSummaries()
   const elapsed = useElapsedTime(loading)
@@ -25,11 +28,15 @@ export default function App() {
 
   async function handleSubmitUrl(url) {
     const result = await summarize(url, defaultLengthHint, selectedModel)
-    if (result) refresh()
+    if (result) {
+      refresh()
+      if (settings.notificationsEnabled) notify(STRINGS.NOTIFICATION_DONE_TITLE, result.title || STRINGS.NOTIFICATION_DONE_BODY)
+    }
   }
 
   async function handleSubmitText(text, title) {
-    await summarizeText(text, title, defaultLengthHint, selectedModel)
+    const result = await summarizeText(text, title, defaultLengthHint, selectedModel)
+    if (result && settings.notificationsEnabled) notify(STRINGS.NOTIFICATION_DONE_TITLE, title || STRINGS.NOTIFICATION_DONE_BODY)
   }
 
   function handleSelectRecent(item) {
