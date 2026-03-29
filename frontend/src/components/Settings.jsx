@@ -10,8 +10,10 @@ const LENGTH_OPTIONS = [
 ]
 
 export function Settings({ settings, onUpdateSetting, onBack }) {
-  const [models, setModels] = useState([])
+  const [providers, setProviders] = useState([])
   const [defaultModel, setDefaultModel] = useState(null)
+  const [keyDraft, setKeyDraft] = useState('')
+  const [keySaved, setKeySaved] = useState(false)
   const { supported, permission, requestPermission } = useNotification()
 
   useEffect(() => {
@@ -19,15 +21,42 @@ export function Settings({ settings, onUpdateSetting, onBack }) {
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data) {
-          setModels(data.models)
+          setProviders(data.providers)
           setDefaultModel(data.defaultModel)
         }
       })
       .catch(() => {})
   }, [])
 
-  // The selected model: use the user's setting, or fall back to the server default
+  // Sync key draft with saved setting
+  useEffect(() => {
+    if (settings.openaiApiKey) {
+      setKeyDraft(settings.openaiApiKey)
+    }
+  }, [settings.openaiApiKey])
+
   const selectedModel = settings.model || defaultModel
+  const hasOpenAiKey = settings.openaiApiKey != null && settings.openaiApiKey !== ''
+
+  function handleSaveKey() {
+    if (!keyDraft.trim()) return
+    onUpdateSetting('openaiApiKey', keyDraft.trim())
+    setKeySaved(true)
+    setTimeout(() => setKeySaved(false), 2000)
+    // Refresh providers to show OpenAI as configured
+    fetch('/api/models').then(r => r.json()).then(data => {
+      if (data) setProviders(data.providers)
+    }).catch(() => {})
+  }
+
+  function handleRemoveKey() {
+    onUpdateSetting('openaiApiKey', '')
+    setKeyDraft('')
+    // Refresh providers
+    fetch('/api/models').then(r => r.json()).then(data => {
+      if (data) setProviders(data.providers)
+    }).catch(() => {})
+  }
 
   return (
     <div className={styles.container}>
@@ -37,6 +66,7 @@ export function Settings({ settings, onUpdateSetting, onBack }) {
 
       <h2 className={styles.heading}>{STRINGS.SETTINGS_TITLE}</h2>
 
+      {/* Summary length */}
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_LENGTH_HEADING}</h3>
         <p className={styles.sectionDesc}>{STRINGS.SETTINGS_LENGTH_SUBHEADING}</p>
@@ -64,35 +94,84 @@ export function Settings({ settings, onUpdateSetting, onBack }) {
         </div>
       </section>
 
-      {models.length > 0 && (
+      {/* API Keys */}
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_API_KEYS_HEADING}</h3>
+        <p className={styles.sectionDesc}>{STRINGS.SETTINGS_API_KEYS_SUBHEADING}</p>
+
+        <div className={styles.apiKeyGroup}>
+          <label className={styles.apiKeyLabel}>{STRINGS.SETTINGS_OPENAI_KEY_LABEL}</label>
+          <div className={styles.apiKeyRow}>
+            <input
+              type="password"
+              className={styles.apiKeyInput}
+              value={keyDraft}
+              onChange={e => setKeyDraft(e.target.value)}
+              placeholder={STRINGS.SETTINGS_OPENAI_KEY_PLACEHOLDER}
+            />
+            {hasOpenAiKey ? (
+              <button className={styles.apiKeyRemoveBtn} onClick={handleRemoveKey}>
+                {STRINGS.SETTINGS_API_KEY_REMOVE}
+              </button>
+            ) : (
+              <button
+                className={styles.apiKeySaveBtn}
+                onClick={handleSaveKey}
+                disabled={!keyDraft.trim()}
+              >
+                {keySaved ? STRINGS.SETTINGS_API_KEY_SAVED : STRINGS.SETTINGS_API_KEY_SAVE}
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Model selection grouped by provider */}
+      {providers.length > 0 && (
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_MODEL_HEADING}</h3>
           <p className={styles.sectionDesc}>{STRINGS.SETTINGS_MODEL_SUBHEADING}</p>
 
-          <div className={styles.options}>
-            {models.map(m => (
-              <label
-                key={m.id}
-                className={`${styles.option} ${selectedModel === m.id ? styles.optionSelected : ''}`}
-              >
-                <input
-                  type="radio"
-                  name="model"
-                  value={m.id}
-                  checked={selectedModel === m.id}
-                  onChange={() => onUpdateSetting('model', m.id)}
-                  className={styles.radio}
-                />
-                <div className={styles.optionContent}>
-                  <span className={styles.optionLabel}>{m.name}</span>
-                  <span className={styles.optionDesc}>{m.description}</span>
-                </div>
-              </label>
-            ))}
-          </div>
+          {providers.map(provider => (
+            <div key={provider.id} className={styles.providerGroup}>
+              <div className={styles.providerHeader}>
+                <span className={styles.providerName}>{provider.name}</span>
+                {!provider.configured && (
+                  <span className={styles.providerBadge}>{STRINGS.SETTINGS_API_KEY_ADD}</span>
+                )}
+              </div>
+
+              <div className={styles.options}>
+                {provider.models.map(m => {
+                  const disabled = !provider.configured
+                  return (
+                    <label
+                      key={m.id}
+                      className={`${styles.option} ${selectedModel === m.id ? styles.optionSelected : ''} ${disabled ? styles.optionDisabled : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="model"
+                        value={m.id}
+                        checked={selectedModel === m.id}
+                        onChange={() => onUpdateSetting('model', m.id)}
+                        className={styles.radio}
+                        disabled={disabled}
+                      />
+                      <div className={styles.optionContent}>
+                        <span className={styles.optionLabel}>{m.name}</span>
+                        <span className={styles.optionDesc}>{m.description}</span>
+                      </div>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </section>
       )}
 
+      {/* Notifications */}
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_NOTIFICATIONS_HEADING}</h3>
         <p className={styles.sectionDesc}>{STRINGS.SETTINGS_NOTIFICATIONS_SUBHEADING}</p>

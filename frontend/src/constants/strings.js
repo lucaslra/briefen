@@ -45,6 +45,18 @@ export const STRINGS = {
   SETTINGS_MODEL_HEADING: 'LLM Model',
   SETTINGS_MODEL_SUBHEADING: 'Choose which model generates your summaries.',
 
+  SETTINGS_API_KEYS_HEADING: 'API Keys',
+  SETTINGS_API_KEYS_SUBHEADING: 'Connect cloud providers to unlock additional models.',
+  SETTINGS_OPENAI_KEY_LABEL: 'OpenAI API Key',
+  SETTINGS_OPENAI_KEY_PLACEHOLDER: 'sk-...',
+  SETTINGS_API_KEY_SAVE: 'Save',
+  SETTINGS_API_KEY_SAVED: 'Saved',
+  SETTINGS_API_KEY_REMOVE: 'Remove',
+  SETTINGS_API_KEY_ADD: 'Add API key to enable',
+
+  SETTINGS_PROVIDER_LOCAL: 'Local (Ollama)',
+  SETTINGS_PROVIDER_OPENAI: 'OpenAI',
+
   SETTINGS_NOTIFICATIONS_HEADING: 'Notifications',
   SETTINGS_NOTIFICATIONS_SUBHEADING: 'Get a browser notification when a summary finishes generating.',
   SETTINGS_NOTIFICATIONS_ENABLE: 'Enable notifications',

@@ -14,6 +14,10 @@ ollama:
   model: gemma3:4b
   timeout: 300s
 
+openai:
+  base-url: https://api.openai.com
+  timeout: 120s
+
 article:
   fetch-timeout: 10s
 

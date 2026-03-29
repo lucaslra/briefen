@@ -5,13 +5,15 @@ import com.briefen.model.UserSettings;
 public record UserSettingsDto(
         String defaultLength,
         String model,
-        boolean notificationsEnabled
+        boolean notificationsEnabled,
+        String openaiApiKey
 ) {
     public static UserSettingsDto from(UserSettings entity) {
         return new UserSettingsDto(
                 entity.getDefaultLength(),
                 entity.getModel(),
-                entity.isNotificationsEnabled()
+                entity.isNotificationsEnabled(),
+                entity.getOpenaiApiKey()
         );
     }
 }

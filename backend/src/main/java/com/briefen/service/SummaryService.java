@@ -2,8 +2,11 @@ package com.briefen.service;
 
 import com.briefen.config.OllamaProperties;
 import com.briefen.exception.InvalidUrlException;
+import com.briefen.exception.SummarizationException;
 import com.briefen.model.Summary;
+import com.briefen.model.UserSettings;
 import com.briefen.repository.SummaryRepository;
+import com.briefen.repository.UserSettingsRepository;
 import com.briefen.validation.UrlValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,27 +17,40 @@ import org.springframework.stereotype.Service;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class SummaryService {
 
     private static final Logger log = LoggerFactory.getLogger(SummaryService.class);
 
+    private static final Set<String> OPENAI_MODELS = Set.of(
+            "gpt-4o-mini", "gpt-4o", "gpt-4.1-nano", "gpt-4.1-mini",
+            "gpt-4.5-preview", "gpt-5-mini",
+            "o3-mini", "o4-mini"
+    );
+
     private final UrlValidator urlValidator;
     private final ArticleFetcherService articleFetcher;
-    private final OllamaSummarizerService summarizer;
+    private final OllamaSummarizerService ollamaSummarizer;
+    private final OpenAiSummarizerService openAiSummarizer;
     private final SummaryRepository repository;
+    private final UserSettingsRepository settingsRepository;
     private final OllamaProperties ollamaProperties;
 
     public SummaryService(UrlValidator urlValidator,
                           ArticleFetcherService articleFetcher,
-                          OllamaSummarizerService summarizer,
+                          OllamaSummarizerService ollamaSummarizer,
+                          OpenAiSummarizerService openAiSummarizer,
                           SummaryRepository repository,
+                          UserSettingsRepository settingsRepository,
                           OllamaProperties ollamaProperties) {
         this.urlValidator = urlValidator;
         this.articleFetcher = articleFetcher;
-        this.summarizer = summarizer;
+        this.ollamaSummarizer = ollamaSummarizer;
+        this.openAiSummarizer = openAiSummarizer;
         this.repository = repository;
+        this.settingsRepository = settingsRepository;
         this.ollamaProperties = ollamaProperties;
     }
 
@@ -57,7 +73,7 @@ public class SummaryService {
 
         ArticleFetcherService.ArticleContent article = articleFetcher.fetch(normalizedUrl);
         String effectiveModel = (model != null && !model.isBlank()) ? model : ollamaProperties.model();
-        String summaryText = summarizer.summarize(article.text(), lengthHint, model);
+        String summaryText = dispatchSummarize(article.text(), lengthHint, effectiveModel);
 
         // Length-adjusted summaries are transient — don't persist them
         if (isLengthAdjustment) {
@@ -88,7 +104,7 @@ public class SummaryService {
 
         String effectiveTitle = (title != null && !title.isBlank()) ? title.trim() : "Pasted Article";
         String effectiveModel = (model != null && !model.isBlank()) ? model : ollamaProperties.model();
-        String summaryText = summarizer.summarize(text, lengthHint, model);
+        String summaryText = dispatchSummarize(text, lengthHint, effectiveModel);
 
         // Pasted-text summaries are always transient (no URL to key on)
         Summary result = new Summary(null, effectiveTitle, summaryText, effectiveModel);
@@ -96,8 +112,33 @@ public class SummaryService {
         return result;
     }
 
-    // TODO: Rate limiting should be applied here
     public Page<Summary> getSummaries(int page, int size) {
         return repository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size));
+    }
+
+    /**
+     * Routes to the correct summarizer based on the model name.
+     */
+    private String dispatchSummarize(String articleText, String lengthHint, String model) {
+        if (isOpenAiModel(model)) {
+            String apiKey = loadOpenAiKey();
+            return openAiSummarizer.summarize(articleText, lengthHint, model, apiKey);
+        }
+        return ollamaSummarizer.summarize(articleText, lengthHint, model);
+    }
+
+    private boolean isOpenAiModel(String model) {
+        return model != null && (OPENAI_MODELS.contains(model)
+                || model.startsWith("gpt-")
+                || model.startsWith("o3-")
+                || model.startsWith("o4-"));
+    }
+
+    private String loadOpenAiKey() {
+        return settingsRepository.findById(UserSettings.DEFAULT_ID)
+                .map(UserSettings::getOpenaiApiKey)
+                .filter(key -> key != null && !key.isBlank())
+                .orElseThrow(() -> new SummarizationException(
+                        "OpenAI API key not configured. Please add your key in Settings.", false));
     }
 }

@@ -34,6 +34,9 @@ public class SettingsController {
             settings.setModel(dto.model());
         }
         settings.setNotificationsEnabled(dto.notificationsEnabled());
+        if (dto.openaiApiKey() != null) {
+            settings.setOpenaiApiKey(dto.openaiApiKey().isBlank() ? null : dto.openaiApiKey());
+        }
 
         return UserSettingsDto.from(repository.save(settings));
     }

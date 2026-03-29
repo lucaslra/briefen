@@ -100,6 +100,122 @@
   color: var(--text-muted);
 }
 
+.providerGroup {
+  margin-bottom: 16px;
+}
+
+.providerGroup:last-child {
+  margin-bottom: 0;
+}
+
+.providerHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.providerName {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.providerBadge {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.optionDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.optionDisabled:hover {
+  background-color: transparent;
+}
+
+.apiKeyGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.apiKeyLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.apiKeyRow {
+  display: flex;
+  gap: 8px;
+}
+
+.apiKeyInput {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  font-family: monospace;
+  color: var(--text);
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition);
+}
+
+.apiKeyInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.apiKeyInput::placeholder {
+  color: var(--text-muted);
+}
+
+.apiKeySaveBtn {
+  padding: 10px 20px;
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: #fff;
+  background-color: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition);
+  white-space: nowrap;
+}
+
+.apiKeySaveBtn:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+}
+
+.apiKeySaveBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.apiKeyRemoveBtn {
+  padding: 10px 20px;
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: var(--error);
+  background: none;
+  border: 1px solid var(--error);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition), color var(--transition);
+  white-space: nowrap;
+}
+
+.apiKeyRemoveBtn:hover {
+  background-color: var(--error);
+  color: #fff;
+}
+
 .toggle {
   display: flex;
   align-items: center;

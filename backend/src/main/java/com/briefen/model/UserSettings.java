@@ -21,6 +21,7 @@ public class UserSettings {
     private String defaultLength = "default"; // "shorter" | "default" | "longer"
     private String model; // null means use server default from application.yml
     private boolean notificationsEnabled = false;
+    private String openaiApiKey; // plaintext — acceptable for local single-user app
     private Instant updatedAt;
 
     public UserSettings() {
@@ -39,6 +40,12 @@ public class UserSettings {
     public String getModel() { return model; }
     public void setModel(String model) {
         this.model = model;
+        this.updatedAt = Instant.now();
+    }
+
+    public String getOpenaiApiKey() { return openaiApiKey; }
+    public void setOpenaiApiKey(String openaiApiKey) {
+        this.openaiApiKey = openaiApiKey;
         this.updatedAt = Instant.now();
     }
 
