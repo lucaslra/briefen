@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { STRINGS } from '../constants/strings'
 import styles from './Settings.module.css'
 
@@ -8,6 +9,24 @@ const LENGTH_OPTIONS = [
 ]
 
 export function Settings({ settings, onUpdateSetting, onBack }) {
+  const [models, setModels] = useState([])
+  const [defaultModel, setDefaultModel] = useState(null)
+
+  useEffect(() => {
+    fetch('/api/models')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          setModels(data.models)
+          setDefaultModel(data.defaultModel)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // The selected model: use the user's setting, or fall back to the server default
+  const selectedModel = settings.model || defaultModel
+
   return (
     <div className={styles.container}>
       <button className={styles.backBtn} onClick={onBack}>
@@ -42,6 +61,35 @@ export function Settings({ settings, onUpdateSetting, onBack }) {
           ))}
         </div>
       </section>
+
+      {models.length > 0 && (
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_MODEL_HEADING}</h3>
+          <p className={styles.sectionDesc}>{STRINGS.SETTINGS_MODEL_SUBHEADING}</p>
+
+          <div className={styles.options}>
+            {models.map(m => (
+              <label
+                key={m.id}
+                className={`${styles.option} ${selectedModel === m.id ? styles.optionSelected : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="model"
+                  value={m.id}
+                  checked={selectedModel === m.id}
+                  onChange={() => onUpdateSetting('model', m.id)}
+                  className={styles.radio}
+                />
+                <div className={styles.optionContent}>
+                  <span className={styles.optionLabel}>{m.name}</span>
+                  <span className={styles.optionDesc}>{m.description}</span>
+                </div>
+              </label>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

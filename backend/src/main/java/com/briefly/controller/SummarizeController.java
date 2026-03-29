@@ -32,9 +32,9 @@ public class SummarizeController {
 
         Summary summary;
         if (hasText) {
-            summary = summaryService.summarizeText(request.text(), request.title(), request.lengthHint());
+            summary = summaryService.summarizeText(request.text(), request.title(), request.lengthHint(), request.model());
         } else {
-            summary = summaryService.summarize(request.url(), refresh, request.lengthHint());
+            summary = summaryService.summarize(request.url(), refresh, request.lengthHint(), request.model());
         }
 
         return SummarizeResponse.from(summary);

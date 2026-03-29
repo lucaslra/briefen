@@ -21,14 +21,15 @@ export default function App() {
 
   // Use the configured default length, converting 'default' to null (backend treats null as default)
   const defaultLengthHint = settings.defaultLength === 'default' ? null : settings.defaultLength
+  const selectedModel = settings.model || null
 
   async function handleSubmitUrl(url) {
-    const result = await summarize(url, defaultLengthHint)
+    const result = await summarize(url, defaultLengthHint, selectedModel)
     if (result) refresh()
   }
 
   async function handleSubmitText(text, title) {
-    await summarizeText(text, title, defaultLengthHint)
+    await summarizeText(text, title, defaultLengthHint, selectedModel)
   }
 
   function handleSelectRecent(item) {
@@ -38,13 +39,13 @@ export default function App() {
 
   function handleMakeShorter() {
     if (data?.url) {
-      summarize(data.url, 'shorter')
+      summarize(data.url, 'shorter', selectedModel)
     }
   }
 
   function handleMakeLonger() {
     if (data?.url) {
-      summarize(data.url, 'longer')
+      summarize(data.url, 'longer', selectedModel)
     }
   }
 

@@ -71,10 +71,13 @@
 
 .summary blockquote {
   border-left: 3px solid var(--accent);
-  padding-left: 12px;
+  background-color: var(--bg-surface-hover);
+  padding: 10px 14px 10px 16px;
   margin: 8px 0;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
   font-style: italic;
+  font-size: 0.875rem;
 }
 
 .summary code {

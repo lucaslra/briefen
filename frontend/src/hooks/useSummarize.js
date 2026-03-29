@@ -6,12 +6,13 @@ export function useSummarize() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const summarize = useCallback(async (url, lengthHint = null) => {
+  const summarize = useCallback(async (url, lengthHint = null, model = null) => {
     setLoading(true)
     setError(null)
 
     const payload = { url }
     if (lengthHint) payload.lengthHint = lengthHint
+    if (model) payload.model = model
 
     try {
       const res = await fetch('/api/summarize', {
@@ -38,13 +39,14 @@ export function useSummarize() {
     }
   }, [])
 
-  const summarizeText = useCallback(async (text, title = null, lengthHint = null) => {
+  const summarizeText = useCallback(async (text, title = null, lengthHint = null, model = null) => {
     setLoading(true)
     setError(null)
 
     const payload = { text }
     if (title) payload.title = title
     if (lengthHint) payload.lengthHint = lengthHint
+    if (model) payload.model = model
 
     try {
       const res = await fetch('/api/summarize', {

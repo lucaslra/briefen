@@ -11,5 +11,6 @@ public record SummarizeRequest(
         String url,
         String text,
         String title,
-        String lengthHint // nullable — "shorter", "longer", or null for default
+        String lengthHint, // nullable — "shorter", "longer", or null for default
+        String model       // nullable — e.g. "gemma2:2b", "gemma3:4b"; null means use server default
 ) {}

@@ -27,7 +27,10 @@ public class OllamaSummarizerService {
             - Use clear, accessible English.
             - Do NOT add information that is not present in the article.
             - Do NOT include your own opinions or commentary.
-            - At the end of the summary, include a "Sources" section that references the specific parts of the article where the key claims come from.
+            - Do NOT include inline parenthetical citations throughout the summary paragraphs — keep the summary clean.
+            - At the end of the summary, include a "Key Quotes" section with 2-4 direct, verbatim short quotes from the article that support the most important claims in the summary.
+            - Each quote must be in quotation marks, attributed with brief context such as the section or speaker if known.
+            - Do NOT invent dates, URLs, or any metadata not present in the article.
             """;
 
     private static final String LENGTH_DEFAULT = "Write 3 to 6 concise paragraphs depending on the article's length and complexity.";
@@ -42,7 +45,22 @@ public class OllamaSummarizerService {
         this.properties = properties;
     }
 
+    /**
+     * @param modelOverride if non-null/blank, use this model instead of the configured default
+     */
+    public String summarize(String articleText, String lengthHint, String modelOverride) {
+        return doSummarize(articleText, lengthHint, resolveModel(modelOverride));
+    }
+
     public String summarize(String articleText, String lengthHint) {
+        return doSummarize(articleText, lengthHint, properties.model());
+    }
+
+    private String resolveModel(String modelOverride) {
+        return (modelOverride != null && !modelOverride.isBlank()) ? modelOverride : properties.model();
+    }
+
+    private String doSummarize(String articleText, String lengthHint, String model) {
         String lengthGuideline = switch (lengthHint != null ? lengthHint.toLowerCase() : "") {
             case "shorter" -> LENGTH_SHORTER;
             case "longer" -> LENGTH_LONGER;
@@ -58,7 +76,7 @@ public class OllamaSummarizerService {
         String prompt = systemPrompt + "\n\nArticle text:\n---\n" + truncateIfNeeded(articleText) + "\n---\n\nSummary:";
 
         Map<String, Object> request = Map.of(
-                "model", properties.model(),
+                "model", model,
                 "prompt", prompt,
                 "stream", false,
                 "options", Map.of(
@@ -68,7 +86,7 @@ public class OllamaSummarizerService {
         );
 
         log.info("Requesting summary from Ollama (model: {}, lengthHint: {}, article length: {} chars)",
-                properties.model(), lengthHint != null ? lengthHint : "default", articleText.length());
+                model, lengthHint != null ? lengthHint : "default", articleText.length());
 
         try {
             @SuppressWarnings("unchecked")

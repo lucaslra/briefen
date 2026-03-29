@@ -30,6 +30,9 @@ public class SettingsController {
         if (dto.defaultLength() != null) {
             settings.setDefaultLength(dto.defaultLength());
         }
+        if (dto.model() != null) {
+            settings.setModel(dto.model());
+        }
 
         return UserSettingsDto.from(repository.save(settings));
     }

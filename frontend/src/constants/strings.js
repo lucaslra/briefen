@@ -42,6 +42,9 @@ export const STRINGS = {
   SETTINGS_LENGTH_LONG: 'Detailed',
   SETTINGS_LENGTH_LONG_DESC: '6-10 paragraphs with thorough coverage of all arguments and nuances.',
 
+  SETTINGS_MODEL_HEADING: 'LLM Model',
+  SETTINGS_MODEL_SUBHEADING: 'Choose which model generates your summaries.',
+
   ERROR_INVALID_URL: 'Please enter a valid HTTP or HTTPS URL.',
   ERROR_EMPTY_TEXT: 'Please paste some article content to summarize.',
   ERROR_GENERIC: 'Something went wrong. Please try again.',

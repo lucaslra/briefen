@@ -36,6 +36,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  margin-bottom: 20px;
 }
 
 .sectionTitle {

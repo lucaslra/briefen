@@ -19,6 +19,7 @@ public class UserSettings {
     private String id = DEFAULT_ID;
 
     private String defaultLength = "default"; // "shorter" | "default" | "longer"
+    private String model; // null means use server default from application.yml
     private Instant updatedAt;
 
     public UserSettings() {
@@ -31,6 +32,12 @@ public class UserSettings {
     public String getDefaultLength() { return defaultLength; }
     public void setDefaultLength(String defaultLength) {
         this.defaultLength = defaultLength;
+        this.updatedAt = Instant.now();
+    }
+
+    public String getModel() { return model; }
+    public void setModel(String model) {
+        this.model = model;
         this.updatedAt = Instant.now();
     }
 

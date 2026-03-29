@@ -41,7 +41,7 @@ public class SummaryService {
     /**
      * Summarize from a URL — fetches the article, summarizes, and caches the result.
      */
-    public Summary summarize(String url, boolean refresh, String lengthHint) {
+    public Summary summarize(String url, boolean refresh, String lengthHint, String model) {
         URI validatedUri = urlValidator.validate(url);
         String normalizedUrl = validatedUri.toString();
         boolean isLengthAdjustment = lengthHint != null && !lengthHint.isBlank();
@@ -56,11 +56,12 @@ public class SummaryService {
         }
 
         ArticleFetcherService.ArticleContent article = articleFetcher.fetch(normalizedUrl);
-        String summaryText = summarizer.summarize(article.text(), lengthHint);
+        String effectiveModel = (model != null && !model.isBlank()) ? model : ollamaProperties.model();
+        String summaryText = summarizer.summarize(article.text(), lengthHint, model);
 
         // Length-adjusted summaries are transient — don't persist them
         if (isLengthAdjustment) {
-            Summary transient_ = new Summary(normalizedUrl, article.title(), summaryText, ollamaProperties.model());
+            Summary transient_ = new Summary(normalizedUrl, article.title(), summaryText, effectiveModel);
             log.info("Generated {} summary for {} (not persisted)", lengthHint, normalizedUrl);
             return transient_;
         }
@@ -71,7 +72,7 @@ public class SummaryService {
         summary.setUrl(normalizedUrl);
         summary.setTitle(article.title());
         summary.setSummary(summaryText);
-        summary.setModelUsed(ollamaProperties.model());
+        summary.setModelUsed(effectiveModel);
         summary.setCreatedAt(Instant.now());
 
         return repository.save(summary);
@@ -80,16 +81,17 @@ public class SummaryService {
     /**
      * Summarize from raw pasted text — no URL fetching, no caching.
      */
-    public Summary summarizeText(String text, String title, String lengthHint) {
+    public Summary summarizeText(String text, String title, String lengthHint, String model) {
         if (text == null || text.isBlank()) {
             throw new InvalidUrlException("Article text must not be blank");
         }
 
         String effectiveTitle = (title != null && !title.isBlank()) ? title.trim() : "Pasted Article";
-        String summaryText = summarizer.summarize(text, lengthHint);
+        String effectiveModel = (model != null && !model.isBlank()) ? model : ollamaProperties.model();
+        String summaryText = summarizer.summarize(text, lengthHint, model);
 
         // Pasted-text summaries are always transient (no URL to key on)
-        Summary result = new Summary(null, effectiveTitle, summaryText, ollamaProperties.model());
+        Summary result = new Summary(null, effectiveTitle, summaryText, effectiveModel);
         log.info("Generated summary from pasted text ({} chars, title='{}')", text.length(), effectiveTitle);
         return result;
     }

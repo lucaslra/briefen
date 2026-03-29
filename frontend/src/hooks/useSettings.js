@@ -4,6 +4,7 @@ const STORAGE_KEY = 'briefly-settings'
 
 const DEFAULTS = {
   defaultLength: 'default', // 'shorter' | 'default' | 'longer'
+  model: null,              // null means server default
 }
 
 /**
