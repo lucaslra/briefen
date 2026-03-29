@@ -59,11 +59,13 @@ export function useSettings() {
       const next = { ...prev, [key]: value }
       writeCache(next)
 
-      // Fire-and-forget save to API
+      // Only send the changed field to avoid overwriting masked keys
+      // with their masked representations (e.g., "sk-...abc1").
+      const payload = { [key]: value }
       fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(next),
+        body: JSON.stringify(payload),
       }).catch(() => {
         // API save failed — cached value is still fine
       })

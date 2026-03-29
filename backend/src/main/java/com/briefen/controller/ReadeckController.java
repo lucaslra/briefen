@@ -33,7 +33,7 @@ public class ReadeckController {
         this.settingsRepository = settingsRepository;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
-                .followRedirects(HttpClient.Redirect.NORMAL)
+                .followRedirects(HttpClient.Redirect.NEVER) // Prevent redirect-based SSRF
                 .build();
     }
 
@@ -78,6 +78,7 @@ public class ReadeckController {
      */
     @GetMapping("/bookmarks/{id}")
     public String getBookmark(@PathVariable String id) {
+        sanitizeId(id);
         var settings = requireReadeck();
         String url = settings.getReadeckUrl() + "/api/bookmarks/" + id;
         return proxyGet(url, settings.getReadeckApiKey());
@@ -90,6 +91,7 @@ public class ReadeckController {
      */
     @GetMapping("/bookmarks/{id}/article")
     public Map<String, String> getArticleContent(@PathVariable String id) {
+        sanitizeId(id);
         var settings = requireReadeck();
 
         // Fetch bookmark metadata for the title
@@ -188,6 +190,17 @@ public class ReadeckController {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
                     "Could not connect to Readeck: " + e.getMessage());
         }
+    }
+
+    /**
+     * Validates that a bookmark ID is alphanumeric (no path traversal).
+     */
+    private static String sanitizeId(String id) {
+        if (id == null || !id.matches("[a-zA-Z0-9_-]+")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid bookmark ID. Must be alphanumeric.");
+        }
+        return id;
     }
 
     private static String encodeParam(String value) {

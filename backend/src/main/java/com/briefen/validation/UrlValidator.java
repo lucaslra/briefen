@@ -10,6 +10,10 @@ import java.net.UnknownHostException;
 @Component
 public class UrlValidator {
 
+    /**
+     * Validates and normalizes a URL for article fetching.
+     * Rejects private/loopback IPs, non-HTTP(S) schemes, cloud metadata addresses.
+     */
     public URI validate(String url) {
         if (url == null || url.isBlank()) {
             throw new InvalidUrlException("URL must not be empty.");
@@ -22,32 +26,86 @@ public class UrlValidator {
             throw new InvalidUrlException("Malformed URL: " + url);
         }
 
-        String scheme = uri.getScheme();
-        if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
-            throw new InvalidUrlException("URL must use HTTP or HTTPS scheme.");
-        }
-
-        String host = uri.getHost();
-        if (host == null || host.isBlank()) {
-            throw new InvalidUrlException("URL must have a valid host.");
-        }
-
-        checkNotPrivateIp(host);
+        validateScheme(uri);
+        validateHost(uri);
+        checkNotPrivateIp(uri.getHost());
 
         return uri;
     }
 
+    /**
+     * Validates a base URL for external service integration (e.g., Readeck).
+     * Same checks as article URLs — prevents SSRF via user-configured endpoints.
+     */
+    public void validateServiceUrl(String url) {
+        if (url == null || url.isBlank()) {
+            throw new InvalidUrlException("URL must not be empty.");
+        }
+        validate(url);
+    }
+
+    /**
+     * Re-validates a resolved IP address against the private IP blocklist.
+     * Call this just before making the actual HTTP request to prevent DNS rebinding.
+     */
+    public void checkResolvedAddress(InetAddress address) {
+        if (isPrivateAddress(address)) {
+            throw new InvalidUrlException(
+                    "DNS resolved to a private/local address (%s). Request blocked."
+                            .formatted(address.getHostAddress()));
+        }
+    }
+
+    private void validateScheme(URI uri) {
+        String scheme = uri.getScheme();
+        if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+            throw new InvalidUrlException("URL must use HTTP or HTTPS scheme.");
+        }
+    }
+
+    private void validateHost(URI uri) {
+        String host = uri.getHost();
+        if (host == null || host.isBlank()) {
+            throw new InvalidUrlException("URL must have a valid host.");
+        }
+    }
+
     private void checkNotPrivateIp(String host) {
         try {
-            InetAddress address = InetAddress.getByName(host);
-            if (address.isLoopbackAddress()
-                    || address.isSiteLocalAddress()
-                    || address.isLinkLocalAddress()
-                    || address.isAnyLocalAddress()) {
-                throw new InvalidUrlException("URLs pointing to local or private IP addresses are not allowed.");
+            // Resolve ALL addresses (catches dual-stack hosts)
+            InetAddress[] addresses = InetAddress.getAllByName(host);
+            for (InetAddress address : addresses) {
+                if (isPrivateAddress(address)) {
+                    throw new InvalidUrlException(
+                            "URLs pointing to local or private IP addresses are not allowed.");
+                }
             }
         } catch (UnknownHostException e) {
             throw new InvalidUrlException("Could not resolve host: " + host);
         }
+    }
+
+    private boolean isPrivateAddress(InetAddress address) {
+        return address.isLoopbackAddress()       // 127.0.0.0/8, ::1
+                || address.isSiteLocalAddress()   // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+                || address.isLinkLocalAddress()    // 169.254.0.0/16, fe80::/10
+                || address.isAnyLocalAddress()     // 0.0.0.0, ::
+                || isCloudMetadata(address);       // 169.254.169.254 (AWS/GCP/Azure)
+    }
+
+    /**
+     * Blocks the well-known cloud metadata endpoint (169.254.169.254)
+     * which is technically link-local but deserves an explicit check.
+     */
+    private boolean isCloudMetadata(InetAddress address) {
+        byte[] bytes = address.getAddress();
+        // IPv4: 169.254.169.254
+        if (bytes.length == 4) {
+            return (bytes[0] & 0xFF) == 169
+                    && (bytes[1] & 0xFF) == 254
+                    && (bytes[2] & 0xFF) == 169
+                    && (bytes[3] & 0xFF) == 254;
+        }
+        return false;
     }
 }
