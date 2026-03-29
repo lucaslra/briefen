@@ -31,6 +31,7 @@ public class OllamaSummarizerService {
             - At the end of the summary, include a "Key Quotes" section with 2-4 direct, verbatim short quotes from the article that support the most important claims in the summary.
             - Each quote must be in quotation marks, attributed with brief context such as the section or speaker if known.
             - Do NOT invent dates, URLs, or any metadata not present in the article.
+            - Begin the response with a single markdown H1 heading (# Title) that captures the article's topic. Use the article's own title if available, or create a concise, descriptive one.
             """;
 
     private static final String LENGTH_DEFAULT = "Write 3 to 6 concise paragraphs depending on the article's length and complexity.";

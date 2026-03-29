@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { STRINGS } from '../constants/strings'
+import { ReadeckBrowser } from './ReadeckBrowser'
 import styles from './UrlInput.module.css'
 
 const URL_PATTERN = /^https?:\/\/.+/i
 
-export function UrlInput({ onSubmitUrl, onSubmitText, loading }) {
-  const [mode, setMode] = useState('url') // 'url' | 'text'
+export function UrlInput({ onSubmitUrl, onSubmitText, loading, readeck, readeckConfigured }) {
+  const [mode, setMode] = useState('url') // 'url' | 'text' | 'readeck'
   const [url, setUrl] = useState('')
   const [text, setText] = useState('')
-  const [title, setTitle] = useState('')
   const [validationError, setValidationError] = useState(null)
 
   function handleSubmit(e) {
@@ -22,14 +22,14 @@ export function UrlInput({ onSubmitUrl, onSubmitText, loading }) {
       }
       setValidationError(null)
       onSubmitUrl(trimmed)
-    } else {
+    } else if (mode === 'text') {
       const trimmed = text.trim()
       if (!trimmed) {
         setValidationError(STRINGS.ERROR_EMPTY_TEXT)
         return
       }
       setValidationError(null)
-      onSubmitText(trimmed, title.trim() || null)
+      onSubmitText(trimmed, null)
     }
   }
 
@@ -52,6 +52,15 @@ export function UrlInput({ onSubmitUrl, onSubmitText, loading }) {
     setValidationError(null)
   }
 
+  // Readeck article selected — can provide text+title+sourceUrl or just URL
+  function handleReadeckSummarize(text, title, articleUrl) {
+    if (text) {
+      onSubmitText(text, title, articleUrl)
+    } else if (articleUrl) {
+      onSubmitUrl(articleUrl)
+    }
+  }
+
   const canSubmit = mode === 'url' ? url.trim().length > 0 : text.trim().length > 0
 
   return (
@@ -71,6 +80,15 @@ export function UrlInput({ onSubmitUrl, onSubmitText, loading }) {
         >
           {STRINGS.TAB_TEXT}
         </button>
+        {readeckConfigured && (
+          <button
+            type="button"
+            className={`${styles.tab} ${mode === 'readeck' ? styles.tabActive : ''}`}
+            onClick={() => switchMode('readeck')}
+          >
+            {STRINGS.TAB_READECK}
+          </button>
+        )}
       </div>
 
       {mode === 'url' ? (
@@ -101,16 +119,8 @@ export function UrlInput({ onSubmitUrl, onSubmitText, loading }) {
             {STRINGS.SUMMARIZE_BUTTON}
           </button>
         </div>
-      ) : (
+      ) : mode === 'text' ? (
         <div className={styles.textMode}>
-          <input
-            type="text"
-            className={styles.input}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={STRINGS.TITLE_PLACEHOLDER}
-            disabled={loading}
-          />
           <textarea
             className={styles.textarea}
             value={text}
@@ -138,6 +148,12 @@ export function UrlInput({ onSubmitUrl, onSubmitText, loading }) {
             </button>
           </div>
         </div>
+      ) : (
+        <ReadeckBrowser
+          readeck={readeck}
+          onSummarize={handleReadeckSummarize}
+          loading={loading}
+        />
       )}
 
       {validationError && (

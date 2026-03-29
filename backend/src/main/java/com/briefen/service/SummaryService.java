@@ -97,19 +97,60 @@ public class SummaryService {
     /**
      * Summarize from raw pasted text — no URL fetching, no caching.
      */
-    public Summary summarizeText(String text, String title, String lengthHint, String model) {
+    public Summary summarizeText(String text, String title, String lengthHint, String model, String sourceUrl) {
         if (text == null || text.isBlank()) {
             throw new InvalidUrlException("Article text must not be blank");
         }
 
-        String effectiveTitle = (title != null && !title.isBlank()) ? title.trim() : "Pasted Article";
         String effectiveModel = (model != null && !model.isBlank()) ? model : ollamaProperties.model();
         String summaryText = dispatchSummarize(text, lengthHint, effectiveModel);
 
-        // Pasted-text summaries are always transient (no URL to key on)
-        Summary result = new Summary(null, effectiveTitle, summaryText, effectiveModel);
-        log.info("Generated summary from pasted text ({} chars, title='{}')", text.length(), effectiveTitle);
+        // Extract title from LLM response if not provided
+        String effectiveTitle = (title != null && !title.isBlank()) ? title.trim() : null;
+        if (effectiveTitle == null) {
+            var parsed = extractTitle(summaryText);
+            effectiveTitle = parsed.title();
+            summaryText = parsed.body();
+        }
+
+        // Persist summaries so they appear in recent list. Use sourceUrl for attribution if provided.
+        String effectiveUrl = (sourceUrl != null && !sourceUrl.isBlank()) ? sourceUrl.trim() : null;
+
+        // Upsert when a sourceUrl is provided (avoids duplicate key on the unique URL index)
+        Summary result;
+        if (effectiveUrl != null) {
+            result = repository.findByUrl(effectiveUrl).orElseGet(Summary::new);
+            result.setUrl(effectiveUrl);
+        } else {
+            result = new Summary();
+        }
+        result.setTitle(effectiveTitle);
+        result.setSummary(summaryText);
+        result.setModelUsed(effectiveModel);
+        result.setCreatedAt(java.time.Instant.now());
+        result = repository.save(result);
+        log.info("Generated and saved summary from pasted text ({} chars, title='{}')", text.length(), effectiveTitle);
         return result;
+    }
+
+    private record TitleAndBody(String title, String body) {}
+
+    /**
+     * Extracts a markdown H1 title from the beginning of the summary text.
+     * If found, returns the title and the remaining body separately.
+     */
+    private TitleAndBody extractTitle(String text) {
+        if (text != null && text.startsWith("# ")) {
+            int newline = text.indexOf('\n');
+            if (newline > 0) {
+                String title = text.substring(2, newline).trim();
+                String body = text.substring(newline + 1).stripLeading();
+                if (!title.isEmpty()) {
+                    return new TitleAndBody(title, body);
+                }
+            }
+        }
+        return new TitleAndBody("Pasted Article", text);
     }
 
     public Page<Summary> getSummaries(int page, int size) {

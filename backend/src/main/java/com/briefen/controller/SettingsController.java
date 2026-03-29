@@ -37,6 +37,12 @@ public class SettingsController {
         if (dto.openaiApiKey() != null) {
             settings.setOpenaiApiKey(dto.openaiApiKey().isBlank() ? null : dto.openaiApiKey());
         }
+        if (dto.readeckApiKey() != null) {
+            settings.setReadeckApiKey(dto.readeckApiKey().isBlank() ? null : dto.readeckApiKey());
+        }
+        if (dto.readeckUrl() != null) {
+            settings.setReadeckUrl(dto.readeckUrl().isBlank() ? null : dto.readeckUrl());
+        }
 
         return UserSettingsDto.from(repository.save(settings));
     }

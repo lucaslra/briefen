@@ -6,6 +6,7 @@ import { useSummaries } from './hooks/useSummaries'
 import { useElapsedTime } from './hooks/useElapsedTime'
 import { useSettings } from './hooks/useSettings'
 import { useNotification } from './hooks/useNotification'
+import { useReadeck } from './hooks/useReadeck'
 import { Header } from './components/Header'
 import { UrlInput } from './components/UrlInput'
 import { LoadingSkeleton } from './components/LoadingSkeleton'
@@ -18,6 +19,7 @@ export default function App() {
   const { theme, toggleTheme } = useTheme()
   const { settings, updateSetting } = useSettings()
   const { notify } = useNotification()
+  const readeck = useReadeck()
   const { summarize, summarizeText, data, setData, loading, error } = useSummarize()
   const { summaries, loading: loadingSummaries, hasMore, refresh, loadMore } = useSummaries()
   const elapsed = useElapsedTime(loading)
@@ -25,6 +27,7 @@ export default function App() {
   // Use the configured default length, converting 'default' to null (backend treats null as default)
   const defaultLengthHint = settings.defaultLength === 'default' ? null : settings.defaultLength
   const selectedModel = settings.model || null
+  const readeckConfigured = !!(settings.readeckApiKey && settings.readeckUrl)
 
   async function handleSubmitUrl(url) {
     const result = await summarize(url, defaultLengthHint, selectedModel)
@@ -34,8 +37,8 @@ export default function App() {
     }
   }
 
-  async function handleSubmitText(text, title) {
-    const result = await summarizeText(text, title, defaultLengthHint, selectedModel)
+  async function handleSubmitText(text, title, sourceUrl = null) {
+    const result = await summarizeText(text, title, defaultLengthHint, selectedModel, sourceUrl)
     if (result && settings.notificationsEnabled) notify(STRINGS.NOTIFICATION_DONE_TITLE, title || STRINGS.NOTIFICATION_DONE_BODY)
   }
 
@@ -53,6 +56,13 @@ export default function App() {
   function handleMakeLonger() {
     if (data?.url) {
       summarize(data.url, 'longer', selectedModel)
+    }
+  }
+
+  async function handleRegenerate() {
+    if (data?.url) {
+      const result = await summarize(data.url, defaultLengthHint, selectedModel, true)
+      if (result) refresh()
     }
   }
 
@@ -74,7 +84,13 @@ export default function App() {
           />
         ) : (
           <>
-            <UrlInput onSubmitUrl={handleSubmitUrl} onSubmitText={handleSubmitText} loading={loading} />
+            <UrlInput
+              onSubmitUrl={handleSubmitUrl}
+              onSubmitText={handleSubmitText}
+              loading={loading}
+              readeck={readeck}
+              readeckConfigured={readeckConfigured}
+            />
 
             {error && (
               <div style={{
@@ -100,6 +116,7 @@ export default function App() {
                 elapsedMs={elapsed}
                 onMakeShorter={handleMakeShorter}
                 onMakeLonger={handleMakeLonger}
+                onRegenerate={handleRegenerate}
               />
             )}
 

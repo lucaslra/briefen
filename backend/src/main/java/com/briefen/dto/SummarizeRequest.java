@@ -12,5 +12,6 @@ public record SummarizeRequest(
         String text,
         String title,
         String lengthHint, // nullable — "shorter", "longer", or null for default
-        String model       // nullable — e.g. "gemma2:2b", "gemma3:4b"; null means use server default
+        String model,      // nullable — e.g. "gemma2:2b", "gemma3:4b"; null means use server default
+        String sourceUrl   // nullable — original article URL for Readeck/pasted content attribution
 ) {}

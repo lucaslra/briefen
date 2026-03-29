@@ -4,7 +4,7 @@ import { STRINGS, MAX_LENGTH_ADJUSTMENTS } from '../constants/strings'
 import { formatElapsed } from '../hooks/useElapsedTime'
 import styles from './SummaryDisplay.module.css'
 
-export function SummaryDisplay({ data, onMakeShorter, onMakeLonger, loading, elapsedMs }) {
+export function SummaryDisplay({ data, onMakeShorter, onMakeLonger, onRegenerate, loading, elapsedMs }) {
   const [copied, setCopied] = useState(false)
   const [shorterCount, setShorterCount] = useState(0)
   const [longerCount, setLongerCount] = useState(0)
@@ -90,15 +90,36 @@ export function SummaryDisplay({ data, onMakeShorter, onMakeLonger, loading, ela
             <span className={styles.pastedLabel}>Pasted content</span>
           )}
           <span className={styles.date}>{date}</span>
+          {data.modelUsed && (
+            <span className={styles.elapsed}>
+              {STRINGS.GENERATED_WITH} {data.modelUsed}
+            </span>
+          )}
           {elapsedMs > 0 && (
             <span className={styles.elapsed}>
               {STRINGS.GENERATED_IN} {formatElapsed(elapsedMs)}
             </span>
           )}
         </div>
-        <button className={styles.copyBtn} onClick={handleCopy}>
-          {copied ? STRINGS.COPIED_TEXT : STRINGS.COPY_BUTTON}
-        </button>
+        <div className={styles.footerActions}>
+          {data.url && onRegenerate && (
+            <button
+              className={styles.regenerateBtn}
+              onClick={onRegenerate}
+              disabled={loading}
+              title={STRINGS.REGENERATE_BUTTON}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1.5 2v5h5" />
+                <path d="M2.3 10.5a6.5 6.5 0 1 0 1.2-5.5L1.5 7" />
+              </svg>
+              {STRINGS.REGENERATE_BUTTON}
+            </button>
+          )}
+          <button className={styles.copyBtn} onClick={handleCopy}>
+            {copied ? STRINGS.COPIED_TEXT : STRINGS.COPY_BUTTON}
+          </button>
+        </div>
       </div>
     </div>
   )

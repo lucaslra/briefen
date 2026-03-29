@@ -9,6 +9,7 @@ public record SummarizeResponse(
         String url,
         String title,
         String summary,
+        String modelUsed,
         Instant createdAt
 ) {
     public static SummarizeResponse from(Summary summary) {
@@ -17,6 +18,7 @@ public record SummarizeResponse(
                 summary.getUrl(),
                 summary.getTitle(),
                 summary.getSummary(),
+                summary.getModelUsed(),
                 summary.getCreatedAt()
         );
     }

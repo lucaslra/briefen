@@ -6,14 +6,18 @@ public record UserSettingsDto(
         String defaultLength,
         String model,
         boolean notificationsEnabled,
-        String openaiApiKey
+        String openaiApiKey,
+        String readeckApiKey,
+        String readeckUrl
 ) {
     public static UserSettingsDto from(UserSettings entity) {
         return new UserSettingsDto(
                 entity.getDefaultLength(),
                 entity.getModel(),
                 entity.isNotificationsEnabled(),
-                entity.getOpenaiApiKey()
+                entity.getOpenaiApiKey(),
+                entity.getReadeckApiKey(),
+                entity.getReadeckUrl()
         );
     }
 }

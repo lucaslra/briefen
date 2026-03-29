@@ -19,7 +19,9 @@ export const STRINGS = {
 
   COPY_BUTTON: 'Copy summary',
   COPIED_TEXT: 'Copied!',
+  REGENERATE_BUTTON: 'Regenerate',
   GENERATED_IN: 'Generated in',
+  GENERATED_WITH: 'Generated with',
 
   SOURCE_LABEL: 'Source',
 
@@ -33,6 +35,9 @@ export const STRINGS = {
 
   SETTINGS_TITLE: 'Settings',
   SETTINGS_BACK: 'Back',
+  SETTINGS_TAB_SUMMARIZATION: 'Summarization',
+  SETTINGS_TAB_INTEGRATIONS: 'Integrations',
+  SETTINGS_TAB_PREFERENCES: 'Preferences',
   SETTINGS_LENGTH_HEADING: 'Summary Length',
   SETTINGS_LENGTH_SUBHEADING: 'Choose the default length for new summaries.',
   SETTINGS_LENGTH_SHORT: 'Short',
@@ -56,6 +61,22 @@ export const STRINGS = {
 
   SETTINGS_PROVIDER_LOCAL: 'Local (Ollama)',
   SETTINGS_PROVIDER_OPENAI: 'OpenAI',
+
+  SETTINGS_READECK_HEADING: 'Readeck',
+  SETTINGS_READECK_SUBHEADING: 'Connect a Readeck instance to summarize your saved articles.',
+  SETTINGS_READECK_URL_LABEL: 'Readeck URL',
+  SETTINGS_READECK_URL_PLACEHOLDER: 'https://readeck.example.com',
+  SETTINGS_READECK_KEY_LABEL: 'Readeck API Key',
+  SETTINGS_READECK_KEY_PLACEHOLDER: 'Your Readeck API token',
+
+  TAB_READECK: 'Readeck',
+
+  READECK_SEARCH_PLACEHOLDER: 'Search articles...',
+  READECK_LOADING: 'Loading articles…',
+  READECK_EMPTY: 'No articles found.',
+  READECK_NOT_CONFIGURED: 'Configure Readeck in Settings to browse your saved articles.',
+  READECK_ERROR: 'Could not connect to Readeck.',
+  READECK_LOAD_MORE: 'Load more',
 
   SETTINGS_NOTIFICATIONS_HEADING: 'Notifications',
   SETTINGS_NOTIFICATIONS_SUBHEADING: 'Get a browser notification when a summary finishes generating.',

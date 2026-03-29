@@ -12,7 +12,7 @@ public class Summary {
     @Id
     private String id;
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, sparse = true)
     private String url;
 
     private String title;

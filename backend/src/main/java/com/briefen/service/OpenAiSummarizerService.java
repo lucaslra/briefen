@@ -31,7 +31,8 @@ public class OpenAiSummarizerService {
             - Do NOT include inline parenthetical citations — keep the summary clean.
             - At the end, include a "Key Quotes" section with 2-4 direct, verbatim short quotes from the article that support the most important claims.
             - Each quote must be in quotation marks, attributed with brief context such as the section or speaker if known.
-            - Do NOT invent dates, URLs, or any metadata not present in the article.""";
+            - Do NOT invent dates, URLs, or any metadata not present in the article.
+            - Begin the response with a single markdown H1 heading (# Title) that captures the article's topic. Use the article's own title if available, or create a concise, descriptive one.""";
 
     private static final String LENGTH_DEFAULT = "Write 3 to 6 concise paragraphs depending on the article's length and complexity.";
     private static final String LENGTH_SHORTER = "Write 1 to 2 short, concise paragraphs capturing only the most essential points.";
@@ -50,23 +51,26 @@ public class OpenAiSummarizerService {
             default -> LENGTH_DEFAULT;
         };
         int maxTokens = switch (lengthHint != null ? lengthHint.toLowerCase() : "") {
-            case "shorter" -> 400;
-            case "longer" -> 2500;
-            default -> 1200;
+            case "shorter" -> 800;
+            case "longer" -> 4096;
+            default -> 2048;
         };
 
         String systemMessage = SYSTEM_PROMPT.formatted(lengthGuideline);
         String userMessage = "Summarize this article:\n\n" + truncateIfNeeded(articleText);
 
-        Map<String, Object> request = Map.of(
-                "model", model,
-                "messages", List.of(
-                        Map.of("role", "system", "content", systemMessage),
-                        Map.of("role", "user", "content", userMessage)
-                ),
-                "temperature", 0.3,
-                "max_completion_tokens", maxTokens
-        );
+        var requestMap = new java.util.HashMap<String, Object>();
+        requestMap.put("model", model);
+        requestMap.put("messages", List.of(
+                Map.of("role", "system", "content", systemMessage),
+                Map.of("role", "user", "content", userMessage)
+        ));
+        requestMap.put("max_completion_tokens", maxTokens);
+
+        // Only older non-reasoning models support custom temperature
+        if (model.startsWith("gpt-4")) {
+            requestMap.put("temperature", 0.3);
+        }
 
         log.info("Requesting summary from OpenAI (model: {}, lengthHint: {}, article length: {} chars)",
                 model, lengthHint != null ? lengthHint : "default", articleText.length());
@@ -76,7 +80,7 @@ public class OpenAiSummarizerService {
             Map<String, Object> response = openAiRestClient.post()
                     .uri("/v1/chat/completions")
                     .header("Authorization", "Bearer " + apiKey)
-                    .body(request)
+                    .body(requestMap)
                     .retrieve()
                     .body(Map.class);
 
@@ -90,9 +94,23 @@ public class OpenAiSummarizerService {
                 throw new SummarizationException("OpenAI returned no choices.", false);
             }
 
+            var firstChoice = choices.getFirst();
+            String finishReason = (String) firstChoice.get("finish_reason");
+
             @SuppressWarnings("unchecked")
-            var message = (Map<String, Object>) choices.getFirst().get("message");
-            String summary = ((String) message.get("content")).strip();
+            var message = (Map<String, Object>) firstChoice.get("message");
+            Object contentObj = message.get("content");
+            String summary = contentObj != null ? ((String) contentObj).strip() : "";
+
+            if (summary.isEmpty()) {
+                log.warn("OpenAI returned empty content (finish_reason: {}, full response: {})", finishReason, response);
+                // For reasoning models, check if there's a refusal
+                Object refusal = message.get("refusal");
+                if (refusal != null) {
+                    throw new SummarizationException("OpenAI refused to generate: " + refusal, false);
+                }
+                throw new SummarizationException("OpenAI returned an empty summary (finish_reason: " + finishReason + "). Try a different model.", false);
+            }
 
             log.info("OpenAI summary generated successfully ({} chars)", summary.length());
             return summary;

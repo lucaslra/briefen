@@ -22,6 +22,8 @@ public class UserSettings {
     private String model; // null means use server default from application.yml
     private boolean notificationsEnabled = false;
     private String openaiApiKey; // plaintext — acceptable for local single-user app
+    private String readeckApiKey;
+    private String readeckUrl;
     private Instant updatedAt;
 
     public UserSettings() {
@@ -52,6 +54,18 @@ public class UserSettings {
     public boolean isNotificationsEnabled() { return notificationsEnabled; }
     public void setNotificationsEnabled(boolean notificationsEnabled) {
         this.notificationsEnabled = notificationsEnabled;
+        this.updatedAt = Instant.now();
+    }
+
+    public String getReadeckApiKey() { return readeckApiKey; }
+    public void setReadeckApiKey(String readeckApiKey) {
+        this.readeckApiKey = readeckApiKey;
+        this.updatedAt = Instant.now();
+    }
+
+    public String getReadeckUrl() { return readeckUrl; }
+    public void setReadeckUrl(String readeckUrl) {
+        this.readeckUrl = readeckUrl;
         this.updatedAt = Instant.now();
     }
 

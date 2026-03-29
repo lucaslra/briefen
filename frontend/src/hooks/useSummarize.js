@@ -6,7 +6,7 @@ export function useSummarize() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const summarize = useCallback(async (url, lengthHint = null, model = null) => {
+  const summarize = useCallback(async (url, lengthHint = null, model = null, refresh = false) => {
     setLoading(true)
     setError(null)
 
@@ -14,8 +14,9 @@ export function useSummarize() {
     if (lengthHint) payload.lengthHint = lengthHint
     if (model) payload.model = model
 
+    const qs = refresh ? '?refresh=true' : ''
     try {
-      const res = await fetch('/api/summarize', {
+      const res = await fetch(`/api/summarize${qs}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -39,7 +40,7 @@ export function useSummarize() {
     }
   }, [])
 
-  const summarizeText = useCallback(async (text, title = null, lengthHint = null, model = null) => {
+  const summarizeText = useCallback(async (text, title = null, lengthHint = null, model = null, sourceUrl = null) => {
     setLoading(true)
     setError(null)
 
@@ -47,6 +48,7 @@ export function useSummarize() {
     if (title) payload.title = title
     if (lengthHint) payload.lengthHint = lengthHint
     if (model) payload.model = model
+    if (sourceUrl) payload.sourceUrl = sourceUrl
 
     try {
       const res = await fetch('/api/summarize', {
