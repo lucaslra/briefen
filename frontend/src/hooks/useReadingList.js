@@ -3,10 +3,10 @@ import { STRINGS } from '../constants/strings'
 
 const PAGE_SIZE = 20
 
-export function useReadingList(refreshUnreadCount) {
+export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
-  const [filter, setFilter] = useState('unread')
+  const [filter, setFilter] = useState(initialFilter)
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [itemErrors, setItemErrors] = useState({})

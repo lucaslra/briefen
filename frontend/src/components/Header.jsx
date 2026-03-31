@@ -1,19 +1,23 @@
+import { useNavigate, useLocation } from 'react-router-dom'
 import { STRINGS } from '../constants/strings'
 import { ThemeToggle } from './ThemeToggle'
 import styles from './Header.module.css'
 
-export function Header({ theme, onToggleTheme, onNavigate, currentPage, unreadCount }) {
+export function Header({ theme, onToggleTheme, unreadCount }) {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+
   return (
     <header className={styles.header}>
-      <div className={styles.brand} onClick={() => onNavigate('home')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('home') } }} role="button" tabIndex={0}>
+      <div className={styles.brand} onClick={() => navigate('/')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/') } }} role="button" tabIndex={0}>
         <h1 className={styles.title}>{STRINGS.APP_TITLE}</h1>
         <p className={styles.subtitle}>{STRINGS.APP_SUBTITLE}</p>
       </div>
       <div className={styles.actions}>
         <div className={styles.iconBtnWrapper}>
           <button
-            className={`${styles.iconBtn} ${currentPage === 'reading-list' ? styles.iconBtnActive : ''}`}
-            onClick={() => onNavigate(currentPage === 'reading-list' ? 'home' : 'reading-list')}
+            className={`${styles.iconBtn} ${pathname === '/reading-list' ? styles.iconBtnActive : ''}`}
+            onClick={() => navigate(pathname === '/reading-list' ? '/' : '/reading-list')}
             title={STRINGS.READING_LIST}
             aria-label={STRINGS.READING_LIST}
           >
@@ -29,8 +33,8 @@ export function Header({ theme, onToggleTheme, onNavigate, currentPage, unreadCo
           )}
         </div>
         <button
-          className={`${styles.iconBtn} ${currentPage === 'settings' ? styles.iconBtnActive : ''}`}
-          onClick={() => onNavigate(currentPage === 'settings' ? 'home' : 'settings')}
+          className={`${styles.iconBtn} ${pathname === '/settings' ? styles.iconBtnActive : ''}`}
+          onClick={() => navigate(pathname === '/settings' ? '/' : '/settings')}
           title={STRINGS.SETTINGS_TITLE}
           aria-label={STRINGS.SETTINGS_TITLE}
         >

@@ -104,7 +104,7 @@ export function SummaryDisplay({ data, onMakeShorter, onMakeLonger, onRegenerate
           )}
           {elapsedMs > 0 && (
             <span className={styles.elapsed}>
-              {STRINGS.GENERATED_IN} {formatElapsed(elapsedMs)}
+              {elapsedMs < 1000 ? STRINGS.CACHED : `${STRINGS.GENERATED_IN} ${formatElapsed(elapsedMs)}`}
             </span>
           )}
         </div>

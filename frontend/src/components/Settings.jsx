@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { STRINGS } from '../constants/strings'
 import styles from './Settings.module.css'
 import { useNotification } from '../hooks/useNotification'
@@ -15,8 +16,18 @@ const TABS = [
   { id: 'preferences', label: STRINGS.SETTINGS_TAB_PREFERENCES },
 ]
 
-export function Settings({ settings, onUpdateSetting, onUpdateSettings, onBack }) {
-  const [tab, setTab] = useState('summarization')
+const TAB_IDS = TABS.map(t => t.id)
+
+export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialTab = TAB_IDS.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'summarization'
+  const [tab, setTab] = useState(initialTab)
+
+  function handleSetTab(t) {
+    setTab(t)
+    setSearchParams(t === 'summarization' ? {} : { tab: t }, { replace: true })
+  }
   const [providers, setProviders] = useState([])
   const [defaultModel, setDefaultModel] = useState(null)
   const [keyDraft, setKeyDraft] = useState('')
@@ -107,7 +118,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings, onBack }
 
   return (
     <div className={styles.container}>
-      <button className={styles.backBtn} onClick={onBack}>
+      <button className={styles.backBtn} onClick={() => navigate('/')}>
         ← {STRINGS.SETTINGS_BACK}
       </button>
 
@@ -119,7 +130,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings, onBack }
           <button
             key={t.id}
             className={`${styles.tabBtn} ${tab === t.id ? styles.tabBtnActive : ''}`}
-            onClick={() => setTab(t.id)}
+            onClick={() => handleSetTab(t.id)}
           >
             {t.label}
           </button>

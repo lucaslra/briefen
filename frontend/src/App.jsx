@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { STRINGS } from './constants/strings'
 import { useTheme } from './hooks/useTheme'
 import { useSummarize } from './hooks/useSummarize'
+import { useBatchSummarize } from './hooks/useBatchSummarize'
 import { useSummaries } from './hooks/useSummaries'
 import { useElapsedTime } from './hooks/useElapsedTime'
 import { useSettings } from './hooks/useSettings'
@@ -11,36 +13,24 @@ import { useUnreadCount } from './hooks/useUnreadCount'
 import { Header } from './components/Header'
 import { UrlInput } from './components/UrlInput'
 import { LoadingSkeleton } from './components/LoadingSkeleton'
+import { BatchProgress } from './components/BatchProgress'
 import { SummaryDisplay } from './components/SummaryDisplay'
 import { RecentSummaries } from './components/RecentSummaries'
 import { Settings } from './components/Settings'
 import { ReadingList } from './components/ReadingList'
 
-export default function App() {
-  const [page, setPage] = useState('home')
-  const { theme, toggleTheme } = useTheme()
-  const { settings, updateSetting, updateSettings } = useSettings()
+function HomePage({ settings, refreshUnreadCount }) {
   const { notify } = useNotification()
   const readeck = useReadeck()
-  const { unreadCount, refreshUnreadCount } = useUnreadCount()
   const { summarize, summarizeText, data, setData, loading, error, clear } = useSummarize()
-  const mainRef = useRef(null)
+  const batch = useBatchSummarize()
   const { summaries, loading: loadingSummaries, hasMore, refresh, loadMore } = useSummaries()
   const elapsed = useElapsedTime(loading)
 
-  // Use the configured default length, converting 'default' to null (backend treats null as default)
   const defaultLengthHint = settings.defaultLength === 'default' ? null : settings.defaultLength
   const selectedModel = settings.model || null
   const readeckConfigured = !!(settings.readeckApiKey && settings.readeckUrl)
-  // Key changes when readeck config changes, forcing ReadeckBrowser to remount and recheck status
   const readeckKey = `${settings.readeckApiKey || ''}-${settings.readeckUrl || ''}`
-
-  // Move focus to main content when page changes
-  useEffect(() => {
-    if (mainRef.current) {
-      mainRef.current.focus({ preventScroll: true })
-    }
-  }, [page])
 
   async function handleSubmitUrl(url) {
     const result = await summarize(url, defaultLengthHint, selectedModel)
@@ -49,6 +39,17 @@ export default function App() {
       refreshUnreadCount()
       if (settings.notificationsEnabled) notify(STRINGS.NOTIFICATION_DONE_TITLE, result.title || STRINGS.NOTIFICATION_DONE_BODY)
     }
+  }
+
+  async function handleSubmitBatch(urls) {
+    await batch.summarizeBatch(urls, defaultLengthHint, selectedModel)
+    refresh()
+    refreshUnreadCount()
+    if (settings.notificationsEnabled) notify(STRINGS.NOTIFICATION_DONE_TITLE, STRINGS.NOTIFICATION_DONE_BODY)
+  }
+
+  function handleBatchDismiss() {
+    batch.clear()
   }
 
   async function handleSubmitText(text, title, sourceUrl = null) {
@@ -84,60 +85,90 @@ export default function App() {
     }
   }
 
+  const isBatchActive = batch.active
+
+  return (
+    <>
+      <UrlInput
+        onSubmitUrl={handleSubmitUrl}
+        onSubmitBatch={handleSubmitBatch}
+        onSubmitText={handleSubmitText}
+        loading={loading || batch.isProcessing}
+        error={error}
+        readeck={readeck}
+        readeckConfigured={readeckConfigured}
+        readeckKey={readeckKey}
+      />
+
+      {isBatchActive && (
+        <BatchProgress
+          jobs={batch.jobs}
+          isProcessing={batch.isProcessing}
+          isComplete={batch.isComplete}
+          doneCount={batch.doneCount}
+          errorCount={batch.errorCount}
+          onDismiss={handleBatchDismiss}
+        />
+      )}
+
+      {!isBatchActive && loading && <LoadingSkeleton elapsed={elapsed} />}
+      {!isBatchActive && !loading && data && (
+        <SummaryDisplay
+          data={data}
+          loading={loading}
+          elapsedMs={elapsed}
+          onMakeShorter={handleMakeShorter}
+          onMakeLonger={handleMakeLonger}
+          onRegenerate={handleRegenerate}
+          onClear={clear}
+        />
+      )}
+
+      <RecentSummaries
+        summaries={summaries}
+        loading={loadingSummaries}
+        hasMore={hasMore}
+        onLoadMore={loadMore}
+        onSelect={handleSelectRecent}
+      />
+    </>
+  )
+}
+
+export default function App() {
+  const { theme, toggleTheme } = useTheme()
+  const { settings, updateSetting, updateSettings } = useSettings()
+  const { unreadCount, refreshUnreadCount } = useUnreadCount()
+  const mainRef = useRef(null)
+  const location = useLocation()
+
+  // Move focus to main content when route changes
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.focus({ preventScroll: true })
+    }
+  }, [location.pathname])
+
   return (
     <>
       <Header
         theme={theme}
         onToggleTheme={toggleTheme}
-        onNavigate={setPage}
-        currentPage={page}
         unreadCount={unreadCount}
       />
 
       <main ref={mainRef} tabIndex={-1} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 20px', paddingBottom: '60px', outline: 'none' }}>
-        {page === 'settings' ? (
-          <Settings
-            settings={settings}
-            onUpdateSetting={updateSetting}
-            onUpdateSettings={updateSettings}
-            onBack={() => setPage('home')}
-          />
-        ) : page === 'reading-list' ? (
-          <ReadingList refreshUnreadCount={refreshUnreadCount} />
-        ) : (
-          <>
-            <UrlInput
-              onSubmitUrl={handleSubmitUrl}
-              onSubmitText={handleSubmitText}
-              loading={loading}
-              error={error}
-              readeck={readeck}
-              readeckConfigured={readeckConfigured}
-              readeckKey={readeckKey}
+        <Routes>
+          <Route path="/" element={<HomePage settings={settings} refreshUnreadCount={refreshUnreadCount} />} />
+          <Route path="/reading-list" element={<ReadingList refreshUnreadCount={refreshUnreadCount} />} />
+          <Route path="/settings" element={
+            <Settings
+              settings={settings}
+              onUpdateSetting={updateSetting}
+              onUpdateSettings={updateSettings}
             />
-
-            {loading && <LoadingSkeleton elapsed={elapsed} />}
-            {!loading && data && (
-              <SummaryDisplay
-                data={data}
-                loading={loading}
-                elapsedMs={elapsed}
-                onMakeShorter={handleMakeShorter}
-                onMakeLonger={handleMakeLonger}
-                onRegenerate={handleRegenerate}
-                onClear={clear}
-              />
-            )}
-
-            <RecentSummaries
-              summaries={summaries}
-              loading={loadingSummaries}
-              hasMore={hasMore}
-              onLoadMore={loadMore}
-              onSelect={handleSelectRecent}
-            />
-          </>
-        )}
+          } />
+        </Routes>
       </main>
     </>
   )

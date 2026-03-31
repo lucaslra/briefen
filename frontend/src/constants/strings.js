@@ -21,6 +21,7 @@ export const STRINGS = {
   COPIED_TEXT: 'Copied!',
   REGENERATE_BUTTON: 'Regenerate',
   GENERATED_IN: 'Generated in',
+  CACHED: 'Cached',
   GENERATED_WITH: 'Generated with',
 
   SOURCE_LABEL: 'Source',
@@ -119,12 +120,26 @@ export const STRINGS = {
   READING_LIST_EMPTY_READ: 'Articles you\u2019ve finished will appear here.',
   READING_LIST_MARK_ALL_READ: 'Mark all as read',
   READING_LIST_ALL_MARKED: 'All marked as read.',
+  READING_LIST_MARK_READ: 'Mark as read',
+  READING_LIST_MARK_UNREAD: 'Mark as unread',
   READING_LIST_OPEN_ARTICLE: 'Open article',
   READING_LIST_DELETE: 'Delete',
   READING_LIST_DELETE_CONFIRM: 'Delete this summary?',
   READING_LIST_UPDATE_FAILED: 'Couldn\u2019t update \u2014 try again.',
   READING_LIST_DELETE_FAILED: 'Couldn\u2019t delete \u2014 try again.',
   READING_LIST_LOAD_MORE: 'Load more',
+
+  BATCH_ADD_URL: '+ Add another URL',
+  BATCH_COUNTER: '{n} of {max} URLs',
+  BATCH_SUMMARIZE: 'Summarize {n} articles',
+  BATCH_PROGRESS_TITLE: 'Summarizing {n} articles\u2026',
+  BATCH_STATUS_QUEUED: 'Queued',
+  BATCH_STATUS_PROCESSING: 'Summarizing\u2026',
+  BATCH_STATUS_DONE: 'Done',
+  BATCH_STATUS_ERROR: 'Failed',
+  BATCH_COMPLETE: '{done} of {total} articles summarized.',
+  BATCH_VIEW_READING_LIST: 'View in reading list',
+  BATCH_DISMISS: 'Done',
 }
 
 /**
