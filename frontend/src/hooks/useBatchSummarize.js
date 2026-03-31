@@ -3,10 +3,14 @@ import { STRINGS } from '../constants/strings'
 
 /**
  * Status per URL: 'queued' | 'processing' | 'done' | 'error'
- * Each entry: { url, status, title, error }
+ * Each entry: { url, status, title, error, result }
+ *
+ * Articles are processed sequentially to avoid overloading the LLM backend.
+ * When running a local model (Ollama), concurrent requests queue up and
+ * later ones can timeout waiting for earlier ones to finish.
  */
 export function useBatchSummarize() {
-  const [jobs, setJobs] = useState([])     // [{ url, status, title, error, result }]
+  const [jobs, setJobs] = useState([])
   const [active, setActive] = useState(false)
   const abortRef = useRef(null)
 
@@ -25,8 +29,12 @@ export function useBatchSummarize() {
     const controller = new AbortController()
     abortRef.current = controller
 
-    // Process all URLs in parallel
-    const promises = urls.map(async (url, index) => {
+    // Process URLs sequentially to avoid LLM queue timeouts
+    for (let index = 0; index < urls.length; index++) {
+      if (controller.signal.aborted) break
+
+      const url = urls[index]
+
       // Mark as processing
       setJobs(prev => prev.map((j, i) => i === index ? { ...j, status: 'processing' } : j))
 
@@ -49,23 +57,19 @@ export function useBatchSummarize() {
           setJobs(prev => prev.map((j, i) =>
             i === index ? { ...j, status: 'error', error: message } : j
           ))
-          return null
+        } else {
+          setJobs(prev => prev.map((j, i) =>
+            i === index ? { ...j, status: 'done', title: body.title, result: body } : j
+          ))
         }
-
-        setJobs(prev => prev.map((j, i) =>
-          i === index ? { ...j, status: 'done', title: body.title, result: body } : j
-        ))
-        return body
       } catch (err) {
-        if (err.name === 'AbortError') return null
+        if (err.name === 'AbortError') break
         setJobs(prev => prev.map((j, i) =>
           i === index ? { ...j, status: 'error', error: STRINGS.ERROR_NETWORK } : j
         ))
-        return null
       }
-    })
+    }
 
-    await Promise.allSettled(promises)
     return true
   }, [])
 

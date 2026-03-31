@@ -22,6 +22,7 @@ export const STRINGS = {
   REGENERATE_BUTTON: 'Regenerate',
   GENERATED_IN: 'Generated in',
   CACHED: 'Cached',
+  CANCEL: 'Cancel',
   GENERATED_WITH: 'Generated with',
 
   SOURCE_LABEL: 'Source',

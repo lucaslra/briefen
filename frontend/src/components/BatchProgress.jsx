@@ -40,7 +40,7 @@ function JobRow({ job }) {
   )
 }
 
-export function BatchProgress({ jobs, isProcessing, isComplete, doneCount, errorCount, onDismiss }) {
+export function BatchProgress({ jobs, isProcessing, isComplete, doneCount, errorCount, onDismiss, onCancel }) {
   const navigate = useNavigate()
   const elapsed = useElapsedTime(isProcessing)
   const total = jobs.length
@@ -53,7 +53,14 @@ export function BatchProgress({ jobs, isProcessing, isComplete, doneCount, error
     <div className={styles.container}>
       <div className={styles.header}>
         <p className={styles.heading}>{heading}</p>
-        {isProcessing && <span className={styles.timer}>{formatElapsed(elapsed)}</span>}
+        <div className={styles.headerRight}>
+          {isProcessing && <span className={styles.timer}>{formatElapsed(elapsed)}</span>}
+          {isProcessing && onCancel && (
+            <button className={styles.cancelBtn} onClick={onCancel}>
+              {STRINGS.CANCEL}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className={styles.progressBar}>

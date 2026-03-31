@@ -22,7 +22,7 @@ import { ReadingList } from './components/ReadingList'
 function HomePage({ settings, refreshUnreadCount }) {
   const { notify } = useNotification()
   const readeck = useReadeck()
-  const { summarize, summarizeText, data, setData, loading, error, clear } = useSummarize()
+  const { summarize, summarizeText, data, setData, loading, error, clear, cancel } = useSummarize()
   const batch = useBatchSummarize()
   const { summaries, loading: loadingSummaries, hasMore, refresh, loadMore } = useSummaries()
   const elapsed = useElapsedTime(loading)
@@ -108,10 +108,11 @@ function HomePage({ settings, refreshUnreadCount }) {
           doneCount={batch.doneCount}
           errorCount={batch.errorCount}
           onDismiss={handleBatchDismiss}
+          onCancel={batch.clear}
         />
       )}
 
-      {!isBatchActive && loading && <LoadingSkeleton elapsed={elapsed} />}
+      {!isBatchActive && loading && <LoadingSkeleton elapsed={elapsed} onCancel={cancel} />}
       {!isBatchActive && !loading && data && (
         <SummaryDisplay
           data={data}

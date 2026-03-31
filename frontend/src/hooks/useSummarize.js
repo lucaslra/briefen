@@ -1,12 +1,17 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { STRINGS } from '../constants/strings'
 
 export function useSummarize() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const abortRef = useRef(null)
 
   const summarize = useCallback(async (url, lengthHint = null, model = null, refresh = false) => {
+    if (abortRef.current) abortRef.current.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setLoading(true)
     setError(null)
 
@@ -20,6 +25,7 @@ export function useSummarize() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       })
 
       const resBody = await res.json()
@@ -33,6 +39,7 @@ export function useSummarize() {
       setData(resBody)
       return resBody
     } catch (err) {
+      if (err.name === 'AbortError') return null
       setError(STRINGS.ERROR_NETWORK)
       return null
     } finally {
@@ -41,6 +48,10 @@ export function useSummarize() {
   }, [])
 
   const summarizeText = useCallback(async (text, title = null, lengthHint = null, model = null, sourceUrl = null) => {
+    if (abortRef.current) abortRef.current.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setLoading(true)
     setError(null)
 
@@ -55,6 +66,7 @@ export function useSummarize() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       })
 
       const resBody = await res.json()
@@ -68,6 +80,7 @@ export function useSummarize() {
       setData(resBody)
       return resBody
     } catch (err) {
+      if (err.name === 'AbortError') return null
       setError(STRINGS.ERROR_NETWORK)
       return null
     } finally {
@@ -75,12 +88,21 @@ export function useSummarize() {
     }
   }, [])
 
+  const cancel = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort()
+      abortRef.current = null
+    }
+    setLoading(false)
+    setError(null)
+  }, [])
+
   const clear = useCallback(() => {
     setData(null)
     setError(null)
   }, [])
 
-  return { summarize, summarizeText, data, setData, loading, error, clear }
+  return { summarize, summarizeText, data, setData, loading, error, clear, cancel }
 }
 
 function parseError(body, status) {
