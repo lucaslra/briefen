@@ -12,11 +12,19 @@ export function useElapsedTime(running) {
 
   useEffect(() => {
     if (running) {
-      startRef.current = Date.now()
-      setElapsed(0)
+      const start = Date.now()
+      startRef.current = start
+      // The first tick at 100ms effectively resets elapsed to ~0;
+      // use a 0ms initial setTimeout to reset immediately without
+      // calling setState synchronously inside the effect.
+      const resetTimer = setTimeout(() => setElapsed(0), 0)
       intervalRef.current = setInterval(() => {
-        setElapsed(Date.now() - startRef.current)
+        setElapsed(Date.now() - start)
       }, 100)
+      return () => {
+        clearTimeout(resetTimer)
+        clearInterval(intervalRef.current)
+      }
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
@@ -24,13 +32,9 @@ export function useElapsedTime(running) {
       }
       // Keep the final elapsed value (don't reset to 0)
       if (startRef.current) {
-        setElapsed(Date.now() - startRef.current)
-      }
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
+        const finalElapsed = Date.now() - startRef.current
+        const timer = setTimeout(() => setElapsed(finalElapsed), 0)
+        return () => clearTimeout(timer)
       }
     }
   }, [running])

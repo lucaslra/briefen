@@ -349,10 +349,14 @@ export function ReadingList({ refreshUnreadCount }) {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [expandedId, items])
 
-  // Collapse when filter or search changes
-  useEffect(() => {
+  // Collapse when filter or search changes (adjust state during render)
+  const [prevFilter, setPrevFilter] = useState(filter)
+  const [prevSearch, setPrevSearch] = useState(search)
+  if (prevFilter !== filter || prevSearch !== search) {
+    setPrevFilter(filter)
+    setPrevSearch(search)
     setExpandedId(null)
-  }, [filter, search])
+  }
 
   return (
     <section className={styles.container} ref={containerRef}>

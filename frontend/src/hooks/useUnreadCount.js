@@ -16,8 +16,21 @@ export function useUnreadCount() {
   }, [])
 
   useEffect(() => {
-    refreshUnreadCount()
-  }, [refreshUnreadCount])
+    let cancelled = false
+    async function fetchInitial() {
+      try {
+        const res = await fetch('/api/summaries/unread-count')
+        if (res.ok && !cancelled) {
+          const data = await res.json()
+          setUnreadCount(data.count)
+        }
+      } catch {
+        // Non-critical — badge will show stale count
+      }
+    }
+    fetchInitial()
+    return () => { cancelled = true }
+  }, [])
 
   return { unreadCount, refreshUnreadCount }
 }

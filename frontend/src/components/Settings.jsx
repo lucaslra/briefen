@@ -39,7 +39,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
   const { supported, permission, requestPermission } = useNotification()
 
   useEffect(() => {
-    setModelsLoading(true)
+    // modelsLoading is already initialized to true
     fetch('/api/models')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
@@ -52,14 +52,21 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
       .finally(() => setModelsLoading(false))
   }, [])
 
-  useEffect(() => {
+  // Sync draft fields with settings (adjust state during render)
+  const [prevOpenaiKey, setPrevOpenaiKey] = useState(settings.openaiApiKey)
+  if (prevOpenaiKey !== settings.openaiApiKey) {
+    setPrevOpenaiKey(settings.openaiApiKey)
     if (settings.openaiApiKey) setKeyDraft(settings.openaiApiKey)
-  }, [settings.openaiApiKey])
+  }
 
-  useEffect(() => {
+  const [prevReadeckKey, setPrevReadeckKey] = useState(settings.readeckApiKey)
+  const [prevReadeckUrl, setPrevReadeckUrl] = useState(settings.readeckUrl)
+  if (prevReadeckKey !== settings.readeckApiKey || prevReadeckUrl !== settings.readeckUrl) {
+    setPrevReadeckKey(settings.readeckApiKey)
+    setPrevReadeckUrl(settings.readeckUrl)
     if (settings.readeckApiKey) setReadeckKeyDraft(settings.readeckApiKey)
     if (settings.readeckUrl) setReadeckUrlDraft(settings.readeckUrl)
-  }, [settings.readeckApiKey, settings.readeckUrl])
+  }
 
   const selectedModel = settings.model || defaultModel
   const hasOpenAiKey = settings.openaiApiKey != null && settings.openaiApiKey !== ''

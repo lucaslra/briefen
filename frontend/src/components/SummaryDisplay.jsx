@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Markdown from 'react-markdown'
 import { STRINGS, MAX_LENGTH_ADJUSTMENTS } from '../constants/strings'
 import { formatElapsed } from '../hooks/useElapsedTime'
@@ -9,11 +9,14 @@ export function SummaryDisplay({ data, onMakeShorter, onMakeLonger, onRegenerate
   const [shorterCount, setShorterCount] = useState(0)
   const [longerCount, setLongerCount] = useState(0)
 
-  // Reset adjustment counts when the underlying data changes (new article or fresh summary)
-  useEffect(() => {
+  // Reset adjustment counts when the underlying data changes (adjust state during render)
+  const [prevDataKey, setPrevDataKey] = useState(() => `${data?.url}|${data?.id}`)
+  const currentDataKey = `${data?.url}|${data?.id}`
+  if (prevDataKey !== currentDataKey) {
+    setPrevDataKey(currentDataKey)
     setShorterCount(0)
     setLongerCount(0)
-  }, [data?.url, data?.id])
+  }
 
   if (!data) return null
 
