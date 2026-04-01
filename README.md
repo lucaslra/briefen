@@ -3,7 +3,7 @@
 [![CI](https://github.com/lucaslra/briefen/actions/workflows/ci.yml/badge.svg)](https://github.com/lucaslra/briefen/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/lucaslra/briefen/actions/workflows/codeql.yml/badge.svg)](https://github.com/lucaslra/briefen/actions/workflows/codeql.yml)
 [![Java](https://img.shields.io/badge/Java-25-blue)](https://github.com/lucaslra/briefen)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.4-green)](https://github.com/lucaslra/briefen)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.5-green)](https://github.com/lucaslra/briefen)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue)](https://github.com/lucaslra/briefen/blob/main/LICENSE)
 
 **Article summaries, instantly.** Paste a URL to any online article, and Briefen will fetch, read, and summarize it using a local LLM — no API keys, no cloud dependencies.

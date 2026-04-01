@@ -4,10 +4,9 @@ spring:
   config:
     # Loads .env file if present (KEY=VALUE format). No-op when missing (CI/Docker use real env vars).
     import: optional:file:.env[.properties]
-  data:
-    mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/briefen}
-      auto-index-creation: true
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://localhost:27017/briefen}
+    auto-index-creation: true
 
 server:
   port: ${SERVER_PORT:8080}
