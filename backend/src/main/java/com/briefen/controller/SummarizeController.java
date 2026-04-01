@@ -3,6 +3,7 @@ package com.briefen.controller;
 import com.briefen.dto.ReadStatusRequest;
 import com.briefen.dto.SummarizeRequest;
 import com.briefen.dto.SummarizeResponse;
+import com.briefen.dto.UpdateNotesRequest;
 import com.briefen.exception.InvalidUrlException;
 import com.briefen.model.Summary;
 import com.briefen.service.SummaryService;
@@ -77,6 +78,13 @@ public class SummarizeController {
     @PatchMapping("/summaries/unread-status/bulk")
     public Map<String, Long> markAllAsUnread() {
         return Map.of("updated", summaryService.markAllAsUnread());
+    }
+
+    @PatchMapping("/summaries/{id}/notes")
+    public SummarizeResponse updateNotes(
+            @PathVariable String id,
+            @RequestBody UpdateNotesRequest request) {
+        return SummarizeResponse.from(summaryService.updateNotes(id, request.notes()));
     }
 
     @DeleteMapping("/summaries/{id}")

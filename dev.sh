@@ -2,9 +2,14 @@
 # Starts both backend and frontend dev servers.
 # Ctrl+C kills both processes.
 
-set -e
-
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+# Load .env from repo root so backend picks up BRIEFEN_* vars
+if [ -f "$ROOT/.env" ]; then
+  set -a
+  . "$ROOT/.env"
+  set +a
+fi
 
 cleanup() {
   echo ""

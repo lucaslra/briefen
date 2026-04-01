@@ -131,6 +131,33 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
     }
   }, [refreshUnreadCount])
 
+  const updateNotes = useCallback(async (id, notes) => {
+    const previousNotes = items.find(item => item.id === id)?.notes ?? null
+
+    // Optimistic update
+    setItems(prev => prev.map(item =>
+      item.id === id ? { ...item, notes } : item
+    ))
+    setItemErrors(prev => { const next = { ...prev }; delete next[id]; return next })
+
+    try {
+      const res = await fetch(`/api/summaries/${id}/notes`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes }),
+      })
+      if (!res.ok) throw new Error()
+      return true
+    } catch {
+      // Revert
+      setItems(prev => prev.map(item =>
+        item.id === id ? { ...item, notes: previousNotes } : item
+      ))
+      setItemErrors(prev => ({ ...prev, [id]: STRINGS.READING_LIST_UPDATE_FAILED }))
+      return false
+    }
+  }, [items])
+
   const markAllAsRead = useCallback(async () => {
     const previousItems = items
 
@@ -169,5 +196,6 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
     items, loading, filter, search, hasMore, itemErrors,
     changeFilter, changeSearch, toggleReadStatus, deleteSummary,
     markAllAsRead, markAllAsUnread, loadMore, refresh, clearItemError,
+    updateNotes,
   }
 }

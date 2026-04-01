@@ -12,7 +12,7 @@ down:
 
 ## Run Spring Boot backend (requires Docker services running)
 backend:
-	cd $(ROOT)/backend && ./mvnw spring-boot:run
+	set -a; [ -f "$(ROOT)/.env" ] && . "$(ROOT)/.env"; set +a; cd "$(ROOT)/backend" && ./mvnw spring-boot:run
 
 ## Run Vite frontend dev server
 frontend:

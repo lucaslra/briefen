@@ -85,10 +85,11 @@ function ActionMenu({ url, isRead, onToggleRead, onDelete }) {
 
 const AUTO_READ_DELAY_MS = 3000
 
-function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMarkRead, onDelete, error, onClearError }) {
+function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMarkRead, onDelete, error, onClearError, onUpdateNotes }) {
   const domain = extractDomain(item.url)
   const autoReadTimer = useRef(null)
   const itemRef = useRef(null)
+  const [notesSaved, setNotesSaved] = useState(false)
 
   useEffect(() => {
     return () => { if (autoReadTimer.current) clearTimeout(autoReadTimer.current) }
@@ -118,6 +119,16 @@ function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMar
   }, [error, item.id, onClearError])
 
   const titleContent = item.title || item.summary?.substring(0, 60) || 'Untitled'
+  const hasNotes = Boolean(item.notes && item.notes.trim())
+
+  async function handleNotesBlur(e) {
+    const value = e.target.value
+    const ok = await onUpdateNotes(item.id, value)
+    if (ok) {
+      setNotesSaved(true)
+      setTimeout(() => setNotesSaved(false), 2000)
+    }
+  }
 
   return (
     <div
@@ -132,12 +143,19 @@ function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMar
           title={item.isRead ? 'Mark as unread' : 'Mark as read'}
         />
         <div className={styles.itemContent}>
-          <button
-            className={`${styles.itemTitle} ${styles.itemTitleLink} ${item.isRead ? styles.itemTitleRead : ''}`}
-            onClick={onToggleExpand}
-          >
-            {titleContent}
-          </button>
+          <div className={styles.itemTitleRow}>
+            <button
+              className={`${styles.itemTitle} ${styles.itemTitleLink} ${item.isRead ? styles.itemTitleRead : ''}`}
+              onClick={onToggleExpand}
+            >
+              {titleContent}
+            </button>
+            {hasNotes && (
+              <svg className={styles.notesIndicator} viewBox="0 0 16 16" width="12" height="12" aria-label="Has notes">
+                <path d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61zm1.414 1.06a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354l-1.086-1.086zM11.189 6.25 9.75 4.81 3.23 11.33c-.03.03-.05.064-.063.101l-.652 2.281 2.278-.651a.2.2 0 0 0 .1-.063l6.496-6.748z" fill="currentColor"/>
+              </svg>
+            )}
+          </div>
           {domain && <span className={styles.itemDomain}>{domain}</span>}
           {error && <span className={styles.itemError}>{error}</span>}
         </div>
@@ -149,6 +167,19 @@ function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMar
         <div className={styles.reader}>
           <div className={styles.readerContent}>
             <Markdown>{item.summary}</Markdown>
+          </div>
+          <div className={styles.notesSection}>
+            <div className={styles.notesHeader}>
+              <label className={styles.notesLabel}>{STRINGS.NOTES_LABEL}</label>
+              {notesSaved && <span className={styles.notesSaved}>{STRINGS.NOTES_SAVED}</span>}
+            </div>
+            <textarea
+              className={styles.notesTextarea}
+              defaultValue={item.notes || ''}
+              placeholder={STRINGS.NOTES_PLACEHOLDER}
+              onBlur={handleNotesBlur}
+              rows={3}
+            />
           </div>
           <div className={styles.readerFooter}>
             {item.url && (
@@ -204,7 +235,7 @@ export function ReadingList({ refreshUnreadCount }) {
   const {
     items, loading, filter, search, hasMore, itemErrors,
     changeFilter: rawChangeFilter, changeSearch, toggleReadStatus, deleteSummary,
-    markAllAsRead, markAllAsUnread, loadMore, clearItemError,
+    markAllAsRead, markAllAsUnread, loadMore, clearItemError, updateNotes,
   } = useReadingList(refreshUnreadCount, initialFilter)
 
   const changeFilter = useCallback((f) => {
@@ -373,6 +404,7 @@ export function ReadingList({ refreshUnreadCount }) {
               onDelete={() => deleteSummary(item.id)}
               error={itemErrors[item.id]}
               onClearError={clearItemError}
+              onUpdateNotes={updateNotes}
             />
           ))}
         </div>

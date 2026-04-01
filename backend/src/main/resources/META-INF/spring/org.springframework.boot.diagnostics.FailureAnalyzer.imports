@@ -1,1 +1,2 @@
 com.briefen.config.MissingEnvVarFailureAnalyzer
+com.briefen.config.MongoConnectionFailureAnalyzer

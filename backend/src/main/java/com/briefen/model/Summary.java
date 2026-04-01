@@ -27,6 +27,9 @@ public class Summary {
     private Boolean isRead;
     private Instant savedAt;
 
+    // User-supplied annotation; null means no note has been added yet.
+    private String notes;
+
     public Summary() {}
 
     public Summary(String url, String title, String summary, String modelUsed) {
@@ -66,4 +69,7 @@ public class Summary {
     public boolean isEffectivelyRead() { return Boolean.TRUE.equals(isRead); }
 
     public Instant getEffectiveSavedAt() { return savedAt != null ? savedAt : createdAt; }
+
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
 }

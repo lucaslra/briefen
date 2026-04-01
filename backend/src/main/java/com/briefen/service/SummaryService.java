@@ -208,7 +208,8 @@ public class SummaryService {
             String escapedSearch = search.replaceAll("([\\\\.*+?^${}()|\\[\\]])", "\\\\$1");
             Criteria searchCriteria = new Criteria().orOperator(
                     Criteria.where("title").regex(escapedSearch, "i"),
-                    Criteria.where("summary").regex(escapedSearch, "i")
+                    Criteria.where("summary").regex(escapedSearch, "i"),
+                    Criteria.where("notes").regex(escapedSearch, "i")
             );
             query.addCriteria(searchCriteria);
         }
@@ -223,6 +224,13 @@ public class SummaryService {
         Summary summary = repository.findById(id)
                 .orElseThrow(() -> new SummaryNotFoundException(id));
         summary.setIsRead(isRead);
+        return repository.save(summary);
+    }
+
+    public Summary updateNotes(String id, String notes) {
+        Summary summary = repository.findById(id)
+                .orElseThrow(() -> new SummaryNotFoundException(id));
+        summary.setNotes((notes != null && !notes.isEmpty()) ? notes : null);
         return repository.save(summary);
     }
 

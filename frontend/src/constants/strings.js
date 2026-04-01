@@ -136,6 +136,10 @@ export const STRINGS = {
   READING_LIST_SEARCH_CLEAR: 'Clear search',
   READING_LIST_SEARCH_EMPTY: 'No summaries match your search.',
 
+  NOTES_LABEL: 'Notes',
+  NOTES_PLACEHOLDER: 'Add your thoughts...',
+  NOTES_SAVED: 'Saved',
+
   BATCH_ADD_URL: '+ Add another URL',
   BATCH_COUNTER: '{n} of {max} URLs',
   BATCH_SUMMARIZE: 'Summarize {n} articles',

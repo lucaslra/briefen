@@ -396,6 +396,80 @@
   white-space: nowrap;
 }
 
+/* --- Notes section --- */
+
+.notesSection {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  max-width: 65ch;
+}
+
+.notesHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.notesLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.notesSaved {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.notesTextarea {
+  width: 100%;
+  min-height: calc(3 * 1.5em + 16px);
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: var(--color-text, var(--text));
+  background: var(--color-bg-secondary, var(--bg-input));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  resize: vertical;
+  line-height: 1.5;
+  transition: border-color var(--transition);
+  box-sizing: border-box;
+}
+
+.notesTextarea:focus {
+  border-color: var(--accent);
+}
+
+.notesTextarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* --- Item title row (title + notes indicator) --- */
+
+.itemTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.itemTitleRow .itemTitle {
+  flex: 1;
+  min-width: 0;
+}
+
+.notesIndicator {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
 /* --- Nav hint --- */
 
 .navHint {
