@@ -2,8 +2,8 @@ package com.briefen.service;
 
 import com.briefen.exception.ArticleExtractionException;
 import com.briefen.exception.ArticleFetchException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,7 +25,7 @@ public class ArticleFetcherService {
 
     private static final Logger log = LoggerFactory.getLogger(ArticleFetcherService.class);
     private static final int MIN_CONTENT_LENGTH = 100;
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonMapper OBJECT_MAPPER = new JsonMapper();
 
     /**
      * Regex to extract string literals from compiled MDX/JSX source code.

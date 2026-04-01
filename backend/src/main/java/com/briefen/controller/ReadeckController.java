@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -29,10 +29,10 @@ public class ReadeckController {
     private static final Logger log = LoggerFactory.getLogger(ReadeckController.class);
 
     private final UserSettingsRepository settingsRepository;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper objectMapper;
     private final HttpClient httpClient;
 
-    public ReadeckController(UserSettingsRepository settingsRepository, ObjectMapper objectMapper) {
+    public ReadeckController(UserSettingsRepository settingsRepository, JsonMapper objectMapper) {
         this.settingsRepository = settingsRepository;
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder()
