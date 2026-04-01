@@ -233,17 +233,16 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
                   onChange={e => setKeyDraft(e.target.value)}
                   placeholder={STRINGS.SETTINGS_OPENAI_KEY_PLACEHOLDER}
                 />
-                {hasOpenAiKey ? (
+                <button
+                  className={styles.apiKeySaveBtn}
+                  onClick={handleSaveKey}
+                  disabled={!keyDraft.trim() || keyDraft === settings.openaiApiKey}
+                >
+                  {keySaved ? STRINGS.SETTINGS_API_KEY_SAVED : (hasOpenAiKey ? STRINGS.SETTINGS_API_KEY_UPDATE : STRINGS.SETTINGS_API_KEY_SAVE)}
+                </button>
+                {hasOpenAiKey && (
                   <button className={styles.apiKeyRemoveBtn} onClick={handleRemoveKey}>
                     {STRINGS.SETTINGS_API_KEY_REMOVE}
-                  </button>
-                ) : (
-                  <button
-                    className={styles.apiKeySaveBtn}
-                    onClick={handleSaveKey}
-                    disabled={!keyDraft.trim()}
-                  >
-                    {keySaved ? STRINGS.SETTINGS_API_KEY_SAVED : STRINGS.SETTINGS_API_KEY_SAVE}
                   </button>
                 )}
               </div>
@@ -277,17 +276,17 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
                   onChange={e => setReadeckKeyDraft(e.target.value)}
                   placeholder={STRINGS.SETTINGS_READECK_KEY_PLACEHOLDER}
                 />
-                {hasReadeck ? (
+                <button
+                  className={styles.apiKeySaveBtn}
+                  onClick={handleSaveReadeck}
+                  disabled={!readeckUrlDraft.trim() || !readeckKeyDraft.trim()
+                    || (readeckKeyDraft === settings.readeckApiKey && readeckUrlDraft.trim().replace(/\/+$/, '') === settings.readeckUrl)}
+                >
+                  {readeckSaved ? STRINGS.SETTINGS_API_KEY_SAVED : (hasReadeck ? STRINGS.SETTINGS_API_KEY_UPDATE : STRINGS.SETTINGS_API_KEY_SAVE)}
+                </button>
+                {hasReadeck && (
                   <button className={styles.apiKeyRemoveBtn} onClick={handleRemoveReadeck}>
                     {STRINGS.SETTINGS_API_KEY_REMOVE}
-                  </button>
-                ) : (
-                  <button
-                    className={styles.apiKeySaveBtn}
-                    onClick={handleSaveReadeck}
-                    disabled={!readeckUrlDraft.trim() || !readeckKeyDraft.trim()}
-                  >
-                    {readeckSaved ? STRINGS.SETTINGS_API_KEY_SAVED : STRINGS.SETTINGS_API_KEY_SAVE}
                   </button>
                 )}
               </div>

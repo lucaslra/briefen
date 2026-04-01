@@ -74,6 +74,11 @@ public class SummarizeController {
         return Map.of("updated", summaryService.markAllAsRead());
     }
 
+    @PatchMapping("/summaries/unread-status/bulk")
+    public Map<String, Long> markAllAsUnread() {
+        return Map.of("updated", summaryService.markAllAsUnread());
+    }
+
     @DeleteMapping("/summaries/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteSummary(@PathVariable String id) {

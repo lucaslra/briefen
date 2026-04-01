@@ -204,7 +204,7 @@ export function ReadingList({ refreshUnreadCount }) {
   const {
     items, loading, filter, search, hasMore, itemErrors,
     changeFilter: rawChangeFilter, changeSearch, toggleReadStatus, deleteSummary,
-    markAllAsRead, loadMore, clearItemError,
+    markAllAsRead, markAllAsUnread, loadMore, clearItemError,
   } = useReadingList(refreshUnreadCount, initialFilter)
 
   const changeFilter = useCallback((f) => {
@@ -242,9 +242,15 @@ export function ReadingList({ refreshUnreadCount }) {
     if (ok) setToast(STRINGS.READING_LIST_ALL_MARKED)
   }, [markAllAsRead])
 
+  const handleMarkAllAsUnread = useCallback(async () => {
+    const ok = await markAllAsUnread()
+    if (ok) setToast(STRINGS.READING_LIST_ALL_MARKED_UNREAD)
+  }, [markAllAsUnread])
+
   const dismissToast = useCallback(() => setToast(null), [])
 
-  const showMarkAll = filter === 'unread' && items.length > 0 && items.some(i => !i.isRead)
+  const showMarkAllRead = filter === 'unread' && items.length > 0 && items.some(i => !i.isRead)
+  const showMarkAllUnread = filter === 'read' && items.length > 0 && items.some(i => i.isRead)
 
   const toggleExpand = useCallback((id) => {
     setExpandedId(prev => prev === id ? null : id)
@@ -309,9 +315,14 @@ export function ReadingList({ refreshUnreadCount }) {
             </button>
           ))}
         </div>
-        {showMarkAll && (
+        {showMarkAllRead && (
           <button className={styles.markAllBtn} onClick={handleMarkAllAsRead}>
             {STRINGS.READING_LIST_MARK_ALL_READ}
+          </button>
+        )}
+        {showMarkAllUnread && (
+          <button className={styles.markAllBtn} onClick={handleMarkAllAsUnread}>
+            {STRINGS.READING_LIST_MARK_ALL_UNREAD}
           </button>
         )}
       </div>

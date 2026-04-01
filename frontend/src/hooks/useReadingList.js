@@ -148,9 +148,26 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
     }
   }, [items, refreshUnreadCount])
 
+  const markAllAsUnread = useCallback(async () => {
+    const previousItems = items
+
+    // Optimistic
+    setItems(prev => prev.map(item => ({ ...item, isRead: false })))
+
+    try {
+      const res = await fetch('/api/summaries/unread-status/bulk', { method: 'PATCH' })
+      if (!res.ok) throw new Error()
+      refreshUnreadCount?.()
+      return true
+    } catch {
+      setItems(previousItems)
+      return false
+    }
+  }, [items, refreshUnreadCount])
+
   return {
     items, loading, filter, search, hasMore, itemErrors,
     changeFilter, changeSearch, toggleReadStatus, deleteSummary,
-    markAllAsRead, loadMore, refresh, clearItemError,
+    markAllAsRead, markAllAsUnread, loadMore, refresh, clearItemError,
   }
 }

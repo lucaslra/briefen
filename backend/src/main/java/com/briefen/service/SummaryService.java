@@ -18,7 +18,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.TextCriteria;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
@@ -206,8 +205,12 @@ public class SummaryService {
         }
 
         if (search != null && !search.isBlank()) {
-            TextCriteria textCriteria = TextCriteria.forDefaultLanguage().matchingPhrase(search);
-            query.addCriteria(textCriteria);
+            String escapedSearch = search.replaceAll("([\\\\.*+?^${}()|\\[\\]])", "\\\\$1");
+            Criteria searchCriteria = new Criteria().orOperator(
+                    Criteria.where("title").regex(escapedSearch, "i"),
+                    Criteria.where("summary").regex(escapedSearch, "i")
+            );
+            query.addCriteria(searchCriteria);
         }
 
         long total = mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Summary.class);
@@ -233,6 +236,12 @@ public class SummaryService {
     public long markAllAsRead() {
         Query query = new Query(Criteria.where("isRead").ne(true));
         Update update = new Update().set("isRead", true);
+        return mongoTemplate.updateMulti(query, update, Summary.class).getModifiedCount();
+    }
+
+    public long markAllAsUnread() {
+        Query query = new Query(Criteria.where("isRead").is(true));
+        Update update = new Update().set("isRead", false);
         return mongoTemplate.updateMulti(query, update, Summary.class).getModifiedCount();
     }
 
