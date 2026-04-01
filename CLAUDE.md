@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Briefen** — a local-first article summarizer. Paste a URL → Jsoup fetches the article → Ollama (local LLM) summarizes it → result is cached in MongoDB. No cloud dependencies by default; everything runs locally via Docker.
+**Briefen** — a local-first article summarizer. Paste a URL → Jsoup fetches the article → Ollama (local LLM) or OpenAI summarizes it → result is cached in MongoDB. No cloud dependencies by default; everything runs locally via Docker.
 
 ## Commands
 
@@ -25,6 +25,13 @@ make frontend  # cd frontend && pnpm dev
 make docker-build  # Build the Briefen Docker image
 make docker-up     # Start full stack: app + MongoDB + Ollama
 make docker-down   # Stop full stack
+```
+
+### Testing
+```bash
+cd backend && ./mvnw test       # Backend unit tests
+cd frontend && pnpm lint        # Frontend linting (no test framework configured)
+make e2e                        # Playwright E2E tests (requires running app)
 ```
 
 ### Other
@@ -58,26 +65,31 @@ cd backend
 Browser (React/Vite :5173)
   → /api/* proxied to Spring Boot (:8080)
     → Jsoup (fetch article HTML)
-    → Ollama (:11434, local LLM)
+    → Ollama (:11434, local LLM) or OpenAI (cloud, optional)
     → MongoDB (:27017, persist summary)
 
 # Docker (single image)
 Browser → Spring Boot (:8080, serves React static + API)
-    → Ollama (external)
+    → Ollama (external) or OpenAI (external)
     → MongoDB (external)
 ```
 
 ### Backend (`backend/src/main/java/com/briefen/`)
-- **controller/** — REST endpoints; `SummaryController` handles all `/api/` routes, `GlobalExceptionHandler` maps exceptions to HTTP responses
-- **service/** — core logic split into fetcher (Jsoup), summarizer (Ollama/OpenAI RestClient), and an orchestration service
-- **model/** — MongoDB documents: `Summary` (url, title, summary, modelUsed, createdAt, isRead, savedAt) and `UserSettings`
+- **controller/** — REST endpoints:
+  - `SummarizeController` — all `/api/summarize` and `/api/summaries` routes (CRUD, export, read status, notes)
+  - `ModelsController` — `/api/models` lists available LLM providers and models
+  - `SettingsController` — `/api/settings` read/update user preferences
+  - `ReadeckController` — `/api/readeck/*` proxies requests to a user-configured Readeck instance (API key stays server-side)
+  - `GlobalExceptionHandler` — maps exceptions to HTTP responses
+- **service/** — core logic: article fetcher (Jsoup with Next.js/React SSR support), summarizer (Ollama and OpenAI via RestClient), and an orchestration service
+- **model/** — MongoDB documents: `Summary` (url, title, summary, modelUsed, createdAt, isRead, savedAt, notes) and `UserSettings`
 - **repository/** — Spring Data MongoDB repos; auto-index creation is enabled
 - **dto/** — request/response records
-- **config/** — `OllamaProperties`, `OpenAIProperties`, RestClient beans, `WebConfig` (SPA static file serving)
+- **config/** — `OllamaProperties`, `OpenAiProperties`, RestClient beans, `OllamaHealthIndicator`, `WebConfig` (SPA static file serving)
 
 Key `application.yml` settings (all configurable via env vars):
 ```yaml
-spring.data.mongodb.uri: ${MONGODB_URI:mongodb://localhost:27017/briefen}
+spring.mongodb.uri: ${MONGODB_URI:mongodb://localhost:27017/briefen}
 server.port: ${SERVER_PORT:8080}
 ollama.base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
 ollama.model: ${OLLAMA_MODEL:gemma3:4b}
@@ -86,22 +98,34 @@ ollama.timeout: 300s
 
 ### Frontend (`frontend/src/`)
 - **App.jsx** — React Router: `/` (home/summarize), `/reading-list`, `/settings`
-- **hooks/** — custom hooks encapsulate all API calls and state (`useSummarize`, `useSettings`, `useReadingList`, etc.)
+- **hooks/** — custom hooks encapsulate all API calls and state:
+  - `useSummarize` — single URL/text summarization with abort support
+  - `useBatchSummarize` — sequential multi-URL processing
+  - `useReadingList` — full reading list management (fetch, filter, search, toggle read, delete, notes)
+  - `useSettings` — loads/syncs user settings with optimistic updates
+  - `useReadeck` — Readeck integration (status, bookmarks, article extraction)
+  - `useSummaries` — recent summaries with pagination
+  - `useUnreadCount` — unread badge count
+  - `useElapsedTime` — real-time elapsed timer for loading states
+  - `useTheme` — dark/light theme toggle with localStorage persistence
+  - `useNotification` — web notification permission and dispatch
 - **components/** — UI components; no component library, plain CSS + CSS modules
 - **constants/strings.js** — all user-facing strings centralized here (i18n-ready)
-- **utils/** — shared utilities
+- **utils/** — shared utilities (relative date formatting)
 
 All `/api` requests go through Vite's dev proxy to the Spring Boot backend. Fetch calls use `AbortController` for cancellation support.
 
 ### Infrastructure
 - **MongoDB 7** — `briefen` database, collections auto-created by Spring Data on first write
 - **Ollama** — local LLM; Docker Compose pulls `gemma2:2b`, `gemma3:4b`, `llama3.2:3b` on first start
-- Optional: OpenAI API key can be configured in browser settings for cloud-based summarization
+- **OpenAI** — optional cloud provider; API key configured in browser settings, stored server-side
+- **Readeck** — optional bookmark integration; URL and API key configured in browser settings
 
 ## Key Conventions
 
 - **No TypeScript** — frontend is plain JavaScript; backend is Java 25
+- **Spring Boot 4.0.x** — uses Jackson 3 (`tools.jackson.*` packages, not `com.fasterxml.jackson`)
 - **CSS approach** — plain CSS + CSS custom properties for dark/light theming; CSS modules for component scoping
 - **All UI strings** go in `frontend/src/constants/strings.js`, never hardcoded in components
-- **No frontend tests** configured; backend uses JUnit 5 via Spring Boot Test
+- **No frontend tests** configured; backend uses JUnit 5 via Spring Boot Test; E2E uses Playwright
 - **pnpm** is the frontend package manager (not npm/yarn)

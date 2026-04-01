@@ -8,25 +8,37 @@
 
 **Article summaries, instantly.** Paste a URL to any online article, and Briefen will fetch, read, and summarize it using a local LLM — no API keys, no cloud dependencies.
 
+## Features
+
+- **Summarize any article** — paste a URL or raw text, get a concise summary
+- **Batch summarization** — process multiple URLs at once
+- **Reading list** — save, filter (unread/read/all), search, and annotate summaries
+- **Multiple LLM providers** — Ollama (local, default) or OpenAI (optional, API key required)
+- **Readeck integration** — browse and summarize bookmarks from a self-hosted Readeck instance
+- **Length control** — shorter, default, or longer summaries; regenerate on demand
+- **Export** — download summaries as Markdown
+- **Dark/light theme** — toggleable, persisted in localStorage
+- **Web notifications** — get notified when long-running summaries complete
+
 ## Architecture
 
 ```
-Browser (React) → Spring Boot API → Jsoup (fetch article) → Ollama (summarize) → MongoDB (persist)
+Browser (React) → Spring Boot API → Jsoup (fetch article) → Ollama or OpenAI (summarize) → MongoDB (persist)
 ```
 
 | Layer          | Technology                         |
 |----------------|------------------------------------|
-| Frontend       | React (Vite, pnpm, plain JS)      |
-| Backend        | Java 25, Spring Boot 3.4.4, Maven |
-| LLM            | Ollama (Docker) with gemma3:4b    |
+| Frontend       | React 19 (Vite, pnpm, plain JS)  |
+| Backend        | Java 25, Spring Boot 4.0.5, Maven |
+| LLM            | Ollama (local) or OpenAI (cloud)  |
 | Database       | MongoDB 7 (Docker)                |
 | Orchestration  | Docker Compose                    |
 
 ## Prerequisites
 
 - **Docker** (with Docker Compose)
-- **Java 25** (OpenJDK)
-- **Node.js 18+** and **pnpm**
+- **Java 25** (Eclipse Temurin recommended)
+- **Node.js 22+** and **pnpm**
 
 ## Quick Start
 
@@ -80,6 +92,19 @@ Add `?refresh=true` to force re-summarization of a previously cached URL.
 GET /api/summaries?page=0&size=10
 ```
 
+### Other endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/summaries/export` | Export summaries as Markdown |
+| `GET` | `/api/summaries/unread-count` | Unread summary count |
+| `PATCH` | `/api/summaries/{id}/read-status` | Toggle read status |
+| `PATCH` | `/api/summaries/{id}/notes` | Update notes |
+| `DELETE` | `/api/summaries/{id}` | Delete a summary |
+| `GET` | `/api/models` | List available LLM providers and models |
+| `GET/PUT` | `/api/settings` | Read/update user settings |
+| `GET` | `/api/readeck/bookmarks` | List Readeck bookmarks (proxied) |
+
 ## Changing the Ollama Model
 
 The default model is `gemma3:4b`, chosen for its excellent summarization quality with 128K context window. To change it:
@@ -89,6 +114,26 @@ The default model is `gemma3:4b`, chosen for its excellent summarization quality
 3. Restart: `make down && make up`
 
 Good alternatives: `gemma2:2b` (faster, lighter), `mistral` (7B, higher quality), `llama3` (8B), `phi3` (3.8B).
+
+## OpenAI Integration
+
+Briefen can optionally use OpenAI models instead of local Ollama. To enable:
+
+1. Go to **Settings → Integrations** in the browser UI
+2. Enter your OpenAI API key
+3. Select an OpenAI model from the model picker
+
+The API key is stored server-side. No data is sent to OpenAI unless you explicitly select an OpenAI model.
+
+## Readeck Integration
+
+Briefen can browse and summarize articles from a self-hosted [Readeck](https://readeck.org) instance:
+
+1. Go to **Settings → Integrations** in the browser UI
+2. Enter your Readeck URL and API key
+3. Use the Readeck tab on the home page to browse bookmarks and summarize them
+
+The Readeck API key never reaches the browser — all requests are proxied through the backend.
 
 ## CSS Approach
 
@@ -101,27 +146,31 @@ All user-facing strings are centralized in `frontend/src/constants/strings.js`. 
 ## Project Structure
 
 ```
-summizer/
+briefen/
 ├── docker-compose.yml
 ├── Makefile
+├── Dockerfile              # Multi-stage: frontend build → backend build → runtime
+├── playwright.config.js    # E2E test configuration
+├── e2e/                    # Playwright E2E tests
 ├── backend/
 │   ├── pom.xml
 │   └── src/main/java/com/briefen/
 │       ├── BriefenApplication.java
-│       ├── config/          # Ollama properties, RestClient, health indicator
-│       ├── controller/      # REST endpoints, global error handler
+│       ├── config/          # Ollama/OpenAI properties, RestClient beans, health indicator
+│       ├── controller/      # SummarizeController, SettingsController, ModelsController, ReadeckController
 │       ├── dto/             # Request/response records
 │       ├── exception/       # Custom exceptions
-│       ├── model/           # MongoDB document
-│       ├── repository/      # Spring Data MongoDB
-│       ├── service/         # Article fetcher, Ollama summarizer, orchestrator
+│       ├── model/           # MongoDB documents (Summary, UserSettings)
+│       ├── repository/      # Spring Data MongoDB repos
+│       ├── service/         # Article fetcher, Ollama/OpenAI summarizer, orchestrator
 │       └── validation/      # URL validator
 └── frontend/
     ├── vite.config.js
     └── src/
-        ├── App.jsx
-        ├── constants/       # Centralized strings
-        ├── hooks/           # useTheme, useSummarize, useSummaries, useSettings
-        ├── components/      # Header, UrlInput, SummaryDisplay, Settings, etc.
+        ├── App.jsx          # React Router: /, /reading-list, /settings
+        ├── constants/       # Centralized UI strings
+        ├── hooks/           # useSummarize, useReadingList, useSettings, useReadeck, etc.
+        ├── components/      # Header, UrlInput, SummaryDisplay, ReadingList, Settings, etc.
+        ├── utils/           # Shared utilities (relative date formatting)
         └── styles/          # CSS variables, global reset
 ```
