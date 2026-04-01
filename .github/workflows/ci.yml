@@ -1,0 +1,177 @@
+# =============================================================================
+# Briefen CI — Build & Test
+# =============================================================================
+#
+# What it does:
+#   Builds and tests both the Java/Spring Boot backend and the React/Vite
+#   frontend on every push and pull request targeting `main`. The backend job
+#   spins up real MongoDB and Ollama service containers so integration tests
+#   run against actual dependencies. A final `ci-passed` gate job provides a
+#   single required status check for branch protection.
+#
+# How to extend:
+#   - Change the Java version: update `java-version` in the backend job and
+#     `<java.version>` in backend/pom.xml. If eclipse-temurin doesn't ship the
+#     version yet, try `distribution: 'zulu'`.
+#   - Add a new test suite: add a step in the appropriate job. If it needs
+#     another service container, add it under `services:`.
+#   - Add end-to-end tests: create a new job that depends on both backend and
+#     frontend, start both services, and run Playwright or similar.
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Backend — Java 25 / Spring Boot / Maven
+  # ---------------------------------------------------------------------------
+  backend:
+    name: Backend (Java 25, Maven)
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ping:1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      ollama:
+        image: ollama/ollama
+        ports:
+          - 11434:11434
+        options: >-
+          --health-cmd "curl -f http://localhost:11434/ || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MONGODB_URI: mongodb://localhost:27017/briefen-test
+      OLLAMA_BASE_URL: http://localhost:11434
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 25 (Temurin) with Maven cache
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+          cache-dependency-path: backend/pom.xml
+
+      # TODO: If integration tests require a specific Ollama model, add a step
+      # here to pull it, e.g.:
+      #   - name: Pull Ollama model
+      #     run: curl -s http://localhost:11434/api/pull -d '{"name":"gemma2:2b"}'
+
+      - name: Build and verify
+        run: ./mvnw --batch-mode verify
+
+      - name: Upload Surefire test reports
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-surefire-reports
+          path: backend/target/surefire-reports/
+          if-no-files-found: ignore
+
+      - name: Upload Failsafe test reports
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-failsafe-reports
+          path: backend/target/failsafe-reports/
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # Frontend — React / Vite / pnpm
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: Frontend (Node LTS, pnpm)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Run tests
+        id: run-tests
+        run: |
+          if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts?.test ? 0 : 1)"; then
+            pnpm test --run --coverage 2>/dev/null || pnpm test --run
+          else
+            echo "No test script configured — skipping"
+          fi
+
+      - name: Upload coverage report
+        if: ${{ steps.run-tests.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # Gate — single required status check for branch protection
+  # ---------------------------------------------------------------------------
+  ci-passed:
+    name: CI Passed
+    if: ${{ always() }}
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check job results
+        run: |
+          if [[ "${{ needs.backend.result }}" != "success" || "${{ needs.frontend.result }}" != "success" ]]; then
+            echo "One or more jobs failed:"
+            echo "  backend:  ${{ needs.backend.result }}"
+            echo "  frontend: ${{ needs.frontend.result }}"
+            exit 1
+          fi
+          echo "All jobs passed."
