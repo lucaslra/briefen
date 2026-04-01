@@ -20,6 +20,13 @@ make backend   # cd backend && ./mvnw spring-boot:run
 make frontend  # cd frontend && pnpm dev
 ```
 
+### Docker (single-image build)
+```bash
+make docker-build  # Build the Briefen Docker image
+make docker-up     # Start full stack: app + MongoDB + Ollama
+make docker-down   # Stop full stack
+```
+
 ### Other
 ```bash
 make logs      # Tail Docker service logs
@@ -47,11 +54,17 @@ cd backend
 ## Architecture
 
 ```
+# Local dev
 Browser (React/Vite :5173)
   → /api/* proxied to Spring Boot (:8080)
     → Jsoup (fetch article HTML)
     → Ollama (:11434, local LLM)
     → MongoDB (:27017, persist summary)
+
+# Docker (single image)
+Browser → Spring Boot (:8080, serves React static + API)
+    → Ollama (external)
+    → MongoDB (external)
 ```
 
 ### Backend (`backend/src/main/java/com/briefen/`)
@@ -60,14 +73,14 @@ Browser (React/Vite :5173)
 - **model/** — MongoDB documents: `Summary` (url, title, summary, modelUsed, createdAt, isRead, savedAt) and `UserSettings`
 - **repository/** — Spring Data MongoDB repos; auto-index creation is enabled
 - **dto/** — request/response records
-- **config/** — `OllamaProperties`, `OpenAIProperties`, RestClient beans
+- **config/** — `OllamaProperties`, `OpenAIProperties`, RestClient beans, `WebConfig` (SPA static file serving)
 
-Key `application.yml` settings:
+Key `application.yml` settings (all configurable via env vars):
 ```yaml
-spring.data.mongodb.uri: mongodb://localhost:27017/briefen
-server.port: 8080
-ollama.base-url: http://localhost:11434
-ollama.model: gemma3:4b
+spring.data.mongodb.uri: ${MONGODB_URI:mongodb://localhost:27017/briefen}
+server.port: ${SERVER_PORT:8080}
+ollama.base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+ollama.model: ${OLLAMA_MODEL:gemma3:4b}
 ollama.timeout: 300s
 ```
 

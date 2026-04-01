@@ -40,6 +40,26 @@ services:
       retries: 10
       start_period: 30s
 
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: briefen-app
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      MONGODB_URI: mongodb://briefen-mongodb:27017/briefen
+      OLLAMA_BASE_URL: http://briefen-ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
+      SERVER_PORT: 8080
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   mongo_data:
   ollama_data:

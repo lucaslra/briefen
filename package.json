@@ -1,0 +1,20 @@
+{
+  "name": "summizer",
+  "version": "1.0.0",
+  "description": "**Article summaries, instantly.** Paste a URL to any online article, and Briefen will fetch, read, and summarize it using a local LLM — no API keys, no cloud dependencies.",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed"
+  },
+  "repository": {
+    "type": "git",
+    "url": "gitea@git.nlga.me:lucaslra/briefen.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "^1.59.0"
+  }
+}

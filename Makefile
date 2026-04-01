@@ -1,4 +1,4 @@
-.PHONY: up down backend frontend dev logs clean clean-all
+.PHONY: up down backend frontend dev logs clean clean-all docker-build docker-up docker-down e2e
 
 ROOT := $(shell pwd)
 
@@ -38,3 +38,19 @@ clean-all:
 	docker compose down -v
 	cd $(ROOT)/backend && ./mvnw clean
 	cd $(ROOT)/frontend && rm -rf node_modules dist
+
+## Build the Briefen Docker image
+docker-build:
+	docker build -t briefen .
+
+## Start full stack: app + MongoDB + Ollama (builds image if needed)
+docker-up:
+	docker compose --profile app up -d --build
+
+## Stop full stack
+docker-down:
+	docker compose --profile app down
+
+## Run Playwright E2E tests against the dockerized app (default: http://localhost:8080)
+e2e:
+	npx playwright test
