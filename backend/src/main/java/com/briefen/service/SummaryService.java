@@ -196,6 +196,20 @@ public class SummaryService {
 
     public Page<Summary> getSummaries(int page, int size, String filter, String search) {
         PageRequest pageable = PageRequest.of(page, size);
+        Query query = buildFilterQuery(filter, search);
+
+        long total = mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Summary.class);
+        query.with(pageable);
+        List<Summary> items = mongoTemplate.find(query, Summary.class);
+        return new PageImpl<>(items, pageable, total);
+    }
+
+    public List<Summary> getAllSummaries(String filter, String search) {
+        Query query = buildFilterQuery(filter, search);
+        return mongoTemplate.find(query, Summary.class);
+    }
+
+    private Query buildFilterQuery(String filter, String search) {
         Query query = new Query().with(Sort.by(Sort.Direction.DESC, "createdAt"));
 
         switch (filter) {
@@ -214,10 +228,7 @@ public class SummaryService {
             query.addCriteria(searchCriteria);
         }
 
-        long total = mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Summary.class);
-        query.with(pageable);
-        List<Summary> items = mongoTemplate.find(query, Summary.class);
-        return new PageImpl<>(items, pageable, total);
+        return query;
     }
 
     public Summary updateReadStatus(String id, boolean isRead) {

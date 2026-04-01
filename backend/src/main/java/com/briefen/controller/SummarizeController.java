@@ -8,9 +8,17 @@ import com.briefen.exception.InvalidUrlException;
 import com.briefen.model.Summary;
 import com.briefen.service.SummaryService;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -53,6 +61,44 @@ public class SummarizeController {
             @RequestParam(required = false) String search) {
         return summaryService.getSummaries(page, size, filter, search)
                 .map(SummarizeResponse::from);
+    }
+
+    @GetMapping("/summaries/export")
+    public ResponseEntity<StreamingResponseBody> exportSummaries(
+            @RequestParam(defaultValue = "md") String format,
+            @RequestParam(defaultValue = "all") String filter,
+            @RequestParam(required = false) String search) {
+
+        if (!"md".equals(format)) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<Summary> summaries = summaryService.getAllSummaries(filter, search);
+
+        StreamingResponseBody body = outputStream -> {
+            Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
+            for (int i = 0; i < summaries.size(); i++) {
+                Summary s = summaries.get(i);
+                String title = (s.getTitle() != null && !s.getTitle().isBlank()) ? s.getTitle() : "Untitled";
+                writer.write("## " + title + "\n\n");
+                if (s.getUrl() != null && !s.getUrl().isBlank()) {
+                    writer.write("*Source: " + s.getUrl() + "*\n\n");
+                }
+                if (s.getSummary() != null) {
+                    writer.write(s.getSummary() + "\n");
+                }
+                if (i < summaries.size() - 1) {
+                    writer.write("\n---\n\n");
+                }
+            }
+            writer.flush();
+        };
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(new MediaType("text", "markdown", StandardCharsets.UTF_8));
+        headers.setContentDispositionFormData("attachment", "briefen-export.md");
+
+        return ResponseEntity.ok().headers(headers).body(body);
     }
 
     @GetMapping("/summaries/unread-count")

@@ -135,6 +135,9 @@ export const STRINGS = {
   READING_LIST_SEARCH_PLACEHOLDER: 'Search summaries\u2026',
   READING_LIST_SEARCH_CLEAR: 'Clear search',
   READING_LIST_SEARCH_EMPTY: 'No summaries match your search.',
+  READING_LIST_EXPORT: 'Export',
+  READING_LIST_COPY_MD: 'Copy as Markdown',
+  READING_LIST_COPY_MD_DONE: 'Copied!',
 
   NOTES_LABEL: 'Notes',
   NOTES_PLACEHOLDER: 'Add your thoughts...',

@@ -53,6 +53,21 @@
   text-decoration: underline;
 }
 
+.exportBtn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 4px 0;
+  text-decoration: none;
+}
+
+.exportBtn:hover {
+  text-decoration: underline;
+}
+
 /* --- Search bar --- */
 
 .searchBar {

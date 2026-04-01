@@ -24,8 +24,9 @@ function Toast({ message, onDone }) {
   return <div className={styles.toast}>{message}</div>
 }
 
-function ActionMenu({ url, isRead, onToggleRead, onDelete }) {
+function ActionMenu({ url, isRead, onToggleRead, onDelete, onCopyMarkdown }) {
   const [open, setOpen] = useState(false)
+  const [copyMdDone, setCopyMdDone] = useState(false)
   const ref = useRef(null)
 
   useEffect(() => {
@@ -49,6 +50,13 @@ function ActionMenu({ url, isRead, onToggleRead, onDelete }) {
     }
   }
 
+  async function handleCopyMarkdown() {
+    setOpen(false)
+    await onCopyMarkdown()
+    setCopyMdDone(true)
+    setTimeout(() => setCopyMdDone(false), 2000)
+  }
+
   return (
     <div className={styles.menuWrapper} ref={ref}>
       <button
@@ -62,6 +70,9 @@ function ActionMenu({ url, isRead, onToggleRead, onDelete }) {
         <div className={styles.menu}>
           <button className={styles.menuItem} onClick={handleToggleRead}>
             {isRead ? STRINGS.READING_LIST_MARK_UNREAD : STRINGS.READING_LIST_MARK_READ}
+          </button>
+          <button className={styles.menuItem} onClick={handleCopyMarkdown}>
+            {copyMdDone ? STRINGS.READING_LIST_COPY_MD_DONE : STRINGS.READING_LIST_COPY_MD}
           </button>
           {url && (
             <a
@@ -118,6 +129,17 @@ function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMar
     return () => clearTimeout(timer)
   }, [error, item.id, onClearError])
 
+  const handleCopyMarkdown = useCallback(async () => {
+    const lines = [`## ${item.title || 'Untitled'}`]
+    if (item.url) lines.push('', `*Source: ${item.url}*`)
+    lines.push('', item.summary || '')
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'))
+    } catch {
+      // Clipboard write failed
+    }
+  }, [item])
+
   const titleContent = item.title || item.summary?.substring(0, 60) || 'Untitled'
   const hasNotes = Boolean(item.notes && item.notes.trim())
 
@@ -160,7 +182,7 @@ function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMar
           {error && <span className={styles.itemError}>{error}</span>}
         </div>
         <span className={styles.itemDate}>{formatRelativeDate(item.savedAt || item.createdAt)}</span>
-        <ActionMenu url={item.url} isRead={item.isRead} onToggleRead={onToggleRead} onDelete={onDelete} />
+        <ActionMenu url={item.url} isRead={item.isRead} onToggleRead={onToggleRead} onDelete={onDelete} onCopyMarkdown={handleCopyMarkdown} />
       </div>
 
       {isExpanded && (
@@ -355,6 +377,15 @@ export function ReadingList({ refreshUnreadCount }) {
           <button className={styles.markAllBtn} onClick={handleMarkAllAsUnread}>
             {STRINGS.READING_LIST_MARK_ALL_UNREAD}
           </button>
+        )}
+        {items.length > 0 && (
+          <a
+            className={styles.exportBtn}
+            href={`/api/summaries/export?format=md&filter=${filter}${search ? `&search=${encodeURIComponent(search)}` : ''}`}
+            download="briefen-export.md"
+          >
+            {STRINGS.READING_LIST_EXPORT}
+          </a>
         )}
       </div>
 
