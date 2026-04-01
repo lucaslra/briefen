@@ -1,0 +1,55 @@
+# Release Drafter — configuration for auto-generated release notes
+# Used by the release-drafter workflow (.github/workflows/release-drafter.yml)
+# Docs: https://github.com/release-drafter/release-drafter
+
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+
+categories:
+  - title: "New Features"
+    labels:
+      - "feature"
+      - "enhancement"
+  - title: "Bug Fixes"
+    labels:
+      - "bug"
+      - "fix"
+  - title: "Infrastructure"
+    labels:
+      - "infra"
+      - "github-actions"
+      - "docker"
+  - title: "Dependencies"
+    labels:
+      - "dependencies"
+  - title: "Documentation"
+    labels:
+      - "docs"
+
+# Auto-label PRs by branch name prefix
+autolabeler:
+  - label: "feature"
+    branch: ["/^feat(ure)?[/-]/"]
+  - label: "bug"
+    branch: ["/^(bug)?fix[/-]/"]
+  - label: "docs"
+    branch: ["/^docs?[/-]/"]
+  - label: "infra"
+    branch: ["/^(infra|ci|chore)[/-]/"]
+
+# Bump version based on labels
+version-resolver:
+  major:
+    labels: ["major"]
+  minor:
+    labels: ["feature", "enhancement"]
+  patch:
+    labels: ["bug", "fix", "dependencies"]
+  default: patch

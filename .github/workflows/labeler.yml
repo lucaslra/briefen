@@ -1,0 +1,22 @@
+# PR Labeler — automatically applies labels based on changed files
+# Configuration lives in .github/labeler.yml
+
+name: PR Labeler
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    name: Label PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply labels
+        uses: actions/labeler@v5
+        with:
+          configuration-path: .github/labeler.yml

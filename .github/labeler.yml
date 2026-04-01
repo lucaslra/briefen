@@ -1,0 +1,25 @@
+# PR Labeler — auto-label PRs based on changed file paths
+# Used by the labeler workflow (.github/workflows/labeler.yml)
+# Docs: https://github.com/actions/labeler
+
+backend:
+  - changed-files:
+      - any-glob-to-any-file: "backend/**"
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file: "frontend/**"
+
+infra:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "Dockerfile"
+          - "docker-compose.yml"
+          - "Makefile"
+          - ".github/**"
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - "LICENSE"
