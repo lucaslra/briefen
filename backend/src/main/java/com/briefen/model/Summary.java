@@ -2,6 +2,7 @@ package com.briefen.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
@@ -15,7 +16,10 @@ public class Summary {
     @Indexed(unique = true, sparse = true)
     private String url;
 
+    @TextIndexed(weight = 3)
     private String title;
+
+    @TextIndexed
     private String summary;
     private String modelUsed;
     private Instant createdAt;

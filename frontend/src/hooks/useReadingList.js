@@ -7,14 +7,22 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState(initialFilter)
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [itemErrors, setItemErrors] = useState({})
 
-  const fetchPage = useCallback(async (pageNum, currentFilter, replace = false) => {
+  const fetchPage = useCallback(async (pageNum, currentFilter, currentSearch, replace = false) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/summaries?page=${pageNum}&size=${PAGE_SIZE}&filter=${currentFilter}`)
+      const params = new URLSearchParams({
+        page: pageNum,
+        size: PAGE_SIZE,
+        filter: currentFilter,
+      })
+      if (currentSearch) params.set('search', currentSearch)
+
+      const res = await fetch(`/api/summaries?${params}`)
       if (!res.ok) return
 
       const data = await res.json()
@@ -31,8 +39,8 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
   }, [])
 
   useEffect(() => {
-    fetchPage(0, filter, true)
-  }, [filter, fetchPage])
+    fetchPage(0, filter, search, true)
+  }, [filter, search, fetchPage])
 
   const changeFilter = useCallback((f) => {
     setFilter(f)
@@ -40,16 +48,22 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
     setItemErrors({})
   }, [])
 
+  const changeSearch = useCallback((q) => {
+    setSearch(q)
+    setPage(0)
+    setItemErrors({})
+  }, [])
+
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
-      fetchPage(page + 1, filter)
+      fetchPage(page + 1, filter, search)
     }
-  }, [loading, hasMore, page, filter, fetchPage])
+  }, [loading, hasMore, page, filter, search, fetchPage])
 
   const refresh = useCallback(() => {
-    fetchPage(0, filter, true)
+    fetchPage(0, filter, search, true)
     refreshUnreadCount?.()
-  }, [filter, fetchPage, refreshUnreadCount])
+  }, [filter, search, fetchPage, refreshUnreadCount])
 
   const clearItemError = useCallback((id) => {
     setItemErrors(prev => {
@@ -135,8 +149,8 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
   }, [items, refreshUnreadCount])
 
   return {
-    items, loading, filter, hasMore, itemErrors,
-    changeFilter, toggleReadStatus, deleteSummary,
+    items, loading, filter, search, hasMore, itemErrors,
+    changeFilter, changeSearch, toggleReadStatus, deleteSummary,
     markAllAsRead, loadMore, refresh, clearItemError,
   }
 }

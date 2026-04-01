@@ -48,8 +48,9 @@ public class SummarizeController {
     public Page<SummarizeResponse> summaries(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "all") String filter) {
-        return summaryService.getSummaries(page, size, filter)
+            @RequestParam(defaultValue = "all") String filter,
+            @RequestParam(required = false) String search) {
+        return summaryService.getSummaries(page, size, filter, search)
                 .map(SummarizeResponse::from);
     }
 

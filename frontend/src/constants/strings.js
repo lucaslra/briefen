@@ -129,6 +129,9 @@ export const STRINGS = {
   READING_LIST_UPDATE_FAILED: 'Couldn\u2019t update \u2014 try again.',
   READING_LIST_DELETE_FAILED: 'Couldn\u2019t delete \u2014 try again.',
   READING_LIST_LOAD_MORE: 'Load more',
+  READING_LIST_SEARCH_PLACEHOLDER: 'Search summaries\u2026',
+  READING_LIST_SEARCH_CLEAR: 'Clear search',
+  READING_LIST_SEARCH_EMPTY: 'No summaries match your search.',
 
   BATCH_ADD_URL: '+ Add another URL',
   BATCH_COUNTER: '{n} of {max} URLs',

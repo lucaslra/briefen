@@ -202,8 +202,8 @@ export function ReadingList({ refreshUnreadCount }) {
   const initialFilter = FILTERS.includes(searchParams.get('filter')) ? searchParams.get('filter') : 'unread'
 
   const {
-    items, loading, filter, hasMore, itemErrors,
-    changeFilter: rawChangeFilter, toggleReadStatus, deleteSummary,
+    items, loading, filter, search, hasMore, itemErrors,
+    changeFilter: rawChangeFilter, changeSearch, toggleReadStatus, deleteSummary,
     markAllAsRead, loadMore, clearItemError,
   } = useReadingList(refreshUnreadCount, initialFilter)
 
@@ -215,6 +215,27 @@ export function ReadingList({ refreshUnreadCount }) {
   const [expandedId, setExpandedId] = useState(null)
   const [toast, setToast] = useState(null)
   const containerRef = useRef(null)
+  const [searchInput, setSearchInput] = useState('')
+  const searchTimer = useRef(null)
+
+  const handleSearchInput = useCallback((e) => {
+    const value = e.target.value
+    setSearchInput(value)
+    clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => {
+      changeSearch(value.trim())
+    }, 300)
+  }, [changeSearch])
+
+  const clearSearch = useCallback(() => {
+    setSearchInput('')
+    clearTimeout(searchTimer.current)
+    changeSearch('')
+  }, [changeSearch])
+
+  useEffect(() => {
+    return () => clearTimeout(searchTimer.current)
+  }, [])
 
   const handleMarkAllAsRead = useCallback(async () => {
     const ok = await markAllAsRead()
@@ -269,10 +290,10 @@ export function ReadingList({ refreshUnreadCount }) {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [expandedId, items])
 
-  // Collapse when filter changes
+  // Collapse when filter or search changes
   useEffect(() => {
     setExpandedId(null)
-  }, [filter])
+  }, [filter, search])
 
   return (
     <section className={styles.container} ref={containerRef}>
@@ -295,6 +316,25 @@ export function ReadingList({ refreshUnreadCount }) {
         )}
       </div>
 
+      <div className={styles.searchBar}>
+        <input
+          type="text"
+          className={styles.searchInput}
+          value={searchInput}
+          onChange={handleSearchInput}
+          placeholder={STRINGS.READING_LIST_SEARCH_PLACEHOLDER}
+        />
+        {searchInput && (
+          <button
+            className={styles.searchClear}
+            onClick={clearSearch}
+            aria-label={STRINGS.READING_LIST_SEARCH_CLEAR}
+          >
+            &times;
+          </button>
+        )}
+      </div>
+
       {expandedId && (
         <div className={styles.navHint}>
           <kbd>↑</kbd> <kbd>↓</kbd> navigate &middot; <kbd>Esc</kbd> close
@@ -304,7 +344,9 @@ export function ReadingList({ refreshUnreadCount }) {
       {loading && items.length === 0 && <Skeleton />}
 
       {!loading && items.length === 0 && (
-        <p className={styles.empty}>{EMPTY_MESSAGES[filter]}</p>
+        <p className={styles.empty}>
+          {search ? STRINGS.READING_LIST_SEARCH_EMPTY : EMPTY_MESSAGES[filter]}
+        </p>
       )}
 
       {items.length > 0 && (

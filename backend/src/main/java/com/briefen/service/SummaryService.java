@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.TextCriteria;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
@@ -191,6 +192,10 @@ public class SummaryService {
     }
 
     public Page<Summary> getSummaries(int page, int size, String filter) {
+        return getSummaries(page, size, filter, null);
+    }
+
+    public Page<Summary> getSummaries(int page, int size, String filter, String search) {
         PageRequest pageable = PageRequest.of(page, size);
         Query query = new Query().with(Sort.by(Sort.Direction.DESC, "createdAt"));
 
@@ -198,6 +203,11 @@ public class SummaryService {
             case "unread" -> query.addCriteria(Criteria.where("isRead").ne(true));
             case "read" -> query.addCriteria(Criteria.where("isRead").is(true));
             default -> {} // "all" — no filter
+        }
+
+        if (search != null && !search.isBlank()) {
+            TextCriteria textCriteria = TextCriteria.forDefaultLanguage().matchingPhrase(search);
+            query.addCriteria(textCriteria);
         }
 
         long total = mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Summary.class);
