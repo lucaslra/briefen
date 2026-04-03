@@ -7,6 +7,7 @@ public record UserSettingsDto(
         String model,
         Boolean notificationsEnabled,
         String openaiApiKey,
+        String anthropicApiKey,
         String readeckApiKey,
         String readeckUrl
 ) {
@@ -20,6 +21,7 @@ public record UserSettingsDto(
                 entity.getModel(),
                 entity.isNotificationsEnabled(),
                 maskKey(entity.getOpenaiApiKey()),
+                maskKey(entity.getAnthropicApiKey()),
                 maskKey(entity.getReadeckApiKey()),
                 entity.getReadeckUrl()
         );

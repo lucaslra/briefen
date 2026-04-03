@@ -16,6 +16,7 @@ public class UserSettings {
     private String model; // null means use server default from application.yml
     private boolean notificationsEnabled = false;
     private String openaiApiKey; // plaintext — acceptable for local single-user app
+    private String anthropicApiKey;
     private String readeckApiKey;
     private String readeckUrl;
     private Instant updatedAt;
@@ -48,6 +49,12 @@ public class UserSettings {
     public boolean isNotificationsEnabled() { return notificationsEnabled; }
     public void setNotificationsEnabled(boolean notificationsEnabled) {
         this.notificationsEnabled = notificationsEnabled;
+        this.updatedAt = Instant.now();
+    }
+
+    public String getAnthropicApiKey() { return anthropicApiKey; }
+    public void setAnthropicApiKey(String anthropicApiKey) {
+        this.anthropicApiKey = anthropicApiKey;
         this.updatedAt = Instant.now();
     }
 

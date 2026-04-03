@@ -27,8 +27,12 @@ public class ModelsController {
 
     @GetMapping
     public Map<String, Object> list() {
-        boolean hasOpenAiKey = settingsPersistence.findDefault()
+        var settings = settingsPersistence.findDefault();
+        boolean hasOpenAiKey = settings
                 .map(s -> s.getOpenaiApiKey() != null && !s.getOpenaiApiKey().isBlank())
+                .orElse(false);
+        boolean hasAnthropicKey = settings
+                .map(s -> s.getAnthropicApiKey() != null && !s.getAnthropicApiKey().isBlank())
                 .orElse(false);
 
         List<Map<String, Object>> providers = new ArrayList<>();
@@ -62,6 +66,21 @@ public class ModelsController {
                                 "description", "Reasoning model. Excels at complex, nuanced analysis with step-by-step thinking."),
                         Map.of("id", "o4-mini", "name", "o4 Mini",
                                 "description", "Latest reasoning model. Best-in-class analysis with efficient token usage.")
+                )
+        ));
+
+        // Anthropic — available only if API key is set
+        providers.add(Map.of(
+                "id", "anthropic",
+                "name", "Anthropic",
+                "configured", hasAnthropicKey,
+                "models", List.of(
+                        Map.of("id", "claude-opus-4-5", "name", "Claude Opus 4.5",
+                                "description", "Most capable model. Exceptional at complex analysis, nuanced writing, and thorough summarization."),
+                        Map.of("id", "claude-sonnet-4-5", "name", "Claude Sonnet 4.5",
+                                "description", "Best balance of speed and quality. Great for everyday summarization tasks."),
+                        Map.of("id", "claude-haiku-4-5", "name", "Claude Haiku 4.5",
+                                "description", "Fastest and most compact. Ideal for quick summaries with low latency.")
                 )
         ));
 

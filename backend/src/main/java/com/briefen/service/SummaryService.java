@@ -31,10 +31,15 @@ public class SummaryService {
             "o3-mini", "o4-mini"
     );
 
+    private static final Set<String> ANTHROPIC_MODELS = Set.of(
+            "claude-opus-4-5", "claude-sonnet-4-5", "claude-haiku-4-5"
+    );
+
     private final UrlValidator urlValidator;
     private final ArticleFetcherService articleFetcher;
     private final OllamaSummarizerService ollamaSummarizer;
     private final OpenAiSummarizerService openAiSummarizer;
+    private final AnthropicSummarizerService anthropicSummarizer;
     private final SummaryPersistence summaryPersistence;
     private final SettingsPersistence settingsPersistence;
     private final OllamaProperties ollamaProperties;
@@ -43,6 +48,7 @@ public class SummaryService {
                           ArticleFetcherService articleFetcher,
                           OllamaSummarizerService ollamaSummarizer,
                           OpenAiSummarizerService openAiSummarizer,
+                          AnthropicSummarizerService anthropicSummarizer,
                           SummaryPersistence summaryPersistence,
                           SettingsPersistence settingsPersistence,
                           OllamaProperties ollamaProperties) {
@@ -50,6 +56,7 @@ public class SummaryService {
         this.articleFetcher = articleFetcher;
         this.ollamaSummarizer = ollamaSummarizer;
         this.openAiSummarizer = openAiSummarizer;
+        this.anthropicSummarizer = anthropicSummarizer;
         this.summaryPersistence = summaryPersistence;
         this.settingsPersistence = settingsPersistence;
         this.ollamaProperties = ollamaProperties;
@@ -233,6 +240,10 @@ public class SummaryService {
             String apiKey = loadOpenAiKey();
             return openAiSummarizer.summarize(articleText, lengthHint, model, apiKey);
         }
+        if (isAnthropicModel(model)) {
+            String apiKey = loadAnthropicKey();
+            return anthropicSummarizer.summarize(articleText, lengthHint, model, apiKey);
+        }
         return ollamaSummarizer.summarize(articleText, lengthHint, model);
     }
 
@@ -243,11 +254,24 @@ public class SummaryService {
                 || model.startsWith("o4-"));
     }
 
+    private boolean isAnthropicModel(String model) {
+        return model != null && (ANTHROPIC_MODELS.contains(model)
+                || model.startsWith("claude-"));
+    }
+
     private String loadOpenAiKey() {
         return settingsPersistence.findDefault()
                 .map(UserSettings::getOpenaiApiKey)
                 .filter(key -> key != null && !key.isBlank())
                 .orElseThrow(() -> new SummarizationException(
                         "OpenAI API key not configured. Please add your key in Settings.", false));
+    }
+
+    private String loadAnthropicKey() {
+        return settingsPersistence.findDefault()
+                .map(UserSettings::getAnthropicApiKey)
+                .filter(key -> key != null && !key.isBlank())
+                .orElseThrow(() -> new SummarizationException(
+                        "Anthropic API key not configured. Please add your key in Settings.", false));
     }
 }

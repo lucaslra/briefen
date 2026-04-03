@@ -7,6 +7,7 @@ const DEFAULTS = {
   model: null,              // null means server default
   notificationsEnabled: true,
   openaiApiKey: null,
+  anthropicApiKey: null,
   readeckApiKey: null,
   readeckUrl: null,
 }

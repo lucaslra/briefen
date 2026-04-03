@@ -32,6 +32,8 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
   const [defaultModel, setDefaultModel] = useState(null)
   const [keyDraft, setKeyDraft] = useState('')
   const [keySaved, setKeySaved] = useState(false)
+  const [anthropicKeyDraft, setAnthropicKeyDraft] = useState('')
+  const [anthropicKeySaved, setAnthropicKeySaved] = useState(false)
   const [readeckUrlDraft, setReadeckUrlDraft] = useState('')
   const [readeckKeyDraft, setReadeckKeyDraft] = useState('')
   const [readeckSaved, setReadeckSaved] = useState(false)
@@ -59,6 +61,12 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
     if (settings.openaiApiKey) setKeyDraft(settings.openaiApiKey)
   }
 
+  const [prevAnthropicKey, setPrevAnthropicKey] = useState(settings.anthropicApiKey)
+  if (prevAnthropicKey !== settings.anthropicApiKey) {
+    setPrevAnthropicKey(settings.anthropicApiKey)
+    if (settings.anthropicApiKey) setAnthropicKeyDraft(settings.anthropicApiKey)
+  }
+
   const [prevReadeckKey, setPrevReadeckKey] = useState(settings.readeckApiKey)
   const [prevReadeckUrl, setPrevReadeckUrl] = useState(settings.readeckUrl)
   if (prevReadeckKey !== settings.readeckApiKey || prevReadeckUrl !== settings.readeckUrl) {
@@ -70,10 +78,11 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
 
   const selectedModel = settings.model || defaultModel
   const hasOpenAiKey = settings.openaiApiKey != null && settings.openaiApiKey !== ''
+  const hasAnthropicKey = settings.anthropicApiKey != null && settings.anthropicApiKey !== ''
 
-  // Filter out OpenAI providers when no key is configured
+  // Filter out cloud providers when no key is configured
   const visibleProviders = providers.filter(p =>
-    p.id === 'ollama' || (p.id === 'openai' && hasOpenAiKey)
+    p.id === 'ollama' || (p.id === 'openai' && hasOpenAiKey) || (p.id === 'anthropic' && hasAnthropicKey)
   )
 
   function handleSaveKey() {
@@ -92,6 +101,29 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
     setKeyDraft('')
     // If the user had an OpenAI model selected, reset to default
     if (selectedModel && (selectedModel.startsWith('gpt-') || selectedModel.startsWith('o'))) {
+      onUpdateSetting('model', defaultModel)
+    }
+    fetch('/api/models').then(r => r.json()).then(data => {
+      if (data) setProviders(data.providers)
+    }).catch(() => {})
+  }
+
+  function handleSaveAnthropicKey() {
+    if (!anthropicKeyDraft.trim()) return
+    onUpdateSetting('anthropicApiKey', anthropicKeyDraft.trim())
+    setAnthropicKeySaved(true)
+    setTimeout(() => setAnthropicKeySaved(false), 2000)
+    fetch('/api/models').then(r => r.json()).then(data => {
+      if (data) setProviders(data.providers)
+    }).catch(() => {})
+  }
+
+  function handleRemoveAnthropicKey() {
+    if (!window.confirm(STRINGS.CONFIRM_REMOVE_ANTHROPIC)) return
+    onUpdateSetting('anthropicApiKey', '')
+    setAnthropicKeyDraft('')
+    // If the user had an Anthropic model selected, reset to default
+    if (selectedModel && selectedModel.startsWith('claude-')) {
       onUpdateSetting('model', defaultModel)
     }
     fetch('/api/models').then(r => r.json()).then(data => {
@@ -213,9 +245,9 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
                 </div>
               ))}
 
-              {!hasOpenAiKey && (
+              {!hasOpenAiKey && !hasAnthropicKey && (
                 <p className={styles.providerHint}>
-                  Add an OpenAI API key in the Integrations tab to unlock cloud models.
+                  Add an OpenAI or Anthropic API key in the Integrations tab to unlock cloud models.
                 </p>
               )}
             </section>
@@ -249,6 +281,31 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
                 </button>
                 {hasOpenAiKey && (
                   <button className={styles.apiKeyRemoveBtn} onClick={handleRemoveKey}>
+                    {STRINGS.SETTINGS_API_KEY_REMOVE}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.apiKeyGroup}>
+              <label className={styles.apiKeyLabel}>{STRINGS.SETTINGS_ANTHROPIC_KEY_LABEL}</label>
+              <div className={styles.apiKeyRow}>
+                <input
+                  type="password"
+                  className={styles.apiKeyInput}
+                  value={anthropicKeyDraft}
+                  onChange={e => setAnthropicKeyDraft(e.target.value)}
+                  placeholder={STRINGS.SETTINGS_ANTHROPIC_KEY_PLACEHOLDER}
+                />
+                <button
+                  className={styles.apiKeySaveBtn}
+                  onClick={handleSaveAnthropicKey}
+                  disabled={!anthropicKeyDraft.trim() || anthropicKeyDraft === settings.anthropicApiKey}
+                >
+                  {anthropicKeySaved ? STRINGS.SETTINGS_API_KEY_SAVED : (hasAnthropicKey ? STRINGS.SETTINGS_API_KEY_UPDATE : STRINGS.SETTINGS_API_KEY_SAVE)}
+                </button>
+                {hasAnthropicKey && (
+                  <button className={styles.apiKeyRemoveBtn} onClick={handleRemoveAnthropicKey}>
                     {STRINGS.SETTINGS_API_KEY_REMOVE}
                   </button>
                 )}

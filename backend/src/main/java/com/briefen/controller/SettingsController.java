@@ -45,6 +45,9 @@ public class SettingsController {
         if (dto.openaiApiKey() != null) {
             settings.setOpenaiApiKey(dto.openaiApiKey().isBlank() ? null : dto.openaiApiKey());
         }
+        if (dto.anthropicApiKey() != null) {
+            settings.setAnthropicApiKey(dto.anthropicApiKey().isBlank() ? null : dto.anthropicApiKey());
+        }
         if (dto.readeckApiKey() != null) {
             settings.setReadeckApiKey(dto.readeckApiKey().isBlank() ? null : dto.readeckApiKey());
         }

@@ -64,6 +64,10 @@ export const STRINGS = {
 
   SETTINGS_PROVIDER_LOCAL: 'Local (Ollama)',
   SETTINGS_PROVIDER_OPENAI: 'OpenAI',
+  SETTINGS_PROVIDER_ANTHROPIC: 'Anthropic',
+
+  SETTINGS_ANTHROPIC_KEY_LABEL: 'Anthropic API Key',
+  SETTINGS_ANTHROPIC_KEY_PLACEHOLDER: 'sk-ant-...',
 
   SETTINGS_READECK_HEADING: 'Readeck',
   SETTINGS_READECK_SUBHEADING: 'Connect a Readeck instance to summarize your saved articles.',
@@ -100,7 +104,8 @@ export const STRINGS = {
   ERROR_BOT_PROTECTION: 'This website uses bot protection and cannot be summarized. Try a different source for the same article.',
   ERROR_CLIPBOARD: 'Clipboard access denied. Please paste manually with Ctrl+V.',
 
-  CONFIRM_REMOVE_OPENAI: 'Remove your OpenAI API key? Cloud models will no longer be available.',
+  CONFIRM_REMOVE_OPENAI: 'Remove your OpenAI API key? OpenAI models will no longer be available.',
+  CONFIRM_REMOVE_ANTHROPIC: 'Remove your Anthropic API key? Anthropic models will no longer be available.',
   CONFIRM_REMOVE_READECK: 'Remove your Readeck configuration? The Readeck tab will be hidden.',
 
   RECENT_LOAD_MORE: 'Load more',

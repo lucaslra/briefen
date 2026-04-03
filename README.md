@@ -130,6 +130,16 @@ Briefen can optionally use OpenAI models instead of local Ollama. To enable:
 
 The API key is stored server-side. No data is sent to OpenAI unless you explicitly select an OpenAI model.
 
+## Anthropic Integration
+
+Briefen can optionally use Anthropic Claude models. To enable:
+
+1. Go to **Settings → Integrations** in the browser UI
+2. Enter your Anthropic API key
+3. Select a Claude model from the model picker
+
+The API key is stored server-side. No data is sent to Anthropic unless you explicitly select a Claude model.
+
 ## Readeck Integration
 
 Briefen can browse and summarize articles from a self-hosted [Readeck](https://readeck.org) instance:
