@@ -133,7 +133,7 @@ jobs:
         id: run-tests
         run: |
           if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts?.test ? 0 : 1)"; then
-            pnpm test --run --coverage 2>/dev/null || pnpm test --run
+            pnpm run test:coverage 2>/dev/null || pnpm test
           else
             echo "No test script configured — skipping"
           fi
