@@ -53,3 +53,11 @@ docker-down:
 ## Run Playwright E2E tests against the dockerized app (default: http://localhost:8080)
 e2e:
 	npx playwright test
+
+## Run Playwright E2E tests in fully-managed mode:
+##   - Spins up a WireMock container (stubs Ollama)
+##   - Starts the Spring Boot backend automatically
+##   - Runs all tests including the full summarization flow
+##   Requires: Docker daemon running, Java (sdkman or JAVA_HOME set)
+e2e-managed:
+	E2E_MANAGED=true npx playwright test
