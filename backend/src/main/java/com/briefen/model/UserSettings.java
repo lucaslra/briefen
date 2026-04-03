@@ -1,21 +1,15 @@
 package com.briefen.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
 import java.time.Instant;
-import java.util.Map;
 
 /**
  * Stores user preferences. Since Briefen has no auth, a single
  * document with a well-known id ("default") is used.
  */
-@Document(collection = "settings")
 public class UserSettings {
 
     public static final String DEFAULT_ID = "default";
 
-    @Id
     private String id = DEFAULT_ID;
 
     private String defaultLength = "default"; // "shorter" | "default" | "longer"

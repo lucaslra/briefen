@@ -8,10 +8,10 @@ Briefen is a **single-user, locally deployed app** with no authentication. The s
 - Runs on `localhost` only (not exposed to the internet)
 - Single user operates all endpoints
 - Local network is trusted for Ollama communication (plaintext HTTP)
-- MongoDB has no auth (local Docker container)
+- SQLite database is a local file (no network exposure)
 
 **However**, the app handles sensitive data that requires protection even locally:
-- **OpenAI API keys** — stored in MongoDB and localStorage in plaintext
+- **OpenAI API keys** — stored in SQLite and localStorage in plaintext
 - **Readeck API keys** — same
 - **Article content** — may include private/paywalled material
 - **User-configured external URLs** — Readeck instance URL is user-controlled
@@ -21,7 +21,7 @@ Briefen is a **single-user, locally deployed app** with no authentication. The s
 ### Sensitive Data Storage & Transmission
 | File | What to look for |
 |---|---|
-| `backend/src/main/java/com/briefen/model/UserSettings.java` | API keys stored plaintext in MongoDB |
+| `backend/src/main/java/com/briefen/model/UserSettings.java` | API keys stored plaintext in SQLite |
 | `backend/src/main/java/com/briefen/dto/UserSettingsDto.java` | Keys exposed in API responses (GET /api/settings) |
 | `backend/src/main/java/com/briefen/controller/SettingsController.java` | No auth on GET/PUT; keys returned in full |
 | `frontend/src/hooks/useSettings.js` | Keys cached in localStorage (writeCache function) |
@@ -44,7 +44,7 @@ Briefen is a **single-user, locally deployed app** with no authentication. The s
 ### Infrastructure & Configuration
 | File | What to look for |
 |---|---|
-| `docker-compose.yml` | Port exposure (27017, 11434); no network isolation |
+| `docker-compose.yml` | Port exposure (11434); no network isolation |
 | `backend/src/main/resources/application.yml` | Hardcoded URLs; actuator exposure; no env var substitution |
 | `frontend/vite.config.js` | API proxy config; no CSP headers |
 | `frontend/index.html` | No CSP meta tags |
@@ -61,8 +61,8 @@ These are accepted trade-offs for the local-first design. Flag them if the deplo
 
 1. **No authentication** — all endpoints are open (single-user local app)
 2. **Plaintext HTTP to Ollama** — localhost-only, Docker network
-3. **MongoDB without auth** — localhost-only Docker container
-4. **API keys in plaintext in MongoDB** — accepted for local single-user (comment in code)
+3. **SQLite database** — local file, no network exposure
+4. **API keys in plaintext in SQLite** — accepted for local single-user (comment in code)
 
 ## Active Concerns to Audit
 

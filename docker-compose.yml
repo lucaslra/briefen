@@ -1,18 +1,6 @@
-services:
-  mongodb:
-    image: mongo:7
-    container_name: briefen-mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: mongosh --eval "db.runCommand('ping').ok" --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+name: briefen
 
+services:
   # Available models: gemma2:2b, gemma3:4b, llama3.2:3b
   # All are pulled on startup. Default model is set in backend application.yml (ollama.model).
   ollama:
@@ -42,6 +30,7 @@ services:
 
   app:
     profiles: ["app"]
+    image: briefen
     build:
       context: .
       dockerfile: Dockerfile
@@ -49,17 +38,17 @@ services:
     ports:
       - "${SERVER_PORT:-8080}:8080"
     environment:
-      MONGODB_URI: mongodb://briefen-mongodb:27017/briefen
+      BRIEFEN_DB_PATH: /data/briefen.db
       OLLAMA_BASE_URL: http://briefen-ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
       SERVER_PORT: 8080
+    volumes:
+      - briefen_data:/data
     depends_on:
-      mongodb:
-        condition: service_healthy
       ollama:
         condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  mongo_data:
   ollama_data:
+  briefen_data:

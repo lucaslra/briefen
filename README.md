@@ -22,27 +22,27 @@
 ## Architecture
 
 ```
-Browser (React) → Spring Boot API → Jsoup (fetch article) → Ollama or OpenAI (summarize) → MongoDB (persist)
+Browser (React) → Spring Boot API → Jsoup (fetch article) → Ollama or OpenAI (summarize) → SQLite (persist)
 ```
 
-| Layer          | Technology                         |
-|----------------|------------------------------------|
-| Frontend       | React 19 (Vite, pnpm, plain JS)  |
-| Backend        | Java 25, Spring Boot 4.0.5, Maven |
-| LLM            | Ollama (local) or OpenAI (cloud)  |
-| Database       | MongoDB 7 (Docker)                |
-| Orchestration  | Docker Compose                    |
+| Layer          | Technology                                 |
+|----------------|--------------------------------------------|
+| Frontend       | React 19 (Vite, pnpm, plain JS)           |
+| Backend        | Java 25, Spring Boot 4.0.5, Maven         |
+| LLM            | Ollama (local) or OpenAI (cloud)           |
+| Database       | SQLite (file-based, zero setup)            |
+| Orchestration  | Docker Compose                             |
 
 ## Prerequisites
 
-- **Docker** (with Docker Compose)
 - **Java 25** (Eclipse Temurin recommended)
 - **Node.js 22+** and **pnpm**
+- **Docker** (with Docker Compose) — required for Ollama
 
 ## Quick Start
 
 ```bash
-# 1. Start infrastructure (MongoDB + Ollama)
+# 1. Start infrastructure (Ollama)
 make up
 
 # 2. Wait for Ollama to pull the model (first time only, ~1-2 min)
@@ -66,11 +66,13 @@ make frontend  # in another terminal
 ### Cleanup
 
 ```bash
-make clean      # stop containers, remove mongo data + build artifacts (Ollama weights preserved)
+make clean      # stop containers, remove build artifacts (Ollama weights preserved)
 make clean-all  # full reset — also removes Ollama model weights (re-download required)
 ```
 
 `make clean` is safe to run frequently. Use `make clean-all` only when you want a completely fresh state.
+
+The SQLite database file lives at `./data/briefen.db` — it is created automatically on first startup. To back up your data, copy this file. To reset, delete it.
 
 ## API
 
@@ -103,6 +105,10 @@ GET /api/summaries?page=0&size=10
 | `GET` | `/api/models` | List available LLM providers and models |
 | `GET/PUT` | `/api/settings` | Read/update user settings |
 | `GET` | `/api/readeck/bookmarks` | List Readeck bookmarks (proxied) |
+
+## Database
+
+Briefen uses **SQLite** — a file-based database that requires zero setup. The database file is created automatically at `./data/briefen.db` on first startup. To customize the path, set the `BRIEFEN_DB_PATH` environment variable.
 
 ## Changing the Ollama Model
 
@@ -159,8 +165,8 @@ briefen/
 │       ├── controller/      # SummarizeController, SettingsController, ModelsController, ReadeckController
 │       ├── dto/             # Request/response records
 │       ├── exception/       # Custom exceptions
-│       ├── model/           # MongoDB documents (Summary, UserSettings)
-│       ├── repository/      # Spring Data MongoDB repos
+│       ├── model/           # Domain models (Summary, UserSettings)
+│       ├── persistence/     # SQLite persistence layer (JPA)
 │       ├── service/         # Article fetcher, Ollama/OpenAI summarizer, orchestrator
 │       └── validation/      # URL validator
 └── frontend/

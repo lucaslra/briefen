@@ -1,7 +1,7 @@
 package com.briefen.controller;
 
 import com.briefen.model.UserSettings;
-import com.briefen.repository.UserSettingsRepository;
+import com.briefen.persistence.SettingsPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -28,12 +28,12 @@ public class ReadeckController {
 
     private static final Logger log = LoggerFactory.getLogger(ReadeckController.class);
 
-    private final UserSettingsRepository settingsRepository;
+    private final SettingsPersistence settingsPersistence;
     private final JsonMapper objectMapper;
     private final HttpClient httpClient;
 
-    public ReadeckController(UserSettingsRepository settingsRepository, JsonMapper objectMapper) {
-        this.settingsRepository = settingsRepository;
+    public ReadeckController(SettingsPersistence settingsPersistence, JsonMapper objectMapper) {
+        this.settingsPersistence = settingsPersistence;
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
@@ -154,7 +154,7 @@ public class ReadeckController {
     }
 
     private UserSettings loadSettings() {
-        return settingsRepository.findById(UserSettings.DEFAULT_ID)
+        return settingsPersistence.findDefault()
                 .orElseGet(UserSettings::new);
     }
 

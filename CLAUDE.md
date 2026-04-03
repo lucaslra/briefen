@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Briefen** — a local-first article summarizer. Paste a URL → Jsoup fetches the article → Ollama (local LLM) or OpenAI summarizes it → result is cached in MongoDB. No cloud dependencies by default; everything runs locally via Docker.
+**Briefen** — a local-first article summarizer. Paste a URL → Jsoup fetches the article → Ollama (local LLM) or OpenAI summarizes it → result is cached in SQLite. No cloud dependencies by default; everything runs locally.
 
 ## Commands
 
 ### Start everything
 ```bash
-make up      # Start Docker services (MongoDB + Ollama)
+make up      # Start Docker services (Ollama)
 make dev     # Start Docker services + backend + frontend in parallel
 ```
 
@@ -23,7 +23,7 @@ make frontend  # cd frontend && pnpm dev
 ### Docker (single-image build)
 ```bash
 make docker-build  # Build the Briefen Docker image
-make docker-up     # Start full stack: app + MongoDB + Ollama
+make docker-up     # Start full stack: app + Ollama
 make docker-down   # Stop full stack
 ```
 
@@ -38,7 +38,7 @@ make e2e                        # Playwright E2E tests (requires running app)
 ```bash
 make logs      # Tail Docker service logs
 make down      # Stop Docker services
-make clean     # Stop containers, remove mongo data + build artifacts (preserves Ollama weights)
+make clean     # Stop containers, remove build artifacts (preserves Ollama weights)
 make clean-all # Full reset including Ollama model weights
 ```
 
@@ -66,12 +66,12 @@ Browser (React/Vite :5173)
   → /api/* proxied to Spring Boot (:8080)
     → Jsoup (fetch article HTML)
     → Ollama (:11434, local LLM) or OpenAI (cloud, optional)
-    → MongoDB (:27017, persist summary)
+    → SQLite (file-based, ./data/briefen.db)
 
 # Docker (single image)
 Browser → Spring Boot (:8080, serves React static + API)
     → Ollama (external) or OpenAI (external)
-    → MongoDB (external)
+    → SQLite (local file)
 ```
 
 ### Backend (`backend/src/main/java/com/briefen/`)
@@ -82,14 +82,16 @@ Browser → Spring Boot (:8080, serves React static + API)
   - `ReadeckController` — `/api/readeck/*` proxies requests to a user-configured Readeck instance (API key stays server-side)
   - `GlobalExceptionHandler` — maps exceptions to HTTP responses
 - **service/** — core logic: article fetcher (Jsoup with Next.js/React SSR support), summarizer (Ollama and OpenAI via RestClient), and an orchestration service
-- **model/** — MongoDB documents: `Summary` (url, title, summary, modelUsed, createdAt, isRead, savedAt, notes) and `UserSettings`
-- **repository/** — Spring Data MongoDB repos; auto-index creation is enabled
+- **model/** — plain domain POJOs (no persistence annotations): `Summary` (url, title, summary, modelUsed, createdAt, isRead, savedAt, notes) and `UserSettings`
+- **persistence/** — SQLite persistence layer:
+  - `SummaryPersistence` / `SettingsPersistence` — interfaces used by services and controllers
+  - `persistence/sqlite/` — JPA implementations using JpaRepository + JpaSpecificationExecutor
 - **dto/** — request/response records
-- **config/** — `OllamaProperties`, `OpenAiProperties`, RestClient beans, `OllamaHealthIndicator`, `WebConfig` (SPA static file serving)
+- **config/** — `OllamaProperties`, `OpenAiProperties`, RestClient beans, `OllamaHealthIndicator`, `WebConfig` (SPA static file serving), `SqliteConfig`
 
 Key `application.yml` settings (all configurable via env vars):
 ```yaml
-spring.mongodb.uri: ${MONGODB_URI:mongodb://localhost:27017/briefen}
+spring.datasource.url: jdbc:sqlite:${BRIEFEN_DB_PATH:./data/briefen.db}
 server.port: ${SERVER_PORT:8080}
 ollama.base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
 ollama.model: ${OLLAMA_MODEL:gemma3:4b}
@@ -116,7 +118,7 @@ ollama.timeout: 300s
 All `/api` requests go through Vite's dev proxy to the Spring Boot backend. Fetch calls use `AbortController` for cancellation support.
 
 ### Infrastructure
-- **MongoDB 7** — `briefen` database, collections auto-created by Spring Data on first write
+- **SQLite** — file-based database at `./data/briefen.db`, no Docker service needed. Schema auto-managed by Hibernate `ddl-auto: update`
 - **Ollama** — local LLM; Docker Compose pulls `gemma2:2b`, `gemma3:4b`, `llama3.2:3b` on first start
 - **OpenAI** — optional cloud provider; API key configured in browser settings, stored server-side
 - **Readeck** — optional bookmark integration; URL and API key configured in browser settings

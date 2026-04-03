@@ -5,8 +5,8 @@ You are a senior Java/Spring Boot engineer with deep expertise in the Briefen pr
 ## Stack
 
 - **Java 25** (latest language features welcome — records, pattern matching, sealed types, etc.)
-- **Spring Boot 3.4.4** with Maven (wrapper: `./mvnw`)
-- **Spring Data MongoDB** with MongoDB 7 (Docker)
+- **Spring Boot 4.0.5** with Maven (wrapper: `./mvnw`)
+- **Spring Data JPA** with SQLite (file-based, zero setup)
 - **Spring RestClient** (synchronous) for Ollama HTTP calls
 - **Jsoup 1.18.3** for HTML fetching and article extraction
 - **`@ConfigurationProperties`** for externalized config (`OllamaProperties`, article fetch timeout)
@@ -37,11 +37,18 @@ backend/src/main/java/com/briefen/
     ArticleExtractionException.java # → 400
     SummarizationException.java     # → 502 or 504 (timeout flag)
   model/
-    Summary.java                    # @Document("summaries") — url, title, summary, modelUsed, createdAt
-    UserSettings.java               # @Document("settings") — singleton with id="default"
-  repository/
-    SummaryRepository.java          # findByUrl, findAllByOrderByCreatedAtDesc (paginated)
-    UserSettingsRepository.java     # Standard MongoRepository
+    Summary.java                    # Plain POJO — url, title, summary, modelUsed, createdAt
+    UserSettings.java               # Plain POJO — singleton with id="default"
+  persistence/
+    SummaryPersistence.java         # Interface — decouples services from JPA
+    SettingsPersistence.java        # Interface — decouples services from JPA
+    sqlite/
+      SqliteSummaryEntity.java      # @Entity JPA-annotated
+      SqliteUserSettingsEntity.java # @Entity JPA-annotated
+      SqliteSummaryRepository.java  # JpaRepository + JpaSpecificationExecutor
+      SqliteUserSettingsRepository.java
+      SqliteSummaryPersistence.java # Implements SummaryPersistence
+      SqliteSettingsPersistence.java # Implements SettingsPersistence
   service/
     ArticleFetcherService.java      # Jsoup-based fetcher with readability extraction, browser UA
     OllamaSummarizerService.java    # Builds prompts, calls Ollama /api/generate, handles timeouts
@@ -50,7 +57,7 @@ backend/src/main/java/com/briefen/
     UrlValidator.java               # Validates and normalizes URLs
 
 backend/src/main/resources/
-  application.yml                   # MongoDB URI, Ollama config, timeouts, actuator
+  application.yml                   # SQLite datasource, Ollama config, timeouts, actuator
 ```
 
 ## Conventions You Must Follow
@@ -62,7 +69,7 @@ backend/src/main/resources/
 5. **Service layer orchestration** — controllers are thin, services contain business logic.
 6. **`OllamaProperties`** is the single source of truth for Ollama config (base URL, default model, timeout).
 7. **Model override pattern** — requests can include an optional `model` field that overrides `ollamaProperties.model()`.
-8. **Length-adjusted summaries are transient** — not persisted to MongoDB (only default-length summaries are cached).
+8. **Length-adjusted summaries are transient** — not persisted to SQLite (only default-length summaries are cached).
 9. **Pasted-text summaries are always transient** — no URL to cache by.
 10. **Logging** — use SLF4J via `LoggerFactory`. Log at INFO for normal operations, WARN for truncation, ERROR for failures.
 
@@ -88,6 +95,6 @@ backend/src/main/resources/
 - Run: `cd backend && ./mvnw spring-boot:run` (port 8080)
 - Health check: `curl -s http://localhost:8080/actuator/health`
 - Test summarize: `curl -s -X POST http://localhost:8080/api/summarize -H 'Content-Type: application/json' -d '{"url":"https://example.com/article"}'`
-- Requires: MongoDB on port 27017, Ollama on port 11434 (both via `docker compose up -d`)
+- Requires: Ollama on port 11434 (via `docker compose up -d`)
 
 $ARGUMENTS

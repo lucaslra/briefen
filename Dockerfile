@@ -64,13 +64,14 @@ WORKDIR /app
 # Copy the fat JAR from the build stage
 COPY --from=backend-build /app/backend/target/*.jar app.jar
 
-RUN chown -R briefen:briefen /app
+# Create the data directory for SQLite and set ownership
+RUN mkdir -p /data && chown -R briefen:briefen /app /data
 USER briefen
 
 # ---------------------------------------------------------------------------
 # Environment variables — override at runtime via docker run -e or compose
 # ---------------------------------------------------------------------------
-# MONGODB_URI      — Full MongoDB connection string (default: mongodb://localhost:27017/briefen)
+# BRIEFEN_DB_PATH  — Path to the SQLite database file (default: ./data/briefen.db)
 # OLLAMA_BASE_URL  — Base URL of the Ollama service (default: http://localhost:11434)
 # OLLAMA_MODEL     — Ollama model to use for summarization (default: gemma3:4b)
 # SERVER_PORT      — Port the app listens on (default: 8080)

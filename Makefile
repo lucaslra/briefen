@@ -2,7 +2,7 @@
 
 ROOT := $(shell pwd)
 
-## Start Docker services (MongoDB + Ollama)
+## Start Docker services (Ollama)
 up:
 	docker compose up -d
 
@@ -26,10 +26,9 @@ dev: up
 logs:
 	docker compose logs -f
 
-## Stop containers, remove mongo data + build artifacts. Preserves Ollama model weights.
+## Stop containers, remove build artifacts. Preserves Ollama model weights.
 clean:
 	docker compose down
-	docker volume rm summizer_mongo_data 2>/dev/null || true
 	cd $(ROOT)/backend && ./mvnw clean
 	cd $(ROOT)/frontend && rm -rf node_modules dist
 
@@ -43,7 +42,7 @@ clean-all:
 docker-build:
 	docker build -t briefen .
 
-## Start full stack: app + MongoDB + Ollama (builds image if needed)
+## Start full stack: app + Ollama (builds image if needed)
 docker-up:
 	docker compose --profile app up -d --build
 

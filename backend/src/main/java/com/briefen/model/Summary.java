@@ -1,18 +1,11 @@
 package com.briefen.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
-
 import java.time.Instant;
 
-@Document(collection = "summaries")
 public class Summary {
 
-    @Id
     private String id;
 
-    @Indexed(unique = true, sparse = true)
     private String url;
 
     private String title;

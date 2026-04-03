@@ -35,7 +35,7 @@ The following are in scope:
 
 The following are **out of scope**:
 
-- Vulnerabilities in Ollama, MongoDB, or other third-party services (report to their respective projects)
+- Vulnerabilities in Ollama or other third-party services (report to their respective projects)
 - Issues that require physical access to the host machine
 - Social engineering attacks
 
@@ -43,7 +43,7 @@ The following are **out of scope**:
 
 Briefen is designed as a **local-first application**. By default:
 
-- All data stays on your machine (MongoDB, Ollama)
+- All data stays on your machine (SQLite, Ollama)
 - No external API calls unless you explicitly configure OpenAI or Readeck
 - Readeck API keys are stored server-side and never sent to the browser
 - OpenAI API keys are stored server-side with masked display in the UI

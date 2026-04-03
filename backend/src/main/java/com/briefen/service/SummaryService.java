@@ -6,19 +6,12 @@ import com.briefen.exception.SummarizationException;
 import com.briefen.exception.SummaryNotFoundException;
 import com.briefen.model.Summary;
 import com.briefen.model.UserSettings;
-import com.briefen.repository.SummaryRepository;
-import com.briefen.repository.UserSettingsRepository;
+import com.briefen.persistence.SettingsPersistence;
+import com.briefen.persistence.SummaryPersistence;
 import com.briefen.validation.UrlValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -42,27 +35,24 @@ public class SummaryService {
     private final ArticleFetcherService articleFetcher;
     private final OllamaSummarizerService ollamaSummarizer;
     private final OpenAiSummarizerService openAiSummarizer;
-    private final SummaryRepository repository;
-    private final UserSettingsRepository settingsRepository;
+    private final SummaryPersistence summaryPersistence;
+    private final SettingsPersistence settingsPersistence;
     private final OllamaProperties ollamaProperties;
-    private final MongoTemplate mongoTemplate;
 
     public SummaryService(UrlValidator urlValidator,
                           ArticleFetcherService articleFetcher,
                           OllamaSummarizerService ollamaSummarizer,
                           OpenAiSummarizerService openAiSummarizer,
-                          SummaryRepository repository,
-                          UserSettingsRepository settingsRepository,
-                          OllamaProperties ollamaProperties,
-                          MongoTemplate mongoTemplate) {
+                          SummaryPersistence summaryPersistence,
+                          SettingsPersistence settingsPersistence,
+                          OllamaProperties ollamaProperties) {
         this.urlValidator = urlValidator;
         this.articleFetcher = articleFetcher;
         this.ollamaSummarizer = ollamaSummarizer;
         this.openAiSummarizer = openAiSummarizer;
-        this.repository = repository;
-        this.settingsRepository = settingsRepository;
+        this.summaryPersistence = summaryPersistence;
+        this.settingsPersistence = settingsPersistence;
         this.ollamaProperties = ollamaProperties;
-        this.mongoTemplate = mongoTemplate;
     }
 
     /**
@@ -75,7 +65,7 @@ public class SummaryService {
 
         // Only use cache for default-length summaries
         if (!refresh && !isLengthAdjustment) {
-            Optional<Summary> cached = repository.findByUrl(normalizedUrl);
+            Optional<Summary> cached = summaryPersistence.findByUrl(normalizedUrl);
             if (cached.isPresent()) {
                 log.info("Returning cached summary for {}", normalizedUrl);
                 return cached.get();
@@ -94,7 +84,7 @@ public class SummaryService {
         }
 
         // Upsert: update existing or create new
-        Summary summary = repository.findByUrl(normalizedUrl)
+        Summary summary = summaryPersistence.findByUrl(normalizedUrl)
                 .orElseGet(Summary::new);
         boolean isNew = summary.getId() == null;
         summary.setUrl(normalizedUrl);
@@ -107,7 +97,7 @@ public class SummaryService {
             summary.setSavedAt(summary.getCreatedAt());
         }
 
-        return repository.save(summary);
+        return summaryPersistence.save(summary);
     }
 
     /**
@@ -123,7 +113,7 @@ public class SummaryService {
         // Check cache by sourceUrl before generating (skip for length adjustments)
         String effectiveUrl = (sourceUrl != null && !sourceUrl.isBlank()) ? sourceUrl.trim() : null;
         if (!isLengthAdjustment && effectiveUrl != null) {
-            Optional<Summary> cached = repository.findByUrl(effectiveUrl);
+            Optional<Summary> cached = summaryPersistence.findByUrl(effectiveUrl);
             if (cached.isPresent()) {
                 log.info("Returning cached summary for source URL: {}", effectiveUrl);
                 return cached.get();
@@ -145,7 +135,7 @@ public class SummaryService {
         Summary result;
         boolean isNew;
         if (effectiveUrl != null) {
-            var existing = repository.findByUrl(effectiveUrl);
+            var existing = summaryPersistence.findByUrl(effectiveUrl);
             result = existing.orElseGet(Summary::new);
             isNew = existing.isEmpty();
             result.setUrl(effectiveUrl);
@@ -161,7 +151,7 @@ public class SummaryService {
             result.setIsRead(false);
             result.setSavedAt(result.getCreatedAt());
         }
-        result = repository.save(result);
+        result = summaryPersistence.save(result);
         log.info("Generated and saved summary from pasted text ({} chars, title='{}')", text.length(), effectiveTitle);
         return result;
     }
@@ -187,7 +177,7 @@ public class SummaryService {
     }
 
     public Page<Summary> getSummaries(int page, int size) {
-        return repository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size));
+        return summaryPersistence.findAll(page, size);
     }
 
     public Page<Summary> getSummaries(int page, int size, String filter) {
@@ -195,78 +185,44 @@ public class SummaryService {
     }
 
     public Page<Summary> getSummaries(int page, int size, String filter, String search) {
-        PageRequest pageable = PageRequest.of(page, size);
-        Query query = buildFilterQuery(filter, search);
-
-        long total = mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Summary.class);
-        query.with(pageable);
-        List<Summary> items = mongoTemplate.find(query, Summary.class);
-        return new PageImpl<>(items, pageable, total);
+        return summaryPersistence.findAll(page, size, filter, search);
     }
 
     public List<Summary> getAllSummaries(String filter, String search) {
-        Query query = buildFilterQuery(filter, search);
-        return mongoTemplate.find(query, Summary.class);
-    }
-
-    private Query buildFilterQuery(String filter, String search) {
-        Query query = new Query().with(Sort.by(Sort.Direction.DESC, "createdAt"));
-
-        switch (filter) {
-            case "unread" -> query.addCriteria(Criteria.where("isRead").ne(true));
-            case "read" -> query.addCriteria(Criteria.where("isRead").is(true));
-            default -> {} // "all" — no filter
-        }
-
-        if (search != null && !search.isBlank()) {
-            String escapedSearch = search.replaceAll("([\\\\.*+?^${}()|\\[\\]])", "\\\\$1");
-            Criteria searchCriteria = new Criteria().orOperator(
-                    Criteria.where("title").regex(escapedSearch, "i"),
-                    Criteria.where("summary").regex(escapedSearch, "i"),
-                    Criteria.where("notes").regex(escapedSearch, "i")
-            );
-            query.addCriteria(searchCriteria);
-        }
-
-        return query;
+        return summaryPersistence.findAll(filter, search);
     }
 
     public Summary updateReadStatus(String id, boolean isRead) {
-        Summary summary = repository.findById(id)
+        Summary summary = summaryPersistence.findById(id)
                 .orElseThrow(() -> new SummaryNotFoundException(id));
         summary.setIsRead(isRead);
-        return repository.save(summary);
+        return summaryPersistence.save(summary);
     }
 
     public Summary updateNotes(String id, String notes) {
-        Summary summary = repository.findById(id)
+        Summary summary = summaryPersistence.findById(id)
                 .orElseThrow(() -> new SummaryNotFoundException(id));
         summary.setNotes((notes != null && !notes.isEmpty()) ? notes : null);
-        return repository.save(summary);
+        return summaryPersistence.save(summary);
     }
 
     public void deleteSummary(String id) {
-        if (!repository.existsById(id)) {
+        if (!summaryPersistence.existsById(id)) {
             throw new SummaryNotFoundException(id);
         }
-        repository.deleteById(id);
+        summaryPersistence.deleteById(id);
     }
 
     public long markAllAsRead() {
-        Query query = new Query(Criteria.where("isRead").ne(true));
-        Update update = new Update().set("isRead", true);
-        return mongoTemplate.updateMulti(query, update, Summary.class).getModifiedCount();
+        return summaryPersistence.markAllAsRead();
     }
 
     public long markAllAsUnread() {
-        Query query = new Query(Criteria.where("isRead").is(true));
-        Update update = new Update().set("isRead", false);
-        return mongoTemplate.updateMulti(query, update, Summary.class).getModifiedCount();
+        return summaryPersistence.markAllAsUnread();
     }
 
     public long getUnreadCount() {
-        Query query = new Query(Criteria.where("isRead").ne(true));
-        return mongoTemplate.count(query, Summary.class);
+        return summaryPersistence.countUnread();
     }
 
     /**
@@ -288,7 +244,7 @@ public class SummaryService {
     }
 
     private String loadOpenAiKey() {
-        return settingsRepository.findById(UserSettings.DEFAULT_ID)
+        return settingsPersistence.findDefault()
                 .map(UserSettings::getOpenaiApiKey)
                 .filter(key -> key != null && !key.isBlank())
                 .orElseThrow(() -> new SummarizationException(

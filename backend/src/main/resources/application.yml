@@ -4,9 +4,14 @@ spring:
   config:
     # Loads .env file if present (KEY=VALUE format). No-op when missing (CI/Docker use real env vars).
     import: optional:file:.env[.properties]
-  mongodb:
-    uri: ${MONGODB_URI:mongodb://localhost:27017/briefen}
-    auto-index-creation: true
+  datasource:
+    url: jdbc:sqlite:${BRIEFEN_DB_PATH:./data/briefen.db}
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
 
 server:
   port: ${SERVER_PORT:8080}

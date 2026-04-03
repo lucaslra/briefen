@@ -1,8 +1,7 @@
 package com.briefen.controller;
 
 import com.briefen.config.OllamaProperties;
-import com.briefen.model.UserSettings;
-import com.briefen.repository.UserSettingsRepository;
+import com.briefen.persistence.SettingsPersistence;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,16 +18,16 @@ import java.util.Map;
 public class ModelsController {
 
     private final OllamaProperties ollamaProperties;
-    private final UserSettingsRepository settingsRepository;
+    private final SettingsPersistence settingsPersistence;
 
-    public ModelsController(OllamaProperties ollamaProperties, UserSettingsRepository settingsRepository) {
+    public ModelsController(OllamaProperties ollamaProperties, SettingsPersistence settingsPersistence) {
         this.ollamaProperties = ollamaProperties;
-        this.settingsRepository = settingsRepository;
+        this.settingsPersistence = settingsPersistence;
     }
 
     @GetMapping
     public Map<String, Object> list() {
-        boolean hasOpenAiKey = settingsRepository.findById(UserSettings.DEFAULT_ID)
+        boolean hasOpenAiKey = settingsPersistence.findDefault()
                 .map(s -> s.getOpenaiApiKey() != null && !s.getOpenaiApiKey().isBlank())
                 .orElse(false);
 

@@ -5,9 +5,9 @@
 # What it does:
 #   Builds and tests both the Java/Spring Boot backend and the React/Vite
 #   frontend on every push and pull request targeting `main`. The backend job
-#   spins up real MongoDB and Ollama service containers so integration tests
-#   run against actual dependencies. A final `ci-passed` gate job provides a
-#   single required status check for branch protection.
+#   spins up a real Ollama service container so integration tests run against
+#   actual dependencies. A final `ci-passed` gate job provides a single
+#   required status check for branch protection.
 #
 # How to extend:
 #   - Change the Java version: update `java-version` in the backend job and
@@ -40,16 +40,6 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      mongo:
-        image: mongo:7
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --eval 'db.runCommand({ping:1})'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
       ollama:
         image: ollama/ollama
         ports:
@@ -61,7 +51,6 @@ jobs:
           --health-retries 5
 
     env:
-      MONGODB_URI: mongodb://localhost:27017/briefen-test
       OLLAMA_BASE_URL: http://localhost:11434
 
     defaults:
