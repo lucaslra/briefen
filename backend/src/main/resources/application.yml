@@ -34,6 +34,10 @@ anthropic:
 article:
   fetch-timeout: 10s
 
+briefen:
+  cors:
+    allowed-origins: ${BRIEFEN_CORS_ALLOWED_ORIGINS:}
+
 management:
   endpoints:
     web:
