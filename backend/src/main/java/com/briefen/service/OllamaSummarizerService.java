@@ -4,7 +4,9 @@ import com.briefen.config.OllamaProperties;
 import com.briefen.exception.SummarizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
@@ -112,6 +114,13 @@ public class OllamaSummarizerService {
             }
             log.error("Failed to reach Ollama", e);
             throw new SummarizationException("Could not connect to Ollama: " + e.getMessage(), e, false);
+        } catch (HttpServerErrorException e) {
+            if (e.getStatusCode() == HttpStatus.GATEWAY_TIMEOUT) {
+                log.error("Ollama gateway timed out (504)", e);
+                throw new SummarizationException("Summarization timed out. The article may be too long or the model is overloaded.", e, true);
+            }
+            log.error("Ollama server error: {}", e.getStatusCode(), e);
+            throw new SummarizationException("Ollama returned a server error: " + e.getStatusCode(), e, false);
         } catch (SummarizationException e) {
             throw e;
         } catch (Exception e) {
@@ -132,12 +141,14 @@ public class OllamaSummarizerService {
     }
 
     private String truncateIfNeeded(String text) {
-        // gemma3:4b supports 128K tokens (~100K words). 60K chars is a safe practical limit.
-        int maxChars = 60000;
+        // Local models have limited context windows and are slow on large inputs.
+        // 20K chars (~15K tokens) is a practical limit that keeps latency acceptable
+        // even for smaller models like llama3.2:3b and gemma2:2b.
+        int maxChars = 20_000;
         if (text.length() <= maxChars) {
             return text;
         }
-        log.warn("Article text truncated from {} to {} chars", text.length(), maxChars);
+        log.warn("Article text truncated from {} to {} chars for Ollama", text.length(), maxChars);
         return text.substring(0, maxChars) + "\n\n[Article truncated for length]";
     }
 }
