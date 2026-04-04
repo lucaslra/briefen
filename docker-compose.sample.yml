@@ -1,0 +1,166 @@
+# =============================================================================
+# Briefen — Sample docker-compose
+#
+# USAGE:
+#   cp docker-compose.sample.yml docker-compose.override.yml
+#   docker compose up
+#
+# This file is self-contained and ready to run. Customise the environment
+# variables below to match your setup, then start the stack.
+#
+# THREE LLM SCENARIOS:
+#   1. Ollama only (default)  — fully local, no API keys needed
+#   2. OpenAI                 — set OPENAI_API_KEY, pick a GPT/o-series model
+#   3. Anthropic              — set ANTHROPIC_API_KEY, pick a Claude model
+#
+# API keys for cloud providers are stored in the SQLite database and managed
+# through the in-app Settings page. The env vars below pre-seed the server
+# default model; per-user overrides are saved in the browser settings UI.
+# =============================================================================
+
+name: briefen
+
+# ---------------------------------------------------------------------------
+# Shared defaults — reused across services via YAML anchors
+# ---------------------------------------------------------------------------
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-restart: &default-restart
+  restart: unless-stopped
+
+# ---------------------------------------------------------------------------
+# Networks
+# ---------------------------------------------------------------------------
+networks:
+  briefen:
+    driver: bridge
+
+# ---------------------------------------------------------------------------
+# Volumes
+# ---------------------------------------------------------------------------
+volumes:
+  ollama_data:   # Ollama model weights — can be several GB; survives container restarts
+  briefen_data:  # SQLite database at /data/briefen.db
+
+# ---------------------------------------------------------------------------
+# Services
+# ---------------------------------------------------------------------------
+services:
+
+  # ── Ollama (local LLM) ──────────────────────────────────────────────────
+  #
+  # Serves local models via REST on port 11434. On first start it downloads
+  # the models listed in the command block (~2–8 GB depending on models).
+  #
+  # To add GPU support (NVIDIA):
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: all
+  #             capabilities: [gpu]
+  #
+  # To add GPU support (Apple Silicon / CPU-only):
+  #   Remove the deploy block entirely — Ollama auto-detects Metal on macOS
+  #   when running natively; inside Docker on macOS it runs on CPU.
+  # ──────────────────────────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: briefen-ollama
+    ports:
+      - "11434:11434"   # Expose only if you need to query Ollama directly from the host
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - briefen
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ollama serve &
+        until ollama ps > /dev/null 2>&1; do sleep 1; done
+        echo "Pulling models (this may take several minutes on first run)..."
+        # Remove any models you don't need to save disk space and download time.
+        # Available options: gemma2:2b (~1.6 GB), gemma3:4b (~3.3 GB), llama3.2:3b (~2 GB)
+        ollama pull gemma3:4b
+        # ollama pull gemma2:2b
+        # ollama pull llama3.2:3b
+        echo "Models ready."
+        wait
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s   # Give extra time on first run for the initial model pull
+    logging: *default-logging
+    <<: *default-restart
+
+  # ── Briefen app ─────────────────────────────────────────────────────────
+  #
+  # Spring Boot backend + React frontend served as a single container.
+  # After `docker compose up`, open http://localhost:8080.
+  #
+  # To build the image locally instead of pulling from the registry:
+  #   Replace `image: ghcr.io/...` with:
+  #     build:
+  #       context: .
+  #       dockerfile: Dockerfile
+  # ──────────────────────────────────────────────────────────────────────────
+  app:
+    image: ghcr.io/lucaslra/briefen:latest   # or use build: context: . (see above)
+    container_name: briefen-app
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    networks:
+      - briefen
+    environment:
+      # ── Database ───────────────────────────────────────────────────────
+      BRIEFEN_DB_PATH: /data/briefen.db
+
+      # ── Server ─────────────────────────────────────────────────────────
+      SERVER_PORT: 8080
+
+      # ── Ollama (local LLM) ─────────────────────────────────────────────
+      # Uses the internal Docker network name — do not change to localhost.
+      OLLAMA_BASE_URL: http://briefen-ollama:11434
+
+      # Default model used when the user has not selected one in Settings.
+      # Must be one of the models pulled above.
+      # Local:    gemma3:4b | gemma2:2b | llama3.2:3b
+      # OpenAI:   gpt-4o-mini | gpt-4o | gpt-4.1-nano | gpt-4.1-mini | o4-mini
+      # Anthropic: claude-haiku-4-5 | claude-sonnet-4-5 | claude-opus-4-5
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
+
+      # ── OpenAI (optional cloud provider) ──────────────────────────────
+      # Set this to enable OpenAI models. The key is stored in SQLite and
+      # can also be configured from the Settings page in the browser.
+      # OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+
+      # ── Anthropic (optional cloud provider) ───────────────────────────
+      # Set this to enable Anthropic/Claude models. Same storage behaviour
+      # as the OpenAI key above.
+      # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+
+    volumes:
+      - briefen_data:/data
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1g      # Spring Boot + SQLite; raise if you see OOM kills
+          cpus: "2.0"
+    logging: *default-logging
+    <<: *default-restart
