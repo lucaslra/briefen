@@ -150,6 +150,46 @@ Briefen can browse and summarize articles from a self-hosted [Readeck](https://r
 
 The Readeck API key never reaches the browser — all requests are proxied through the backend.
 
+## Deploying Behind a Reverse Proxy (Nginx / NPM)
+
+If you expose Briefen or Ollama through a reverse proxy (e.g. **Nginx Proxy Manager**, Traefik, Caddy), you must raise the default proxy timeouts. Summarization of long articles can take 2–3 minutes on local models — the default 60s timeout will drop the connection before the response arrives, showing the user a "Could not reach the server" error even though the summary completed fine on the backend.
+
+### Nginx Proxy Manager — Advanced tab
+
+Open each affected proxy host → **Edit → Advanced** and paste:
+
+```nginx
+proxy_read_timeout 310s;
+proxy_send_timeout 310s;
+proxy_connect_timeout 310s;
+```
+
+Apply this to **both** proxy hosts if both are behind NPM:
+
+| Host | Why |
+|------|-----|
+| Briefen app | Browser ↔ Spring Boot requests can take 2–3 min on slow models |
+| Ollama | Spring Boot ↔ Ollama inference requests can take equally long |
+
+### Plain Nginx
+
+Add the same directives inside the relevant `location` block:
+
+```nginx
+location / {
+    proxy_pass         http://briefen:8080;
+    proxy_read_timeout 310s;
+    proxy_send_timeout 310s;
+    proxy_connect_timeout 310s;
+}
+```
+
+### Why 310s?
+
+Briefen's Ollama client timeout is **300s** (`ollama.timeout` in `application.yml`) and Tomcat's connection timeout is set to **310s**. Setting the proxy to 310s ensures it always outlasts the longest possible Ollama request without dropping the connection prematurely.
+
+---
+
 ## CSS Approach
 
 Plain CSS with CSS custom properties and CSS Modules. Custom properties enable dark/light mode via a single `data-theme` attribute toggle on `<html>`. CSS Modules provide component-scoped styles without build tooling overhead. This keeps the stack minimal and consistent with the plain-JS-no-TypeScript philosophy.
