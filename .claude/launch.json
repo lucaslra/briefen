@@ -10,10 +10,17 @@
     },
     {
       "name": "frontend",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "/Users/lucaslra/.nvm/versions/node/v24.14.0/bin/node",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js", "--port", "5173"],
       "port": 5173,
       "cwd": "frontend"
+    },
+    {
+      "name": "extension",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "5174"],
+      "port": 5174,
+      "cwd": "extension"
     }
   ]
 }

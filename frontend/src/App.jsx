@@ -158,7 +158,7 @@ export default function App() {
         unreadCount={unreadCount}
       />
 
-      <main ref={mainRef} tabIndex={-1} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 20px', paddingBottom: '60px', outline: 'none' }}>
+      <main ref={mainRef} tabIndex={-1} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 20px', paddingBottom: '40px', outline: 'none' }}>
         <Routes>
           <Route path="/" element={<HomePage settings={settings} refreshUnreadCount={refreshUnreadCount} />} />
           <Route path="/reading-list" element={<ReadingList refreshUnreadCount={refreshUnreadCount} />} />
@@ -171,6 +171,12 @@ export default function App() {
           } />
         </Routes>
       </main>
+
+      <footer style={{ padding: '12px 20px 20px', textAlign: 'center' }}>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace', letterSpacing: '0.03em' }}>
+          {__APP_COMMIT__} · {__BUILD_DATE__}
+        </span>
+      </footer>
     </>
   )
 }
