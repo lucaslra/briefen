@@ -73,7 +73,7 @@ services:
     image: ollama/ollama:latest
     container_name: briefen-ollama
     ports:
-      - "11434:11434"   # Expose only if you need to query Ollama directly from the host
+      - "127.0.0.1:11434:11434"   # Bound to loopback — prevents LAN access to the unauthenticated Ollama API
     volumes:
       - ollama_data:/root/.ollama
     networks:

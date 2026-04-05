@@ -97,6 +97,18 @@ Use the [issue templates](https://github.com/lucaslra/briefen/issues/new/choose)
 - Expected vs actual behavior
 - Browser/OS/Docker versions if relevant
 
+## What Not to Commit
+
+Before opening a PR, verify you have not accidentally staged any of the following:
+
+- **`.env` files** — gitignored by design; use `.env.example` for documentation
+- **API keys, tokens, or passwords** — never hardcode credentials in source files; use environment variables
+- **SQLite database files** (`*.db`, `data/`) — gitignored; contain user data and potentially stored API keys
+- **IDE or OS files** (`.DS_Store`, `.idea/`) — use your global gitignore for these
+- **Large binary files** — check with the maintainer before adding assets
+
+CI includes secret scanning via Gitleaks. PRs that introduce credentials will fail the check.
+
 ## Security
 
 If you discover a security vulnerability, **do not open a public issue**. See [SECURITY.md](SECURITY.md) for responsible disclosure instructions.

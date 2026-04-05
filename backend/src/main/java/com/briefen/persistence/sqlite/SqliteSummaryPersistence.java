@@ -105,11 +105,15 @@ public class SqliteSummaryPersistence implements SummaryPersistence {
         }
 
         if (search != null && !search.isBlank()) {
-            String pattern = "%" + search.toLowerCase() + "%";
+            String escaped = search.toLowerCase()
+                    .replace("\\", "\\\\")
+                    .replace("%", "\\%")
+                    .replace("_", "\\_");
+            String pattern = "%" + escaped + "%";
             spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("title")), pattern),
-                    cb.like(cb.lower(root.get("summary")), pattern),
-                    cb.like(cb.lower(root.get("notes")), pattern)
+                    cb.like(cb.lower(root.get("title")), pattern, '\\'),
+                    cb.like(cb.lower(root.get("summary")), pattern, '\\'),
+                    cb.like(cb.lower(root.get("notes")), pattern, '\\')
             ));
         }
 

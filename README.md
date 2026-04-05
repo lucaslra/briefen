@@ -150,6 +150,18 @@ Briefen can browse and summarize articles from a self-hosted [Readeck](https://r
 
 The Readeck API key never reaches the browser — all requests are proxied through the backend.
 
+## Security & Network Exposure
+
+Briefen has **no built-in authentication**. All API endpoints are open by design for single-user local use.
+
+> **If you expose Briefen on a shared or public network**, add an authentication layer (HTTP Basic Auth, OAuth2 proxy, etc.) in front of it. Without auth, anyone who can reach the server can read your summaries, overwrite your API keys, and trigger LLM inference at your expense.
+
+Additionally, ensure the Ollama port (`11434`) is **not** exposed to the network. The default `docker-compose.yml` binds it to `127.0.0.1` — do not change this to `0.0.0.0` unless you have a specific reason. Ollama has no authentication.
+
+See [SECURITY.md](SECURITY.md) for the full threat model, accepted risks, and how to report vulnerabilities.
+
+---
+
 ## Deploying Behind a Reverse Proxy (Nginx / NPM)
 
 If you expose Briefen or Ollama through a reverse proxy (e.g. **Nginx Proxy Manager**, Traefik, Caddy), you must raise the default proxy timeouts. Summarization of long articles can take 2–3 minutes on local models — the default 60s timeout will drop the connection before the response arrives, showing the user a "Could not reach the server" error even though the summary completed fine on the backend.

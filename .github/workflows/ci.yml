@@ -33,6 +33,23 @@ concurrency:
 
 jobs:
   # ---------------------------------------------------------------------------
+  # Secret scanning — Gitleaks across full history
+  # ---------------------------------------------------------------------------
+  secrets:
+    name: Secret Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0   # full history so Gitleaks can scan all commits
+
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---------------------------------------------------------------------------
   # Backend — Java 25 / Spring Boot / Maven
   # ---------------------------------------------------------------------------
   backend:
@@ -152,13 +169,14 @@ jobs:
   ci-passed:
     name: CI Passed
     if: ${{ always() }}
-    needs: [backend, frontend]
+    needs: [secrets, backend, frontend]
     runs-on: ubuntu-latest
     steps:
       - name: Check job results
         run: |
-          if [[ "${{ needs.backend.result }}" != "success" || "${{ needs.frontend.result }}" != "success" ]]; then
+          if [[ "${{ needs.secrets.result }}" != "success" || "${{ needs.backend.result }}" != "success" || "${{ needs.frontend.result }}" != "success" ]]; then
             echo "One or more jobs failed:"
+            echo "  secrets:  ${{ needs.secrets.result }}"
             echo "  backend:  ${{ needs.backend.result }}"
             echo "  frontend: ${{ needs.frontend.result }}"
             exit 1

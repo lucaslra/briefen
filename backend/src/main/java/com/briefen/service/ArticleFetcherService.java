@@ -49,7 +49,7 @@ public class ArticleFetcherService {
                     .userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
                     .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                     .header("Accept-Language", "en-US,en;q=0.9")
-                    .followRedirects(true)
+                    .followRedirects(false)
                     .get();
         } catch (HttpStatusException e) {
             log.error("HTTP {} fetching article from {}: {}", e.getStatusCode(), url, e.getMessage());

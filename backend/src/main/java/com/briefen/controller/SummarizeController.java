@@ -12,6 +12,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -23,6 +26,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
+@Validated
 public class SummarizeController {
 
     private final SummaryService summaryService;
@@ -55,8 +59,8 @@ public class SummarizeController {
 
     @GetMapping("/summaries")
     public Page<SummarizeResponse> summaries(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(200) int size,
             @RequestParam(defaultValue = "all") String filter,
             @RequestParam(required = false) String search) {
         return summaryService.getSummaries(page, size, filter, search)
