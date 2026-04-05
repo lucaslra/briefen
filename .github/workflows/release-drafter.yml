@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run release drafter
-        uses: release-drafter/release-drafter@v7
+        uses: release-drafter/release-drafter@a6acf82562eee06318b77ab8cb0b11ed81c677a7  # v7
         with:
           config-name: release-drafter.yml
         env:

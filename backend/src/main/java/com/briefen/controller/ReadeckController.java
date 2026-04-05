@@ -2,9 +2,12 @@ package com.briefen.controller;
 
 import com.briefen.model.UserSettings;
 import com.briefen.persistence.SettingsPersistence;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -24,6 +27,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/readeck")
+@Validated
 public class ReadeckController {
 
     private static final Logger log = LoggerFactory.getLogger(ReadeckController.class);
@@ -57,8 +61,8 @@ public class ReadeckController {
      */
     @GetMapping("/bookmarks")
     public String listBookmarks(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "1") @Min(1) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status) {
 

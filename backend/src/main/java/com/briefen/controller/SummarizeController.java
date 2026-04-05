@@ -12,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.validation.annotation.Validated;
@@ -37,7 +38,7 @@ public class SummarizeController {
 
     @PostMapping("/summarize")
     public SummarizeResponse summarize(
-            @RequestBody SummarizeRequest request,
+            @Valid @RequestBody SummarizeRequest request,
             @RequestParam(defaultValue = "false") boolean refresh) {
 
         boolean hasUrl = request.url() != null && !request.url().isBlank();

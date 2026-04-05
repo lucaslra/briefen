@@ -2,6 +2,7 @@ package com.briefen.service;
 
 import com.briefen.exception.ArticleExtractionException;
 import com.briefen.exception.ArticleFetchException;
+import com.briefen.validation.UrlValidator;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import org.jsoup.HttpStatusException;
@@ -14,6 +15,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,12 +40,28 @@ public class ArticleFetcherService {
             "children:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
 
     private final int fetchTimeoutMs;
+    private final UrlValidator urlValidator;
 
-    public ArticleFetcherService(@Value("${article.fetch-timeout:10s}") Duration fetchTimeout) {
+    public ArticleFetcherService(@Value("${article.fetch-timeout:10s}") Duration fetchTimeout,
+                                 UrlValidator urlValidator) {
         this.fetchTimeoutMs = (int) fetchTimeout.toMillis();
+        this.urlValidator = urlValidator;
     }
 
     public ArticleContent fetch(String url) {
+        // Re-resolve and re-check the hostname just before connection to prevent DNS rebinding.
+        // The URL was validated at request time; a second check here closes the TOCTOU window
+        // between that validation and Jsoup's actual TCP connect.
+        try {
+            String host = URI.create(url).getHost();
+            InetAddress[] addresses = InetAddress.getAllByName(host);
+            for (InetAddress address : addresses) {
+                urlValidator.checkResolvedAddress(address);
+            }
+        } catch (UnknownHostException e) {
+            throw new ArticleFetchException("Could not resolve host: " + URI.create(url).getHost(), e);
+        }
+
         Document doc;
         try {
             doc = Jsoup.connect(url)

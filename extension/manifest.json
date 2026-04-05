@@ -22,8 +22,7 @@
   },
   "permissions": [
     "activeTab",
-    "storage",
-    "<all_urls>"
+    "storage"
   ],
   "browser_specific_settings": {
     "gecko": {

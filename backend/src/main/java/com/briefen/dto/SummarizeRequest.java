@@ -1,5 +1,7 @@
 package com.briefen.dto;
 
+import jakarta.validation.constraints.Size;
+
 /**
  * Accepts either a {@code url} to fetch and summarize, or raw {@code text}
  * (with an optional {@code title}) to summarize directly.
@@ -9,6 +11,7 @@ package com.briefen.dto;
  */
 public record SummarizeRequest(
         String url,
+        @Size(max = 500_000, message = "Text must not exceed 500,000 characters.")
         String text,
         String title,
         String lengthHint, // nullable — "shorter", "longer", or null for default

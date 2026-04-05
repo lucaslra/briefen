@@ -2,6 +2,7 @@ package com.briefen.service;
 
 import com.briefen.exception.ArticleExtractionException;
 import com.briefen.exception.ArticleFetchException;
+import com.briefen.validation.UrlValidator;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import org.junit.jupiter.api.AfterEach;
@@ -13,6 +14,7 @@ import java.time.Duration;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
 class ArticleFetcherServiceTest {
 
@@ -23,7 +25,9 @@ class ArticleFetcherServiceTest {
     void setUp() {
         wireMock = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
         wireMock.start();
-        articleFetcherService = new ArticleFetcherService(Duration.ofSeconds(5));
+        // Use a no-op UrlValidator mock so the DNS rebinding check does not block
+        // WireMock's localhost test server (127.0.0.1 is a loopback address).
+        articleFetcherService = new ArticleFetcherService(Duration.ofSeconds(5), mock(UrlValidator.class));
     }
 
     @AfterEach

@@ -113,7 +113,7 @@ public class AnthropicSummarizerService {
             if (e.getStatusCode().value() == 429) {
                 throw new SummarizationException("Anthropic rate limit exceeded. Please wait a moment and try again.", e, true);
             }
-            throw new SummarizationException("Anthropic API error: " + e.getResponseBodyAsString(), e, false);
+            throw new SummarizationException("Anthropic request failed with status " + e.getStatusCode().value() + ". Check server logs for details.", e, false);
         } catch (ResourceAccessException e) {
             if (isTimeoutCause(e)) {
                 log.error("Anthropic request timed out", e);

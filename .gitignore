@@ -38,6 +38,9 @@ Thumbs.db
 .env
 .env.local
 
+# Claude Code local settings (may contain private hostnames/IPs)
+.claude/settings.local.json
+
 # SQLite database
 data/
 *.db

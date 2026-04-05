@@ -36,6 +36,8 @@ function writeCache(settings) {
 
 export function useSettings() {
   const [settings, setSettings] = useState(loadFromCache)
+  // true when the API was unreachable on load and we are showing cached/default settings
+  const [settingsStale, setSettingsStale] = useState(false)
 
   // On mount, fetch the authoritative settings from the API
   useEffect(() => {
@@ -47,10 +49,12 @@ export function useSettings() {
           const merged = { ...DEFAULTS, ...data }
           setSettings(merged)
           writeCache(merged)
+          setSettingsStale(false)
         }
       })
       .catch(() => {
-        // API unreachable — keep using cached settings
+        // API unreachable — keep using cached/default settings and flag as stale
+        if (!cancelled) setSettingsStale(true)
       })
     return () => { cancelled = true }
   }, [])
@@ -116,5 +120,5 @@ export function useSettings() {
     })
   }, [])
 
-  return { settings, updateSetting, updateSettings }
+  return { settings, settingsStale, updateSetting, updateSettings }
 }

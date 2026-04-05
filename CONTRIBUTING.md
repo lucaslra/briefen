@@ -109,6 +109,16 @@ Before opening a PR, verify you have not accidentally staged any of the followin
 
 CI includes secret scanning via Gitleaks. PRs that introduce credentials will fail the check.
 
+To catch secrets locally before pushing, run Gitleaks against the full git history:
+
+```bash
+# Using Docker (no install required)
+docker run --rm -v "$(pwd):/repo" zricethezav/gitleaks:latest detect --source /repo --redact
+
+# Using the Gitleaks binary (https://github.com/gitleaks/gitleaks#installing)
+gitleaks detect --redact
+```
+
 ## Security
 
 If you discover a security vulnerability, **do not open a public issue**. See [SECURITY.md](SECURITY.md) for responsible disclosure instructions.
