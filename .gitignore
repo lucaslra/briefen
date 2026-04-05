@@ -40,3 +40,8 @@ Thumbs.db
 
 # SQLite database
 data/
+*.db
+*.db-shm
+*.db-wal
+# SQLite in-memory URI accidentally materialized on disk (e.g. backend/:memory:?cache=shared)
+backend/:memory*
