@@ -86,12 +86,12 @@ class OllamaSummarizerServiceTest {
     }
 
     @Test
-    void shouldTruncateVeryLongArticleText() {
-        // Arrange — build a string > 60000 chars
+    void shouldSendFullArticleTextWithoutTruncation() {
+        // Arrange — build a string that previously would have been truncated (> 50000 chars)
         String longText = "A".repeat(70_000);
 
         String responseBody = """
-                {"model":"gemma3:4b","response":"Summary of truncated article.","done":true}
+                {"model":"gemma3:4b","response":"Summary of long article.","done":true}
                 """;
         wireMock.stubFor(post(urlEqualTo("/api/generate"))
                 .willReturn(aResponse()
@@ -102,11 +102,10 @@ class OllamaSummarizerServiceTest {
         // Act
         String summary = service.summarize(longText, null, "gemma3:4b");
 
-        // Assert — call succeeded (truncation happened silently)
-        assertThat(summary).isEqualTo("Summary of truncated article.");
-        // Verify the actual body sent was truncated (max 60000 chars + truncation marker)
+        // Assert — full text was sent, no truncation marker present
+        assertThat(summary).isEqualTo("Summary of long article.");
         wireMock.verify(postRequestedFor(urlEqualTo("/api/generate"))
-                .withRequestBody(containing("[Article truncated for length]")));
+                .withRequestBody(notContaining("[Article truncated for length]")));
     }
 
     @Test
