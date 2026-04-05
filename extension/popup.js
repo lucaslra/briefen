@@ -132,3 +132,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   sendBtn.addEventListener('click', handleSend);
   retryBtn.addEventListener('click', handleSend);
 });
+
+// Export pure/async functions for unit testing.
+// `module` is undefined in the browser extension context, so this block is a no-op at runtime.
+if (typeof module !== 'undefined') {
+  module.exports = { DEFAULT_BRIEFEN_URL, TIMEOUT_MS, getStoredUrl, getCurrentTab, isUnsupportedUrl, truncateUrl, sendToBriefen };
+}

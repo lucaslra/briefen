@@ -59,7 +59,7 @@ public class AnthropicSummarizerService {
         };
 
         String systemMessage = SYSTEM_PROMPT.formatted(lengthGuideline);
-        String userMessage = "Summarize this article:\n\n" + truncateIfNeeded(articleText);
+        String userMessage = "Summarize this article:\n\n" + articleText;
 
         Map<String, Object> requestMap = Map.of(
                 "model", model,
@@ -140,13 +140,4 @@ public class AnthropicSummarizerService {
         return false;
     }
 
-    private String truncateIfNeeded(String text) {
-        // Claude models handle 200K tokens. 120K chars is safe.
-        int maxChars = 120_000;
-        if (text.length() <= maxChars) {
-            return text;
-        }
-        log.warn("Article text truncated from {} to {} chars for Anthropic", text.length(), maxChars);
-        return text.substring(0, maxChars) + "\n\n[Article truncated for length]";
-    }
 }

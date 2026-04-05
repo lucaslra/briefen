@@ -57,7 +57,7 @@ public class OpenAiSummarizerService {
         };
 
         String systemMessage = SYSTEM_PROMPT.formatted(lengthGuideline);
-        String userMessage = "Summarize this article:\n\n" + truncateIfNeeded(articleText);
+        String userMessage = "Summarize this article:\n\n" + articleText;
 
         var requestMap = new java.util.HashMap<String, Object>();
         requestMap.put("model", model);
@@ -150,13 +150,4 @@ public class OpenAiSummarizerService {
         return false;
     }
 
-    private String truncateIfNeeded(String text) {
-        // OpenAI models handle 128K+ tokens. 120K chars is safe.
-        int maxChars = 120_000;
-        if (text.length() <= maxChars) {
-            return text;
-        }
-        log.warn("Article text truncated from {} to {} chars for OpenAI", text.length(), maxChars);
-        return text.substring(0, maxChars) + "\n\n[Article truncated for length]";
-    }
 }

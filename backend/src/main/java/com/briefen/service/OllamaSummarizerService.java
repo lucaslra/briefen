@@ -76,7 +76,7 @@ public class OllamaSummarizerService {
         };
 
         String systemPrompt = BASE_PROMPT.formatted(lengthGuideline);
-        String prompt = systemPrompt + "\n\nArticle text:\n---\n" + truncateIfNeeded(articleText, model) + "\n---\n\nSummary:";
+        String prompt = systemPrompt + "\n\nArticle text:\n---\n" + articleText + "\n---\n\nSummary:";
 
         Map<String, Object> request = Map.of(
                 "model", model,
@@ -140,55 +140,4 @@ public class OllamaSummarizerService {
         return false;
     }
 
-    /**
-     * Returns the maximum input characters to send to Ollama based on the model's
-     * known context window and generation speed.
-     *
-     * <ul>
-     *   <li><b>Large</b> (~50K): modern capable models with 128K+ context and fast generation
-     *       (gemma3, llama3.1, llama3.3, mistral, mixtral, qwen2.5, phi4, deepseek-r1, command-r)</li>
-     *   <li><b>Small</b> (~20K): lightweight/fast models with smaller contexts or limited RAM
-     *       (gemma2:2b, llama3.2:3b, phi3-mini, tinyllama, moondream, smollm)</li>
-     *   <li><b>Default</b> (~30K): unknown or unrecognised models — conservative middle ground</li>
-     * </ul>
-     */
-    private int maxCharsForModel(String model) {
-        if (model == null) return 30_000;
-        String m = model.toLowerCase();
-
-        // Small / slow models — keep input tight to avoid proxy timeouts
-        if (m.contains("gemma2:2b") || m.contains("gemma2-2b")
-                || m.contains("llama3.2:3b") || m.contains("llama3.2-3b")
-                || m.contains("llama3.2:1b") || m.contains("llama3.2-1b")
-                || m.contains("phi3-mini") || m.contains("phi3:mini")
-                || m.contains("tinyllama")
-                || m.contains("moondream")
-                || m.contains("smollm")) {
-            return 20_000;
-        }
-
-        // Large / capable models — generous context, fast enough for long articles
-        if (m.contains("gemma3")
-                || m.contains("llama3.1") || m.contains("llama3.3")
-                || m.contains("llama3:") || m.contains("llama3-")   // llama3:8b, llama3:70b
-                || m.contains("mistral") || m.contains("mixtral")
-                || m.contains("qwen2.5") || m.contains("qwen2-5")
-                || m.contains("phi4") || m.contains("phi-4")
-                || m.contains("deepseek")
-                || m.contains("command-r")) {
-            return 50_000;
-        }
-
-        // Unknown model — conservative default
-        return 30_000;
-    }
-
-    private String truncateIfNeeded(String text, String model) {
-        int maxChars = maxCharsForModel(model);
-        if (text.length() <= maxChars) {
-            return text;
-        }
-        log.warn("Article text truncated from {} to {} chars for model '{}'", text.length(), maxChars, model);
-        return text.substring(0, maxChars) + "\n\n[Article truncated for length]";
-    }
 }
