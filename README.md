@@ -110,6 +110,47 @@ GET /api/summaries?page=0&size=10
 
 Briefen uses **SQLite** — a file-based database that requires zero setup. The database file is created automatically at `./data/briefen.db` on first startup. To customize the path, set the `BRIEFEN_DB_PATH` environment variable.
 
+### Backup & Restore
+
+**Your entire Briefen state** (summaries, notes, API keys, settings) lives in a single file. Backing up is just copying that file.
+
+#### Docker deployments (named volume)
+
+```bash
+# Find where Docker stores the volume on your host
+docker volume inspect briefen_briefen_data
+
+# Back up — creates a compressed archive on the host
+docker run --rm \
+  -v briefen_briefen_data:/data \
+  -v "$(pwd)":/backup \
+  alpine tar czf /backup/briefen-backup-$(date +%Y%m%d).tar.gz -C /data .
+
+# Restore — stops the app first to avoid write conflicts
+docker compose down
+docker run --rm \
+  -v briefen_briefen_data:/data \
+  -v "$(pwd)":/backup \
+  alpine sh -c "rm -rf /data/* && tar xzf /backup/briefen-backup-YYYYMMDD.tar.gz -C /data"
+docker compose up -d
+```
+
+#### Local / bare-metal deployments
+
+```bash
+# Back up
+cp ./data/briefen.db ./briefen-backup-$(date +%Y%m%d).db
+
+# Restore
+cp ./briefen-backup-YYYYMMDD.db ./data/briefen.db
+```
+
+#### Automated backups (optional)
+
+For continuous replication to S3-compatible storage (Cloudflare R2, Backblaze B2, MinIO), add a [Litestream](https://litestream.io) sidecar alongside Briefen. Litestream streams SQLite's WAL to object storage in real time with no application changes required.
+
+> ⚠️ **`make clean-all` destroys all data** including the database volume and Ollama model weights. Run it only when you want a completely fresh state.
+
 ## Changing the Ollama Model
 
 The default model is `gemma3:4b`, chosen for its excellent summarization quality with 128K context window. To change it:
@@ -199,6 +240,39 @@ location / {
 ### Why 310s?
 
 Briefen's Ollama client timeout is **300s** (`ollama.timeout` in `application.yml`) and Tomcat's connection timeout is set to **310s**. Setting the proxy to 310s ensures it always outlasts the longest possible Ollama request without dropping the connection prematurely.
+
+---
+
+## Configuration Reference
+
+All runtime behaviour is controlled through environment variables. In local development, place these in a `.env` file at the repo root — it is loaded automatically via `spring.config.import`.
+
+| Variable | Default | Description |
+|---|---|---|
+| `BRIEFEN_DB_PATH` | `./data/briefen.db` | Path to the SQLite database file. In Docker, point this at a named-volume mount path (e.g. `/data/briefen.db`). |
+| `SERVER_PORT` | `8080` | HTTP port the server listens on. |
+| `SERVER_FORWARD_HEADERS_STRATEGY` | `NONE` | Set to `FRAMEWORK` when running behind a reverse proxy (Nginx, Traefik, Caddy) to trust `X-Forwarded-For` / `X-Forwarded-Proto` headers. |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Base URL of the Ollama API. Override when Ollama runs in a separate container or host. |
+| `OLLAMA_MODEL` | `gemma3:4b` | Default Ollama model used for summarization. The model must be pulled in Ollama first. |
+| `BRIEFEN_CORS_ALLOWED_ORIGINS` | *(empty — CORS disabled)* | Comma-separated list of allowed CORS origins. Only required when the frontend is served from a different origin than the backend. |
+
+---
+
+## Browser Integration
+
+A bookmarklet lets you send any page to Briefen with one click — no copy-pasting required.
+
+### Bookmarklet setup
+
+1. Create a new browser bookmark (right-click the bookmarks bar → **Add page** or **New bookmark**)
+2. Set the **name** to `Summarize with Briefen`
+3. Set the **URL** to the snippet below, replacing `http://localhost:8080` with your Briefen base URL:
+
+```
+javascript:window.open('http://localhost:8080/?url='+encodeURIComponent(location.href))
+```
+
+Click the bookmark on any article page and Briefen opens in a new tab with the URL pre-filled, ready to summarize.
 
 ---
 

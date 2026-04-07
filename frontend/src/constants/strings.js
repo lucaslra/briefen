@@ -159,6 +159,8 @@ export const STRINGS = {
   BATCH_COMPLETE: '{done} of {total} articles summarized.',
   BATCH_VIEW_READING_LIST: 'View in reading list',
   BATCH_DISMISS: 'Done',
+
+  SETTINGS_VERSION_PREFIX: 'Briefen',
 }
 
 /**

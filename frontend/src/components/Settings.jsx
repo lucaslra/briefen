@@ -38,7 +38,15 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
   const [readeckKeyDraft, setReadeckKeyDraft] = useState('')
   const [readeckSaved, setReadeckSaved] = useState(false)
   const [modelsLoading, setModelsLoading] = useState(true)
+  const [appVersion, setAppVersion] = useState(null)
   const { supported, permission, requestPermission } = useNotification()
+
+  useEffect(() => {
+    fetch('/api/version')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setAppVersion(data.version) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     // modelsLoading is already initialized to true
@@ -393,6 +401,10 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
             </label>
           )}
         </section>
+      )}
+
+      {appVersion && (
+        <p className={styles.versionFooter}>{STRINGS.SETTINGS_VERSION_PREFIX} v{appVersion}</p>
       )}
     </div>
   )
