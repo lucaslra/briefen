@@ -19,6 +19,7 @@ public class UserSettings {
     private String anthropicApiKey;
     private String readeckApiKey;
     private String readeckUrl;
+    private String webhookUrl;
     private Instant updatedAt;
 
     public UserSettings() {
@@ -67,6 +68,12 @@ public class UserSettings {
     public String getReadeckUrl() { return readeckUrl; }
     public void setReadeckUrl(String readeckUrl) {
         this.readeckUrl = readeckUrl;
+        this.updatedAt = Instant.now();
+    }
+
+    public String getWebhookUrl() { return webhookUrl; }
+    public void setWebhookUrl(String webhookUrl) {
+        this.webhookUrl = webhookUrl;
         this.updatedAt = Instant.now();
     }
 

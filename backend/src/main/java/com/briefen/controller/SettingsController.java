@@ -64,6 +64,19 @@ public class SettingsController {
                 }
             }
         }
+        if (dto.webhookUrl() != null) {
+            if (dto.webhookUrl().isBlank()) {
+                settings.setWebhookUrl(null);
+            } else {
+                try {
+                    urlValidator.validateServiceUrl(dto.webhookUrl());
+                    settings.setWebhookUrl(dto.webhookUrl());
+                } catch (InvalidUrlException e) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Invalid webhook URL: " + e.getMessage());
+                }
+            }
+        }
 
         return UserSettingsDto.fromMasked(settingsPersistence.save(settings));
     }

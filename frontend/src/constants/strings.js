@@ -108,6 +108,12 @@ export const STRINGS = {
   CONFIRM_REMOVE_ANTHROPIC: 'Remove your Anthropic API key? Anthropic models will no longer be available.',
   CONFIRM_REMOVE_READECK: 'Remove your Readeck configuration? The Readeck tab will be hidden.',
 
+  SETTINGS_WEBHOOK_HEADING: 'Webhook Notifications',
+  SETTINGS_WEBHOOK_SUBHEADING: 'POST a JSON event to a URL whenever a summary is saved. Compatible with Home Assistant, ntfy, Gotify, and any HTTP endpoint.',
+  SETTINGS_WEBHOOK_URL_LABEL: 'Webhook URL',
+  SETTINGS_WEBHOOK_URL_PLACEHOLDER: 'https://ntfy.example.com/briefen',
+  CONFIRM_REMOVE_WEBHOOK: 'Remove the webhook URL? Notifications will stop being sent.',
+
   RECENT_LOAD_MORE: 'Load more',
   RECENT_LOADING: 'Loading\u2026',
   RECENT_EMPTY_HINT: 'Your summaries will appear here.',

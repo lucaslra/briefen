@@ -32,6 +32,7 @@ class SummaryServiceTest {
     @Mock private AnthropicSummarizerService anthropicSummarizer;
     @Mock private SummaryPersistence summaryPersistence;
     @Mock private SettingsPersistence settingsPersistence;
+    @Mock private WebhookService webhookService;
 
     private OllamaProperties ollamaProperties;
     private SummaryService summaryService;
@@ -47,7 +48,8 @@ class SummaryServiceTest {
         ollamaProperties = new OllamaProperties("http://localhost:11434", "gemma3:4b", java.time.Duration.ofSeconds(300));
         summaryService = new SummaryService(
                 urlValidator, articleFetcher, ollamaSummarizer, openAiSummarizer,
-                anthropicSummarizer, summaryPersistence, settingsPersistence, ollamaProperties
+                anthropicSummarizer, summaryPersistence, settingsPersistence, ollamaProperties,
+                webhookService
         );
     }
 

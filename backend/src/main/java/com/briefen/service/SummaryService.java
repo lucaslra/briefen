@@ -43,6 +43,7 @@ public class SummaryService {
     private final SummaryPersistence summaryPersistence;
     private final SettingsPersistence settingsPersistence;
     private final OllamaProperties ollamaProperties;
+    private final WebhookService webhookService;
 
     public SummaryService(UrlValidator urlValidator,
                           ArticleFetcherService articleFetcher,
@@ -51,7 +52,8 @@ public class SummaryService {
                           AnthropicSummarizerService anthropicSummarizer,
                           SummaryPersistence summaryPersistence,
                           SettingsPersistence settingsPersistence,
-                          OllamaProperties ollamaProperties) {
+                          OllamaProperties ollamaProperties,
+                          WebhookService webhookService) {
         this.urlValidator = urlValidator;
         this.articleFetcher = articleFetcher;
         this.ollamaSummarizer = ollamaSummarizer;
@@ -60,6 +62,7 @@ public class SummaryService {
         this.summaryPersistence = summaryPersistence;
         this.settingsPersistence = settingsPersistence;
         this.ollamaProperties = ollamaProperties;
+        this.webhookService = webhookService;
     }
 
     /**
@@ -104,7 +107,9 @@ public class SummaryService {
             summary.setSavedAt(summary.getCreatedAt());
         }
 
-        return summaryPersistence.save(summary);
+        Summary saved = summaryPersistence.save(summary);
+        webhookService.send(saved);
+        return saved;
     }
 
     /**
@@ -159,6 +164,7 @@ public class SummaryService {
             result.setSavedAt(result.getCreatedAt());
         }
         result = summaryPersistence.save(result);
+        webhookService.send(result);
         log.info("Generated and saved summary from pasted text ({} chars, title='{}')", text.length(), effectiveTitle);
         return result;
     }

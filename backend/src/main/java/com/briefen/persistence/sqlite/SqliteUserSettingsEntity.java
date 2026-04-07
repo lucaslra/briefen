@@ -23,6 +23,8 @@ public class SqliteUserSettingsEntity {
     private String anthropicApiKey;
     private String readeckApiKey;
     private String readeckUrl;
+    @Column(name = "webhook_url")
+    private String webhookUrl;
     private Instant updatedAt;
 
     public SqliteUserSettingsEntity() {
@@ -39,6 +41,7 @@ public class SqliteUserSettingsEntity {
         entity.anthropicApiKey = s.getAnthropicApiKey();
         entity.readeckApiKey = s.getReadeckApiKey();
         entity.readeckUrl = s.getReadeckUrl();
+        entity.webhookUrl = s.getWebhookUrl();
         entity.updatedAt = s.getUpdatedAt();
         return entity;
     }
@@ -54,6 +57,7 @@ public class SqliteUserSettingsEntity {
         s.setAnthropicApiKey(anthropicApiKey);
         s.setReadeckApiKey(readeckApiKey);
         s.setReadeckUrl(readeckUrl);
+        s.setWebhookUrl(webhookUrl);
         s.setUpdatedAt(updatedAt); // Re-set to original value after setters updated it
         return s;
     }
@@ -81,6 +85,9 @@ public class SqliteUserSettingsEntity {
 
     public String getReadeckUrl() { return readeckUrl; }
     public void setReadeckUrl(String readeckUrl) { this.readeckUrl = readeckUrl; }
+
+    public String getWebhookUrl() { return webhookUrl; }
+    public void setWebhookUrl(String webhookUrl) { this.webhookUrl = webhookUrl; }
 
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }

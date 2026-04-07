@@ -275,6 +275,50 @@ All runtime behaviour is controlled through environment variables. In local deve
 | `BRIEFEN_CORS_ALLOWED_ORIGINS` | *(empty — CORS disabled)* | Comma-separated list of allowed CORS origins. Only required when the frontend is served from a different origin than the backend. |
 | `BRIEFEN_AUTH_USERNAME` | *(empty — auth disabled)* | Username for HTTP Basic Auth. Set together with `BRIEFEN_AUTH_PASSWORD` to enable authentication. |
 | `BRIEFEN_AUTH_PASSWORD` | *(empty — auth disabled)* | Password for HTTP Basic Auth. Set together with `BRIEFEN_AUTH_USERNAME`. Always use HTTPS when auth is enabled. |
+| `BRIEFEN_WEBHOOK_URL` | *(empty — webhooks disabled)* | HTTP/S URL to POST a JSON notification to whenever a summary is saved. Compatible with Home Assistant, ntfy, Gotify, and any HTTP endpoint. |
+
+---
+
+## Webhook Notifications
+
+Briefen can POST a JSON notification to any HTTP endpoint whenever a summary is saved. Set `BRIEFEN_WEBHOOK_URL` to enable it:
+
+```bash
+BRIEFEN_WEBHOOK_URL=https://ntfy.sh/my-briefen-topic
+```
+
+### Payload
+
+```json
+{
+  "event": "summary.completed",
+  "id": "3f2a1b...",
+  "url": "https://example.com/article",
+  "title": "Article Title",
+  "model": "gemma3:4b",
+  "createdAt": "2026-04-07T10:00:00Z"
+}
+```
+
+Delivery is **fire-and-forget** on a virtual thread — webhook failures are logged at `WARN` level but never affect the summarization response. The connection and read timeout is 10 seconds.
+
+### Integration examples
+
+**ntfy (self-hosted push notifications)**
+```bash
+BRIEFEN_WEBHOOK_URL=https://ntfy.example.com/briefen
+```
+
+**Home Assistant**
+```bash
+BRIEFEN_WEBHOOK_URL=https://homeassistant.local:8123/api/webhook/briefen-summary-done
+```
+
+**Gotify**
+```bash
+# Gotify expects a different body format — use an intermediary like n8n or a small proxy
+BRIEFEN_WEBHOOK_URL=https://gotify.example.com/message?token=YOUR_TOKEN
+```
 
 ---
 

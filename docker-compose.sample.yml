@@ -151,6 +151,17 @@ services:
       # as the OpenAI key above.
       # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
 
+      # ── Webhook notifications (optional) ──────────────────────────────
+      # When set, Briefen POSTs a JSON payload to this URL every time a
+      # summary is saved. Compatible with Home Assistant, ntfy, Gotify, and
+      # any HTTP endpoint that accepts a JSON POST body. Delivery is
+      # fire-and-forget; failures are logged but do not affect summarization.
+      #
+      # Example payload:
+      #   {"event":"summary.completed","id":"...","url":"...","title":"...",
+      #    "model":"gemma3:4b","createdAt":"2026-04-07T10:00:00Z"}
+      # BRIEFEN_WEBHOOK_URL: ${BRIEFEN_WEBHOOK_URL:-}
+
       # ── Authentication (optional) ──────────────────────────────────────
       # Uncomment and set both variables to enable HTTP Basic Auth.
       # When set, ALL routes (except /actuator/health) require a username

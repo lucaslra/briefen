@@ -46,6 +46,8 @@ briefen:
   auth:
     username: ${BRIEFEN_AUTH_USERNAME:}
     password: ${BRIEFEN_AUTH_PASSWORD:}
+  webhook:
+    url: ${BRIEFEN_WEBHOOK_URL:}
 
 management:
   endpoints:

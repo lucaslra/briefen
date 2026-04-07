@@ -9,7 +9,8 @@ public record UserSettingsDto(
         String openaiApiKey,
         String anthropicApiKey,
         String readeckApiKey,
-        String readeckUrl
+        String readeckUrl,
+        String webhookUrl
 ) {
     /**
      * Returns a response-safe DTO with API keys masked (e.g., "sk-...abc1").
@@ -23,7 +24,8 @@ public record UserSettingsDto(
                 maskKey(entity.getOpenaiApiKey()),
                 maskKey(entity.getAnthropicApiKey()),
                 maskKey(entity.getReadeckApiKey()),
-                entity.getReadeckUrl()
+                entity.getReadeckUrl(),
+                entity.getWebhookUrl()
         );
     }
 

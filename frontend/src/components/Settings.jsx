@@ -37,6 +37,8 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
   const [readeckUrlDraft, setReadeckUrlDraft] = useState('')
   const [readeckKeyDraft, setReadeckKeyDraft] = useState('')
   const [readeckSaved, setReadeckSaved] = useState(false)
+  const [webhookUrlDraft, setWebhookUrlDraft] = useState('')
+  const [webhookSaved, setWebhookSaved] = useState(false)
   const [modelsLoading, setModelsLoading] = useState(true)
   const [appVersion, setAppVersion] = useState(null)
   const { supported, permission, requestPermission } = useNotification()
@@ -82,6 +84,12 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
     setPrevReadeckUrl(settings.readeckUrl)
     if (settings.readeckApiKey) setReadeckKeyDraft(settings.readeckApiKey)
     if (settings.readeckUrl) setReadeckUrlDraft(settings.readeckUrl)
+  }
+
+  const [prevWebhookUrl, setPrevWebhookUrl] = useState(settings.webhookUrl)
+  if (prevWebhookUrl !== settings.webhookUrl) {
+    setPrevWebhookUrl(settings.webhookUrl)
+    if (settings.webhookUrl) setWebhookUrlDraft(settings.webhookUrl)
   }
 
   const selectedModel = settings.model || defaultModel
@@ -161,6 +169,25 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
     await onUpdateSettings({ readeckUrl: '', readeckApiKey: '' })
     setReadeckUrlDraft('')
     setReadeckKeyDraft('')
+  }
+
+  const hasWebhookUrl = settings.webhookUrl != null && settings.webhookUrl !== ''
+
+  async function handleSaveWebhook() {
+    if (!webhookUrlDraft.trim()) return
+    try {
+      await onUpdateSettings({ webhookUrl: webhookUrlDraft.trim() })
+      setWebhookSaved(true)
+      setTimeout(() => setWebhookSaved(false), 2000)
+    } catch {
+      alert('Failed to save webhook URL. Please check the URL and try again.')
+    }
+  }
+
+  async function handleRemoveWebhook() {
+    if (!window.confirm(STRINGS.CONFIRM_REMOVE_WEBHOOK)) return
+    await onUpdateSettings({ webhookUrl: '' })
+    setWebhookUrlDraft('')
   }
 
   return (
@@ -358,6 +385,35 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
                 </button>
                 {hasReadeck && (
                   <button className={styles.apiKeyRemoveBtn} onClick={handleRemoveReadeck}>
+                    {STRINGS.SETTINGS_API_KEY_REMOVE}
+                  </button>
+                )}
+              </div>
+            </div>
+          </section>
+          <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_WEBHOOK_HEADING}</h3>
+            <p className={styles.sectionDesc}>{STRINGS.SETTINGS_WEBHOOK_SUBHEADING}</p>
+
+            <div className={styles.apiKeyGroup}>
+              <label className={styles.apiKeyLabel}>{STRINGS.SETTINGS_WEBHOOK_URL_LABEL}</label>
+              <div className={styles.apiKeyRow}>
+                <input
+                  type="url"
+                  className={styles.apiKeyInput}
+                  value={webhookUrlDraft}
+                  onChange={e => setWebhookUrlDraft(e.target.value)}
+                  placeholder={STRINGS.SETTINGS_WEBHOOK_URL_PLACEHOLDER}
+                />
+                <button
+                  className={styles.apiKeySaveBtn}
+                  onClick={handleSaveWebhook}
+                  disabled={!webhookUrlDraft.trim() || webhookUrlDraft.trim() === settings.webhookUrl}
+                >
+                  {webhookSaved ? STRINGS.SETTINGS_API_KEY_SAVED : (hasWebhookUrl ? STRINGS.SETTINGS_API_KEY_UPDATE : STRINGS.SETTINGS_API_KEY_SAVE)}
+                </button>
+                {hasWebhookUrl && (
+                  <button className={styles.apiKeyRemoveBtn} onClick={handleRemoveWebhook}>
                     {STRINGS.SETTINGS_API_KEY_REMOVE}
                   </button>
                 )}

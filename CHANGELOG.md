@@ -10,6 +10,7 @@ Briefen uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 - Optional HTTP Basic Auth — set `BRIEFEN_AUTH_USERNAME` and `BRIEFEN_AUTH_PASSWORD` to protect all routes; `/actuator/health` remains public for health probes. Auth is disabled by default for local single-user use.
+- Outgoing webhook notifications — set `BRIEFEN_WEBHOOK_URL` to receive a JSON `summary.completed` event every time a summary is saved. Fire-and-forget on a virtual thread; failures are logged and do not affect summarization. Compatible with Home Assistant, ntfy, Gotify, and any HTTP endpoint.
 
 ---
 
