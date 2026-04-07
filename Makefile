@@ -33,6 +33,7 @@ clean:
 	cd $(ROOT)/frontend && rm -rf node_modules dist
 
 ## Full cleanup including Ollama model weights (triggers re-download on next `make up`)
+# ⚠️  This destroys ALL data including your SQLite database and Ollama model weights
 clean-all:
 	docker compose down -v
 	cd $(ROOT)/backend && ./mvnw clean

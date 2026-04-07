@@ -59,6 +59,9 @@ FROM eclipse-temurin:25-jre AS runtime
 # Run as non-root for security
 RUN groupadd --system briefen && useradd --system --gid briefen briefen
 
+# Install curl for the HEALTHCHECK (must run as root, before USER switch)
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Copy the fat JAR from the build stage
@@ -66,7 +69,6 @@ COPY --from=backend-build /app/backend/target/*.jar app.jar
 
 # Create the data directory for SQLite and set ownership
 RUN mkdir -p /data && chown -R briefen:briefen /app /data
-USER briefen
 
 # ---------------------------------------------------------------------------
 # Environment variables — override at runtime via docker run -e or compose
@@ -78,5 +80,10 @@ USER briefen
 # ---------------------------------------------------------------------------
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD curl -sf http://localhost:8080/actuator/health | grep -q '"status":"UP"' || exit 1
+
+USER briefen
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

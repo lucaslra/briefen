@@ -1,6 +1,7 @@
 package com.briefen.persistence.sqlite;
 
 import com.briefen.model.UserSettings;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -18,6 +19,8 @@ public class SqliteUserSettingsEntity {
     private String model;
     private boolean notificationsEnabled = false;
     private String openaiApiKey;
+    @Column(name = "anthropic_api_key")
+    private String anthropicApiKey;
     private String readeckApiKey;
     private String readeckUrl;
     private Instant updatedAt;
@@ -33,6 +36,7 @@ public class SqliteUserSettingsEntity {
         entity.model = s.getModel();
         entity.notificationsEnabled = s.isNotificationsEnabled();
         entity.openaiApiKey = s.getOpenaiApiKey();
+        entity.anthropicApiKey = s.getAnthropicApiKey();
         entity.readeckApiKey = s.getReadeckApiKey();
         entity.readeckUrl = s.getReadeckUrl();
         entity.updatedAt = s.getUpdatedAt();
@@ -47,6 +51,7 @@ public class SqliteUserSettingsEntity {
         s.setModel(model);
         s.setNotificationsEnabled(notificationsEnabled);
         s.setOpenaiApiKey(openaiApiKey);
+        s.setAnthropicApiKey(anthropicApiKey);
         s.setReadeckApiKey(readeckApiKey);
         s.setReadeckUrl(readeckUrl);
         s.setUpdatedAt(updatedAt); // Re-set to original value after setters updated it
@@ -67,6 +72,9 @@ public class SqliteUserSettingsEntity {
 
     public String getOpenaiApiKey() { return openaiApiKey; }
     public void setOpenaiApiKey(String openaiApiKey) { this.openaiApiKey = openaiApiKey; }
+
+    public String getAnthropicApiKey() { return anthropicApiKey; }
+    public void setAnthropicApiKey(String anthropicApiKey) { this.anthropicApiKey = anthropicApiKey; }
 
     public String getReadeckApiKey() { return readeckApiKey; }
     public void setReadeckApiKey(String readeckApiKey) { this.readeckApiKey = readeckApiKey; }
