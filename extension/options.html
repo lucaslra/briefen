@@ -27,6 +27,36 @@
         >
       </div>
 
+      <div class="field">
+        <label for="briefen-username" class="label">
+          Username
+          <span class="label-optional">(optional)</span>
+        </label>
+        <p class="hint">Required only if HTTP Basic Auth is enabled on your Briefen instance.</p>
+        <input
+          id="briefen-username"
+          type="text"
+          class="input"
+          placeholder="username"
+          autocomplete="username"
+          spellcheck="false"
+        >
+      </div>
+
+      <div class="field">
+        <label for="briefen-password" class="label">
+          Password
+          <span class="label-optional">(optional)</span>
+        </label>
+        <input
+          id="briefen-password"
+          type="password"
+          class="input"
+          placeholder="••••••••"
+          autocomplete="current-password"
+        >
+      </div>
+
       <div class="actions">
         <button id="save-btn" class="btn btn-primary">Save</button>
         <button id="test-btn" class="btn btn-ghost">Test connection</button>

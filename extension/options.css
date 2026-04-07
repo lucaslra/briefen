@@ -106,6 +106,12 @@ body {
   line-height: 1.4;
 }
 
+.label-optional {
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
 .input {
   margin-top: 4px;
   padding: 9px 12px;

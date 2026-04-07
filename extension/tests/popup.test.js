@@ -5,6 +5,7 @@ const {
   DEFAULT_BRIEFEN_URL,
   TIMEOUT_MS,
   getStoredUrl,
+  getStoredCredentials,
   getCurrentTab,
   isUnsupportedUrl,
   truncateUrl,
@@ -106,6 +107,22 @@ describe('getStoredUrl', () => {
 });
 
 // ---------------------------------------------------------------------------
+// getStoredCredentials
+// ---------------------------------------------------------------------------
+
+describe('getStoredCredentials', () => {
+  test('returns stored username and password', async () => {
+    browser.storage.local.get.mockResolvedValueOnce({ briefenUsername: 'alice', briefenPassword: 'secret' });
+    await expect(getStoredCredentials()).resolves.toEqual({ username: 'alice', password: 'secret' });
+  });
+
+  test('returns empty strings when nothing is stored', async () => {
+    browser.storage.local.get.mockResolvedValueOnce({});
+    await expect(getStoredCredentials()).resolves.toEqual({ username: '', password: '' });
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getCurrentTab
 // ---------------------------------------------------------------------------
 
@@ -155,6 +172,43 @@ describe('sendToBriefen', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: TAB_URL }),
+      }),
+    );
+  });
+
+  test('includes Authorization header when credentials are provided', async () => {
+    mockOk({ id: 'abc', status: 'QUEUED', message: 'Queued' });
+    const credentials = { username: 'alice', password: 's3cr3t' };
+    await sendToBriefen(TAB_URL, BRIEFEN_URL, credentials);
+    expect(fetch).toHaveBeenCalledWith(
+      `${BRIEFEN_URL}/api/articles`,
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + btoa('alice:s3cr3t'),
+        }),
+      }),
+    );
+  });
+
+  test('omits Authorization header when only username is provided', async () => {
+    mockOk({ id: 'abc', status: 'QUEUED', message: 'Queued' });
+    await sendToBriefen(TAB_URL, BRIEFEN_URL, { username: 'alice', password: '' });
+    expect(fetch).toHaveBeenCalledWith(
+      `${BRIEFEN_URL}/api/articles`,
+      expect.objectContaining({
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+  });
+
+  test('omits Authorization header when credentials are undefined', async () => {
+    mockOk({ id: 'abc', status: 'QUEUED', message: 'Queued' });
+    await sendToBriefen(TAB_URL, BRIEFEN_URL, undefined);
+    expect(fetch).toHaveBeenCalledWith(
+      `${BRIEFEN_URL}/api/articles`,
+      expect.objectContaining({
+        headers: { 'Content-Type': 'application/json' },
       }),
     );
   });
@@ -263,7 +317,9 @@ describe('Popup DOM integration', () => {
 
   test('transitions to "success" state after a successful send', async () => {
     browser.tabs.query.mockResolvedValueOnce([{ url: 'https://example.com/article' }]);
-    browser.storage.local.get.mockResolvedValueOnce({});
+    browser.storage.local.get
+      .mockResolvedValueOnce({})   // getStoredUrl
+      .mockResolvedValueOnce({});  // getStoredCredentials
     fetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ id: '1', status: 'QUEUED', message: 'Queued' }),
@@ -281,7 +337,9 @@ describe('Popup DOM integration', () => {
 
   test('transitions to "error" state and shows message on failure', async () => {
     browser.tabs.query.mockResolvedValueOnce([{ url: 'https://example.com/article' }]);
-    browser.storage.local.get.mockResolvedValueOnce({});
+    browser.storage.local.get
+      .mockResolvedValueOnce({})   // getStoredUrl
+      .mockResolvedValueOnce({});  // getStoredCredentials
     fetch.mockResolvedValueOnce({ ok: false, status: 404, json: () => Promise.resolve({}) });
 
     loadPopup();

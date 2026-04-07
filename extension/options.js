@@ -10,6 +10,18 @@ async function saveUrl(url) {
   await browser.storage.local.set({ briefenUrl: url });
 }
 
+async function getStoredCredentials() {
+  const result = await browser.storage.local.get(['briefenUsername', 'briefenPassword']);
+  return {
+    username: result.briefenUsername || '',
+    password: result.briefenPassword || '',
+  };
+}
+
+async function saveCredentials(username, password) {
+  await browser.storage.local.set({ briefenUsername: username, briefenPassword: password });
+}
+
 function showFeedback(el, type, message) {
   el.textContent = message;
   el.className = `feedback feedback--${type}`;
@@ -20,14 +32,20 @@ function hideFeedback(el) {
   el.textContent = '';
 }
 
-async function testConnection(url) {
+async function testConnection(url, credentials) {
   const normalizedUrl = url.replace(/\/$/, '');
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
+  const headers = {};
+  if (credentials?.username && credentials?.password) {
+    headers['Authorization'] = 'Basic ' + btoa(`${credentials.username}:${credentials.password}`);
+  }
+
   try {
     const response = await fetch(`${normalizedUrl}/api/health`, {
       method: 'GET',
+      headers,
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -48,15 +66,22 @@ async function testConnection(url) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   const urlInput = document.getElementById('briefen-url');
+  const usernameInput = document.getElementById('briefen-username');
+  const passwordInput = document.getElementById('briefen-password');
   const saveBtn = document.getElementById('save-btn');
   const testBtn = document.getElementById('test-btn');
   const feedbackEl = document.getElementById('feedback');
 
-  // Load saved URL
+  // Load saved settings
   urlInput.value = await getStoredUrl();
+  const stored = await getStoredCredentials();
+  usernameInput.value = stored.username;
+  passwordInput.value = stored.password;
 
-  // Clear feedback on input change
-  urlInput.addEventListener('input', () => hideFeedback(feedbackEl));
+  // Clear feedback on any input change
+  for (const input of [urlInput, usernameInput, passwordInput]) {
+    input.addEventListener('input', () => hideFeedback(feedbackEl));
+  }
 
   // Save
   saveBtn.addEventListener('click', async () => {
@@ -75,6 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     await saveUrl(url.replace(/\/$/, ''));
+    await saveCredentials(usernameInput.value.trim(), passwordInput.value);
     showFeedback(feedbackEl, 'success', 'Settings saved.');
 
     setTimeout(() => hideFeedback(feedbackEl), 3000);
@@ -92,7 +118,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     testBtn.disabled = true;
     showFeedback(feedbackEl, 'info', 'Testing connection…');
 
-    const result = await testConnection(url);
+    const credentials = {
+      username: usernameInput.value.trim(),
+      password: passwordInput.value,
+    };
+    const result = await testConnection(url, credentials);
 
     testBtn.disabled = false;
     showFeedback(feedbackEl, result.ok ? 'success' : 'error', result.message);
@@ -102,5 +132,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Export pure/async functions for unit testing.
 // `module` is undefined in the browser extension context, so this block is a no-op at runtime.
 if (typeof module !== 'undefined') {
-  module.exports = { DEFAULT_BRIEFEN_URL, TIMEOUT_MS, getStoredUrl, saveUrl, showFeedback, hideFeedback, testConnection };
+  module.exports = { DEFAULT_BRIEFEN_URL, TIMEOUT_MS, getStoredUrl, saveUrl, getStoredCredentials, saveCredentials, showFeedback, hideFeedback, testConnection };
 }

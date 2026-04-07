@@ -6,6 +6,8 @@ const {
   TIMEOUT_MS,
   getStoredUrl,
   saveUrl,
+  getStoredCredentials,
+  saveCredentials,
   showFeedback,
   hideFeedback,
   testConnection,
@@ -36,6 +38,40 @@ describe('saveUrl', () => {
     browser.storage.local.set.mockResolvedValueOnce(undefined);
     await saveUrl('http://localhost:9090');
     expect(browser.storage.local.set).toHaveBeenCalledWith({ briefenUrl: 'http://localhost:9090' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getStoredCredentials
+// ---------------------------------------------------------------------------
+
+describe('getStoredCredentials', () => {
+  test('returns stored username and password', async () => {
+    browser.storage.local.get.mockResolvedValueOnce({ briefenUsername: 'alice', briefenPassword: 'secret' });
+    await expect(getStoredCredentials()).resolves.toEqual({ username: 'alice', password: 'secret' });
+  });
+
+  test('returns empty strings when nothing is stored', async () => {
+    browser.storage.local.get.mockResolvedValueOnce({});
+    await expect(getStoredCredentials()).resolves.toEqual({ username: '', password: '' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// saveCredentials
+// ---------------------------------------------------------------------------
+
+describe('saveCredentials', () => {
+  test('persists username and password to local storage', async () => {
+    browser.storage.local.set.mockResolvedValueOnce(undefined);
+    await saveCredentials('alice', 'secret');
+    expect(browser.storage.local.set).toHaveBeenCalledWith({ briefenUsername: 'alice', briefenPassword: 'secret' });
+  });
+
+  test('persists empty strings when credentials are cleared', async () => {
+    browser.storage.local.set.mockResolvedValueOnce(undefined);
+    await saveCredentials('', '');
+    expect(browser.storage.local.set).toHaveBeenCalledWith({ briefenUsername: '', briefenPassword: '' });
   });
 });
 
@@ -144,6 +180,28 @@ describe('testConnection', () => {
     expect(result.message).toMatch(/timed out/i);
     jest.useRealTimers();
   });
+
+  test('includes Authorization header when credentials are provided', async () => {
+    fetch.mockResolvedValueOnce({ ok: true });
+    await testConnection('http://localhost:8080', { username: 'alice', password: 'secret' });
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:8080/api/health',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'Authorization': 'Basic ' + btoa('alice:secret'),
+        }),
+      }),
+    );
+  });
+
+  test('omits Authorization header when credentials are empty', async () => {
+    fetch.mockResolvedValueOnce({ ok: true });
+    await testConnection('http://localhost:8080', { username: '', password: '' });
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:8080/api/health',
+      expect.objectContaining({ headers: {} }),
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -161,22 +219,48 @@ describe('Options page DOM integration', () => {
   }
 
   test('pre-fills the URL input with the stored value', async () => {
-    browser.storage.local.get.mockResolvedValueOnce({ briefenUrl: 'https://briefen.example.com' });
+    browser.storage.local.get
+      .mockResolvedValueOnce({ briefenUrl: 'https://briefen.example.com' })
+      .mockResolvedValueOnce({});
     loadOptions();
     await new Promise((r) => setTimeout(r, 0));
     expect(document.getElementById('briefen-url').value).toBe('https://briefen.example.com');
   });
 
   test('pre-fills with the default URL when nothing is stored', async () => {
-    browser.storage.local.get.mockResolvedValueOnce({});
+    browser.storage.local.get
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({});
     loadOptions();
     await new Promise((r) => setTimeout(r, 0));
     expect(document.getElementById('briefen-url').value).toBe(DEFAULT_BRIEFEN_URL);
   });
 
+  test('pre-fills username and password inputs with stored credentials', async () => {
+    browser.storage.local.get
+      .mockResolvedValueOnce({ briefenUrl: 'http://localhost:8080' })
+      .mockResolvedValueOnce({ briefenUsername: 'alice', briefenPassword: 'secret' });
+    loadOptions();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.getElementById('briefen-username').value).toBe('alice');
+    expect(document.getElementById('briefen-password').value).toBe('secret');
+  });
+
+  test('pre-fills credential inputs as empty when nothing is stored', async () => {
+    browser.storage.local.get
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({});
+    loadOptions();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.getElementById('briefen-username').value).toBe('');
+    expect(document.getElementById('briefen-password').value).toBe('');
+  });
+
   test('shows success feedback after saving a valid URL', async () => {
-    browser.storage.local.get.mockResolvedValueOnce({});
-    browser.storage.local.set.mockResolvedValueOnce(undefined);
+    browser.storage.local.get
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({});
+    browser.storage.local.set.mockResolvedValue(undefined);
     loadOptions();
     await new Promise((r) => setTimeout(r, 0));
 
@@ -190,7 +274,9 @@ describe('Options page DOM integration', () => {
   });
 
   test('shows error feedback when saving an invalid URL', async () => {
-    browser.storage.local.get.mockResolvedValueOnce({});
+    browser.storage.local.get
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({});
     loadOptions();
     await new Promise((r) => setTimeout(r, 0));
 
@@ -204,7 +290,9 @@ describe('Options page DOM integration', () => {
   });
 
   test('shows error feedback when saving an empty URL', async () => {
-    browser.storage.local.get.mockResolvedValueOnce({});
+    browser.storage.local.get
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({});
     loadOptions();
     await new Promise((r) => setTimeout(r, 0));
 
@@ -216,7 +304,9 @@ describe('Options page DOM integration', () => {
   });
 
   test('shows success feedback when connection test passes', async () => {
-    browser.storage.local.get.mockResolvedValueOnce({});
+    browser.storage.local.get
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({});
     fetch.mockResolvedValueOnce({ ok: true });
     loadOptions();
     await new Promise((r) => setTimeout(r, 0));
@@ -232,7 +322,9 @@ describe('Options page DOM integration', () => {
   });
 
   test('shows error feedback when connection test fails', async () => {
-    browser.storage.local.get.mockResolvedValueOnce({});
+    browser.storage.local.get
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({});
     fetch.mockRejectedValueOnce(new Error('ECONNREFUSED'));
     loadOptions();
     await new Promise((r) => setTimeout(r, 0));

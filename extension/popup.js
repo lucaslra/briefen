@@ -9,6 +9,14 @@ async function getStoredUrl() {
   return (result.briefenUrl || DEFAULT_BRIEFEN_URL).replace(/\/$/, '');
 }
 
+async function getStoredCredentials() {
+  const result = await browser.storage.local.get(['briefenUsername', 'briefenPassword']);
+  return {
+    username: result.briefenUsername || '',
+    password: result.briefenPassword || '',
+  };
+}
+
 async function getCurrentTab() {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   return tab;
@@ -29,14 +37,19 @@ function truncateUrl(url, maxLen = 48) {
   }
 }
 
-async function sendToBriefen(tabUrl, briefenUrl) {
+async function sendToBriefen(tabUrl, briefenUrl, credentials) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (credentials?.username && credentials?.password) {
+    headers['Authorization'] = 'Basic ' + btoa(`${credentials.username}:${credentials.password}`);
+  }
 
   try {
     const response = await fetch(`${briefenUrl}/api/articles`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ url: tabUrl }),
       signal: controller.signal,
     });
@@ -120,7 +133,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       const briefenUrl = await getStoredUrl();
-      await sendToBriefen(tabUrl, briefenUrl);
+      const credentials = await getStoredCredentials();
+      await sendToBriefen(tabUrl, briefenUrl, credentials);
       showState('success');
     } catch (err) {
       errorMsg.textContent = err.message || 'Something went wrong.';
@@ -136,5 +150,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Export pure/async functions for unit testing.
 // `module` is undefined in the browser extension context, so this block is a no-op at runtime.
 if (typeof module !== 'undefined') {
-  module.exports = { DEFAULT_BRIEFEN_URL, TIMEOUT_MS, getStoredUrl, getCurrentTab, isUnsupportedUrl, truncateUrl, sendToBriefen };
+  module.exports = { DEFAULT_BRIEFEN_URL, TIMEOUT_MS, getStoredUrl, getStoredCredentials, getCurrentTab, isUnsupportedUrl, truncateUrl, sendToBriefen };
 }
