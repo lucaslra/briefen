@@ -193,11 +193,29 @@ The Readeck API key never reaches the browser — all requests are proxied throu
 
 ## Security & Network Exposure
 
-Briefen has **no built-in authentication**. All API endpoints are open by design for single-user local use.
+### Authentication
 
-> **If you expose Briefen on a shared or public network**, add an authentication layer (HTTP Basic Auth, OAuth2 proxy, etc.) in front of it. Without auth, anyone who can reach the server can read your summaries, overwrite your API keys, and trigger LLM inference at your expense.
+Briefen includes **optional HTTP Basic Auth**. By default it is disabled so local single-user installs work without any configuration. To enable it, set two environment variables:
 
-Additionally, ensure the Ollama port (`11434`) is **not** exposed to the network. The default `docker-compose.yml` binds it to `127.0.0.1` — do not change this to `0.0.0.0` unless you have a specific reason. Ollama has no authentication.
+```bash
+BRIEFEN_AUTH_USERNAME=alice
+BRIEFEN_AUTH_PASSWORD=changeme
+```
+
+When both are set, every route except `/actuator/health` requires a valid username and password. The browser will show a native auth dialog on first visit, and most HTTP clients (curl, Postman, etc.) support Basic Auth natively.
+
+```bash
+# curl example with auth
+curl -u alice:changeme http://localhost:8080/api/summaries
+```
+
+> ⚠️ **Always use HTTPS when auth is enabled.** HTTP Basic Auth transmits credentials as base64, which is trivially decoded on an unencrypted connection. Put Briefen behind a TLS-terminating reverse proxy (Nginx, Traefik, Caddy) before exposing it to the internet.
+
+When auth is not configured, all API endpoints remain open — this is intentional for local use.
+
+### Ollama exposure
+
+Ensure the Ollama port (`11434`) is **not** exposed to the network. The default `docker-compose.yml` binds it to `127.0.0.1` — do not change this to `0.0.0.0` unless you have a specific reason. Ollama has no authentication.
 
 See [SECURITY.md](SECURITY.md) for the full threat model, accepted risks, and how to report vulnerabilities.
 
@@ -255,6 +273,8 @@ All runtime behaviour is controlled through environment variables. In local deve
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Base URL of the Ollama API. Override when Ollama runs in a separate container or host. |
 | `OLLAMA_MODEL` | `gemma3:4b` | Default Ollama model used for summarization. The model must be pulled in Ollama first. |
 | `BRIEFEN_CORS_ALLOWED_ORIGINS` | *(empty — CORS disabled)* | Comma-separated list of allowed CORS origins. Only required when the frontend is served from a different origin than the backend. |
+| `BRIEFEN_AUTH_USERNAME` | *(empty — auth disabled)* | Username for HTTP Basic Auth. Set together with `BRIEFEN_AUTH_PASSWORD` to enable authentication. |
+| `BRIEFEN_AUTH_PASSWORD` | *(empty — auth disabled)* | Password for HTTP Basic Auth. Set together with `BRIEFEN_AUTH_USERNAME`. Always use HTTPS when auth is enabled. |
 
 ---
 

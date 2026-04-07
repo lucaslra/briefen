@@ -8,6 +8,9 @@ Briefen uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Optional HTTP Basic Auth — set `BRIEFEN_AUTH_USERNAME` and `BRIEFEN_AUTH_PASSWORD` to protect all routes; `/actuator/health` remains public for health probes. Auth is disabled by default for local single-user use.
+
 ---
 
 ## [0.1.0] — 2026-04-07
