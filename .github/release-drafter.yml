@@ -12,37 +12,63 @@ template: |
 
   **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
 
+no-changes-template: |
+  No changes recorded yet. Merge a pull request into `main` to populate this draft.
+
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
+
 categories:
-  - title: "New Features"
+  - title: "🚀 New Features"
     labels:
       - "feature"
       - "enhancement"
-  - title: "Bug Fixes"
+  - title: "🐛 Bug Fixes"
     labels:
       - "bug"
       - "fix"
-  - title: "Infrastructure"
+  - title: "⚙️ Backend"
+    labels:
+      - "backend"
+  - title: "🎨 Frontend"
+    labels:
+      - "frontend"
+  - title: "🏗️ Infrastructure"
     labels:
       - "infra"
       - "github-actions"
       - "docker"
-  - title: "Dependencies"
+  - title: "📦 Dependencies"
     labels:
       - "dependencies"
-  - title: "Documentation"
+  - title: "📖 Documentation"
     labels:
       - "docs"
+  - title: "🔄 Other Changes"
+    labels:
+      - "other"
 
-# Auto-label PRs by branch name prefix
+# Catch-all: PRs that don't match any category above appear here.
+# This ensures no merged PR is silently dropped from the draft.
+exclude-labels:
+  - "skip-changelog"
+
+# Auto-label PRs by branch name prefix OR conventional-commit PR title.
+# Both are checked — whichever matches first wins.
 autolabeler:
   - label: "feature"
     branch: ["/^feat(ure)?[/-]/"]
+    title: ["/^feat(ure)?[:(\\s]/i"]
   - label: "bug"
     branch: ["/^(bug)?fix[/-]/"]
+    title: ["/^fix[:(\\s]/i"]
   - label: "docs"
     branch: ["/^docs?[/-]/"]
+    title: ["/^docs?[:(\\s]/i"]
   - label: "infra"
     branch: ["/^(infra|ci|chore)[/-]/"]
+    title: ["/^(chore|ci|infra|build|test)[:(\\s]/i"]
+  - label: "dependencies"
+    title: ["/^(deps?|bump|upgrade|update)[:(\\s]/i"]
 
 # Bump version based on labels
 version-resolver:
@@ -51,5 +77,5 @@ version-resolver:
   minor:
     labels: ["feature", "enhancement"]
   patch:
-    labels: ["bug", "fix", "dependencies"]
+    labels: ["bug", "fix", "dependencies", "backend", "frontend", "infra"]
   default: patch

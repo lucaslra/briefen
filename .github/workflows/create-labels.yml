@@ -1,0 +1,64 @@
+# Ensures all labels used by the labeler and release-drafter workflows exist
+# in the repository. Safe to run multiple times — existing labels are not touched.
+#
+# Trigger manually from Actions → Create Labels → Run workflow,
+# or it runs automatically on the first push after this file is merged.
+
+name: Create Labels
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/create-labels.yml"
+
+permissions:
+  issues: write
+
+jobs:
+  labels:
+    name: Sync Labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create missing labels
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea  # v7
+        with:
+          script: |
+            const labels = [
+              { name: "feature",       color: "0075ca", description: "New feature or request" },
+              { name: "enhancement",   color: "a2eeef", description: "Improvement to an existing feature" },
+              { name: "bug",           color: "d73a4a", description: "Something isn't working" },
+              { name: "fix",           color: "e4e669", description: "A bug fix" },
+              { name: "backend",       color: "1d76db", description: "Java / Spring Boot changes" },
+              { name: "frontend",      color: "bfd4f2", description: "React / Vite changes" },
+              { name: "infra",         color: "f9d0c4", description: "Docker, CI, Makefile" },
+              { name: "github-actions",color: "000000", description: "GitHub Actions workflows" },
+              { name: "docker",        color: "0e8a16", description: "Docker / container changes" },
+              { name: "dependencies",  color: "0366d6", description: "Dependency updates" },
+              { name: "docs",          color: "c5def5", description: "Documentation changes" },
+              { name: "other",         color: "e4e4e4", description: "Uncategorised changes" },
+              { name: "major",         color: "b60205", description: "Breaking change (triggers major version bump)" },
+              { name: "skip-changelog",color: "ededed", description: "Exclude this PR from release notes" },
+            ];
+
+            const existing = await github.paginate(github.rest.issues.listLabelsForRepo, {
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+            });
+            const existingNames = new Set(existing.map(l => l.name));
+
+            for (const label of labels) {
+              if (existingNames.has(label.name)) {
+                console.log(`✓ exists: ${label.name}`);
+              } else {
+                await github.rest.issues.createLabel({
+                  owner:       context.repo.owner,
+                  repo:        context.repo.repo,
+                  name:        label.name,
+                  color:       label.color,
+                  description: label.description,
+                });
+                console.log(`+ created: ${label.name}`);
+              }
+            }
