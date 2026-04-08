@@ -96,7 +96,7 @@ jobs:
 
       - name: Upload Surefire test reports
         if: ${{ failure() }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: backend-surefire-reports
           path: backend/target/surefire-reports/
@@ -104,7 +104,7 @@ jobs:
 
       - name: Upload Failsafe test reports
         if: ${{ failure() }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: backend-failsafe-reports
           path: backend/target/failsafe-reports/
@@ -157,7 +157,7 @@ jobs:
 
       - name: Upload coverage report
         if: ${{ steps.run-tests.outcome == 'success' }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: frontend-coverage
           path: frontend/coverage/
