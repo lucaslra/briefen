@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { apiFetch } from '../apiFetch.js'
 
 export function useReadeck() {
   const [articles, setArticles] = useState([])
@@ -11,7 +12,7 @@ export function useReadeck() {
 
   const checkStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/readeck/status')
+      const res = await apiFetch('/api/readeck/status')
       if (res.ok) {
         const data = await res.json()
         setConfigured(data.configured)
@@ -34,7 +35,7 @@ export function useReadeck() {
       let url = `/api/readeck/bookmarks?page=${pageNum}&limit=20`
       if (search) url += `&search=${encodeURIComponent(search)}`
 
-      const res = await fetch(url)
+      const res = await apiFetch(url)
       if (!res.ok) {
         const text = await res.text()
         setError(text || 'Failed to fetch articles')
@@ -67,7 +68,7 @@ export function useReadeck() {
 
   const getArticleContent = useCallback(async (id) => {
     try {
-      const res = await fetch(`/api/readeck/bookmarks/${id}/article`)
+      const res = await apiFetch(`/api/readeck/bookmarks/${id}/article`)
       if (res.ok) {
         const data = await res.json()
         if (data.error) {

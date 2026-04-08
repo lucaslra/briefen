@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test.describe('Navigation', () => {
   test('navigate to reading list and back', async ({ page }) => {

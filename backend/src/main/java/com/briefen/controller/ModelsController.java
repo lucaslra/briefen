@@ -2,6 +2,8 @@ package com.briefen.controller;
 
 import com.briefen.config.OllamaProperties;
 import com.briefen.persistence.SettingsPersistence;
+import com.briefen.security.BriefenUserDetails;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,8 +28,8 @@ public class ModelsController {
     }
 
     @GetMapping
-    public Map<String, Object> list() {
-        var settings = settingsPersistence.findDefault();
+    public Map<String, Object> list(@AuthenticationPrincipal BriefenUserDetails userDetails) {
+        var settings = settingsPersistence.findByUserId(userDetails.userId());
         boolean hasOpenAiKey = settings
                 .map(s -> s.getOpenaiApiKey() != null && !s.getOpenaiApiKey().isBlank())
                 .orElse(false);
@@ -58,14 +60,14 @@ public class ModelsController {
                 "name", "OpenAI",
                 "configured", hasOpenAiKey,
                 "models", List.of(
-                        Map.of("id", "gpt-4.5-preview", "name", "GPT-4.5 Preview",
-                                "description", "Largest non-reasoning model. Exceptional at creative, nuanced summarization."),
-                        Map.of("id", "gpt-5-mini", "name", "GPT-5 Mini",
-                                "description", "Next-gen compact model. Top-tier quality with fast response times."),
-                        Map.of("id", "o3-mini", "name", "o3 Mini",
-                                "description", "Reasoning model. Excels at complex, nuanced analysis with step-by-step thinking."),
-                        Map.of("id", "o4-mini", "name", "o4 Mini",
-                                "description", "Latest reasoning model. Best-in-class analysis with efficient token usage.")
+                        Map.of("id", "gpt-5.4", "name", "GPT-5.4",
+                                "description", "Latest flagship model. Best overall quality for complex, nuanced summarization."),
+                        Map.of("id", "gpt-5.4-mini", "name", "GPT-5.4 Mini",
+                                "description", "Fast, cost-effective GPT-5.4-class model. Great quality with lower latency."),
+                        Map.of("id", "gpt-4.1", "name", "GPT-4.1",
+                                "description", "Strong general-purpose model. Reliable quality with good instruction-following."),
+                        Map.of("id", "gpt-4.1-mini", "name", "GPT-4.1 Mini",
+                                "description", "Lightweight and efficient. Ideal for high-volume summarization at lower cost.")
                 )
         ));
 
@@ -75,11 +77,11 @@ public class ModelsController {
                 "name", "Anthropic",
                 "configured", hasAnthropicKey,
                 "models", List.of(
-                        Map.of("id", "claude-opus-4-5", "name", "Claude Opus 4.5",
+                        Map.of("id", "claude-opus-4-6", "name", "Claude Opus 4.6",
                                 "description", "Most capable model. Exceptional at complex analysis, nuanced writing, and thorough summarization."),
-                        Map.of("id", "claude-sonnet-4-5", "name", "Claude Sonnet 4.5",
+                        Map.of("id", "claude-sonnet-4-6", "name", "Claude Sonnet 4.6",
                                 "description", "Best balance of speed and quality. Great for everyday summarization tasks."),
-                        Map.of("id", "claude-haiku-4-5", "name", "Claude Haiku 4.5",
+                        Map.of("id", "claude-haiku-4-5-20251001", "name", "Claude Haiku 4.5",
                                 "description", "Fastest and most compact. Ideal for quick summaries with low latency.")
                 )
         ));

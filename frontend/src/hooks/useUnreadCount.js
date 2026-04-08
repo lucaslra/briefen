@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
+import { apiFetch } from '../apiFetch.js'
 
 export function useUnreadCount() {
   const [unreadCount, setUnreadCount] = useState(0)
 
   const refreshUnreadCount = useCallback(async () => {
     try {
-      const res = await fetch('/api/summaries/unread-count')
+      const res = await apiFetch('/api/summaries/unread-count')
       if (res.ok) {
         const data = await res.json()
         setUnreadCount(data.count)
@@ -19,7 +20,7 @@ export function useUnreadCount() {
     let cancelled = false
     async function fetchInitial() {
       try {
-        const res = await fetch('/api/summaries/unread-count')
+        const res = await apiFetch('/api/summaries/unread-count')
         if (res.ok && !cancelled) {
           const data = await res.json()
           setUnreadCount(data.count)

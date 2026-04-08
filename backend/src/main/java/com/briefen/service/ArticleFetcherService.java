@@ -5,6 +5,9 @@ import com.briefen.exception.ArticleFetchException;
 import com.briefen.validation.UrlValidator;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -18,6 +21,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -62,6 +68,68 @@ public class ArticleFetcherService {
             throw new ArticleFetchException("Could not resolve host: " + URI.create(url).getHost(), e);
         }
 
+        String path = URI.create(url).getPath();
+        if (path != null && path.toLowerCase().endsWith(".pdf")) {
+            return fetchPdf(url);
+        }
+        return fetchHtml(url);
+    }
+
+    private ArticleContent fetchPdf(String url) {
+        byte[] pdfBytes;
+        try {
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofMillis(fetchTimeoutMs))
+                    .followRedirects(HttpClient.Redirect.NORMAL)
+                    .build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofMillis(fetchTimeoutMs))
+                    .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
+                    .GET()
+                    .build();
+            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            if (response.statusCode() != 200) {
+                log.error("HTTP {} fetching PDF from {}", response.statusCode(), url);
+                throw new ArticleFetchException("Failed to fetch PDF: HTTP " + response.statusCode());
+            }
+            pdfBytes = response.body();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ArticleFetchException("PDF fetch interrupted", e);
+        } catch (ArticleFetchException e) {
+            throw e;
+        } catch (IOException e) {
+            log.error("Failed to fetch PDF from {}: {}", url, e.getMessage());
+            throw new ArticleFetchException("Failed to fetch PDF: " + e.getMessage(), e);
+        }
+
+        try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            String text = stripper.getText(doc).replaceAll("\\s+", " ").strip();
+
+            if (text.length() < MIN_CONTENT_LENGTH) {
+                throw new ArticleExtractionException(
+                        "Extracted PDF content too short (%d chars). The PDF may be scanned or image-based."
+                                .formatted(text.length()));
+            }
+
+            String title = doc.getDocumentInformation().getTitle();
+            if (title == null || title.isBlank()) {
+                title = extractFilenameFromUrl(url);
+            }
+
+            log.info("Fetched PDF '{}' from {} ({} chars, {} pages)", title, url, text.length(), doc.getNumberOfPages());
+            return new ArticleContent(title, text);
+        } catch (ArticleExtractionException e) {
+            throw e;
+        } catch (IOException e) {
+            log.error("Failed to parse PDF from {}: {}", url, e.getMessage());
+            throw new ArticleFetchException("Failed to parse PDF: " + e.getMessage(), e);
+        }
+    }
+
+    private ArticleContent fetchHtml(String url) {
         Document doc;
         try {
             doc = Jsoup.connect(url)
@@ -94,6 +162,17 @@ public class ArticleFetcherService {
 
         log.info("Fetched article '{}' from {} ({} chars)", title, url, text.length());
         return new ArticleContent(title, text);
+    }
+
+    private String extractFilenameFromUrl(String url) {
+        String path = URI.create(url).getPath();
+        if (path == null || path.isBlank()) return "Untitled";
+        String[] parts = path.split("/");
+        String filename = parts[parts.length - 1];
+        if (filename.toLowerCase().endsWith(".pdf")) {
+            filename = filename.substring(0, filename.length() - 4);
+        }
+        return filename.replace('_', ' ').replace('-', ' ').strip();
     }
 
     private String extractTitle(Document doc) {

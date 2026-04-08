@@ -25,14 +25,16 @@ public class SqliteSummaryPersistence implements SummaryPersistence {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Summary> findByUrl(String url) {
-        return repository.findByUrl(url).map(SqliteSummaryEntity::toDomain);
+    public Optional<Summary> findByUrl(String userId, String url) {
+        return repository.findByUrlAndUserId(url, userId).map(SqliteSummaryEntity::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Summary> findById(String id) {
-        return repository.findById(id).map(SqliteSummaryEntity::toDomain);
+    public Optional<Summary> findById(String userId, String id) {
+        return repository.findById(id)
+                .filter(e -> userId.equals(e.getUserId()))
+                .map(SqliteSummaryEntity::toDomain);
     }
 
     @Override
@@ -46,57 +48,67 @@ public class SqliteSummaryPersistence implements SummaryPersistence {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean existsById(String id) {
-        return repository.existsById(id);
+    public boolean existsById(String userId, String id) {
+        return repository.findById(id)
+                .map(e -> userId.equals(e.getUserId()))
+                .orElse(false);
     }
 
     @Override
-    public void deleteById(String id) {
-        repository.deleteById(id);
+    public void deleteById(String userId, String id) {
+        repository.findById(id)
+                .filter(e -> userId.equals(e.getUserId()))
+                .ifPresent(repository::delete);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Summary> findAll(int page, int size) {
-        return repository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size))
+    public Page<Summary> findAll(String userId, int page, int size) {
+        return repository.findAllByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size))
                 .map(SqliteSummaryEntity::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Summary> findAll(int page, int size, String filter, String search) {
+    public Page<Summary> findAll(String userId, int page, int size, String filter, String search) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Specification<SqliteSummaryEntity> spec = buildSpec(filter, search);
+        Specification<SqliteSummaryEntity> spec = buildSpec(userId, filter, search);
         return repository.findAll(spec, pageable).map(SqliteSummaryEntity::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Summary> findAll(String filter, String search) {
-        Specification<SqliteSummaryEntity> spec = buildSpec(filter, search);
+    public List<Summary> findAll(String userId, String filter, String search) {
+        Specification<SqliteSummaryEntity> spec = buildSpec(userId, filter, search);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
         return repository.findAll(spec, sort).stream()
                 .map(SqliteSummaryEntity::toDomain).toList();
     }
 
     @Override
-    public long markAllAsRead() {
-        return repository.markAllAsRead();
+    public long markAllAsRead(String userId) {
+        return repository.markAllAsRead(userId);
     }
 
     @Override
-    public long markAllAsUnread() {
-        return repository.markAllAsUnread();
+    public long markAllAsUnread(String userId) {
+        return repository.markAllAsUnread(userId);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public long countUnread() {
-        return repository.countUnread();
+    public long countUnread(String userId) {
+        return repository.countUnreadByUserId(userId);
     }
 
-    private Specification<SqliteSummaryEntity> buildSpec(String filter, String search) {
-        Specification<SqliteSummaryEntity> spec = (root, query, cb) -> cb.conjunction();
+    @Override
+    public long assignOrphanedSummaries(String userId) {
+        return repository.assignOrphanedSummaries(userId);
+    }
+
+    private Specification<SqliteSummaryEntity> buildSpec(String userId, String filter, String search) {
+        Specification<SqliteSummaryEntity> spec = (root, query, cb) ->
+                cb.equal(root.get("userId"), userId);
 
         if ("unread".equals(filter)) {
             spec = spec.and((root, query, cb) -> cb.isFalse(root.get("isRead")));

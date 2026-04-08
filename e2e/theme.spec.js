@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test.describe('Theme toggle', () => {
   test('can toggle between light and dark mode', async ({ page }) => {

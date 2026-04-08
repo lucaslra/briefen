@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test.describe('Settings page', () => {
   test.beforeEach(async ({ page }) => {
@@ -27,5 +27,41 @@ test.describe('Settings page', () => {
     // Switch to Preferences
     await page.getByRole('button', { name: 'Preferences' }).click();
     await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
+  });
+
+  test('admin sees Users tab', async ({ page }) => {
+    // The fixture pre-populates role=ADMIN so the Users tab should render
+    await expect(page.getByRole('button', { name: 'Users' })).toBeVisible();
+  });
+
+  test('Users tab shows user management UI', async ({ page }) => {
+    await page.getByRole('button', { name: 'Users' }).click();
+    await expect(page.getByRole('heading', { name: 'User Accounts' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Add User' })).toBeVisible();
+    await expect(page.getByPlaceholder('Username')).toBeVisible();
+    await expect(page.getByPlaceholder('Password')).toBeVisible();
+  });
+
+  test('Create User button is disabled when fields are empty', async ({ page }) => {
+    await page.getByRole('button', { name: 'Users' }).click();
+    await expect(page.getByRole('button', { name: 'Create User' })).toBeDisabled();
+  });
+
+  test('Create User button enables when both fields are filled', async ({ page }) => {
+    await page.getByRole('button', { name: 'Users' }).click();
+    await page.getByPlaceholder('Username').fill('newuser');
+    await page.getByPlaceholder('Password').fill('password');
+    await expect(page.getByRole('button', { name: 'Create User' })).toBeEnabled();
+  });
+
+  test('Integrations tab shows OpenAI and Anthropic key fields', async ({ page }) => {
+    await page.getByRole('button', { name: 'Integrations' }).click();
+    await expect(page.getByText('OpenAI API Key')).toBeVisible();
+    await expect(page.getByText('Anthropic API Key')).toBeVisible();
+  });
+
+  test('Integrations tab shows Readeck configuration', async ({ page }) => {
+    await page.getByRole('button', { name: 'Integrations' }).click();
+    await expect(page.getByRole('heading', { name: 'Readeck' })).toBeVisible();
   });
 });

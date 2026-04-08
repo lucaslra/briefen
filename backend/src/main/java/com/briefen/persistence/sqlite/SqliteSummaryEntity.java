@@ -5,17 +5,21 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
 
 @Entity
-@Table(name = "summaries")
+@Table(name = "summaries",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"url", "user_id"}))
 public class SqliteSummaryEntity {
 
     @Id
     private String id;
 
-    @Column(unique = true)
+    @Column(name = "user_id")
+    private String userId;
+
     private String url;
 
     private String title;
@@ -39,6 +43,7 @@ public class SqliteSummaryEntity {
     public static SqliteSummaryEntity fromDomain(Summary s) {
         var entity = new SqliteSummaryEntity();
         entity.id = s.getId();
+        entity.userId = s.getUserId();
         entity.url = s.getUrl();
         entity.title = s.getTitle();
         entity.summary = s.getSummary();
@@ -53,6 +58,7 @@ public class SqliteSummaryEntity {
     public Summary toDomain() {
         var s = new Summary();
         s.setId(id);
+        s.setUserId(userId);
         s.setUrl(url);
         s.setTitle(title);
         s.setSummary(summary);
@@ -66,6 +72,9 @@ public class SqliteSummaryEntity {
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }

@@ -37,6 +37,7 @@ class SummaryServiceTest {
     private OllamaProperties ollamaProperties;
     private SummaryService summaryService;
 
+    private static final String USER_ID = "test-user-id";
     private static final String ARTICLE_URL = "https://example.com/article";
     private static final String NORMALIZED_URL = "https://example.com/article";
     private static final String ARTICLE_TEXT = "This is the article body content. ".repeat(20);
@@ -60,10 +61,10 @@ class SummaryServiceTest {
         // Arrange
         Summary cached = buildSummary("cached-id", NORMALIZED_URL, "Cached Title", "Cached summary");
         when(urlValidator.validate(ARTICLE_URL)).thenReturn(URI.create(NORMALIZED_URL));
-        when(summaryPersistence.findByUrl(NORMALIZED_URL)).thenReturn(Optional.of(cached));
+        when(summaryPersistence.findByUrl(USER_ID, NORMALIZED_URL)).thenReturn(Optional.of(cached));
 
         // Act
-        Summary result = summaryService.summarize(ARTICLE_URL, false, null, null);
+        Summary result = summaryService.summarize(USER_ID, ARTICLE_URL, false, null, null);
 
         // Assert
         assertThat(result.getId()).isEqualTo("cached-id");
@@ -78,11 +79,11 @@ class SummaryServiceTest {
         when(urlValidator.validate(ARTICLE_URL)).thenReturn(URI.create(NORMALIZED_URL));
         when(articleFetcher.fetch(NORMALIZED_URL)).thenReturn(new ArticleFetcherService.ArticleContent(ARTICLE_TITLE, ARTICLE_TEXT));
         when(ollamaSummarizer.summarize(anyString(), isNull(), anyString())).thenReturn(SUMMARY_TEXT);
-        when(summaryPersistence.findByUrl(NORMALIZED_URL)).thenReturn(Optional.of(existing));
+        when(summaryPersistence.findByUrl(USER_ID, NORMALIZED_URL)).thenReturn(Optional.of(existing));
         when(summaryPersistence.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        summaryService.summarize(ARTICLE_URL, true, null, null);
+        summaryService.summarize(USER_ID, ARTICLE_URL, true, null, null);
 
         // Assert
         verify(articleFetcher).fetch(NORMALIZED_URL);
@@ -98,10 +99,10 @@ class SummaryServiceTest {
         when(ollamaSummarizer.summarize(anyString(), eq("shorter"), anyString())).thenReturn(SUMMARY_TEXT);
 
         // Act
-        Summary result = summaryService.summarize(ARTICLE_URL, false, "shorter", null);
+        Summary result = summaryService.summarize(USER_ID, ARTICLE_URL, false, "shorter", null);
 
         // Assert — cache was NOT checked; fetcher and summarizer were called
-        verify(summaryPersistence, never()).findByUrl(any());
+        verify(summaryPersistence, never()).findByUrl(any(), any());
         verify(articleFetcher).fetch(NORMALIZED_URL);
         assertThat(result.getSummary()).isEqualTo(SUMMARY_TEXT);
         // Length-adjusted summaries are transient — not saved
@@ -112,7 +113,7 @@ class SummaryServiceTest {
     void shouldFetchAndSummarizeNewArticle() {
         // Arrange
         when(urlValidator.validate(ARTICLE_URL)).thenReturn(URI.create(NORMALIZED_URL));
-        when(summaryPersistence.findByUrl(NORMALIZED_URL)).thenReturn(Optional.empty());
+        when(summaryPersistence.findByUrl(USER_ID, NORMALIZED_URL)).thenReturn(Optional.empty());
         when(articleFetcher.fetch(NORMALIZED_URL)).thenReturn(new ArticleFetcherService.ArticleContent(ARTICLE_TITLE, ARTICLE_TEXT));
         when(ollamaSummarizer.summarize(anyString(), isNull(), anyString())).thenReturn(SUMMARY_TEXT);
         when(summaryPersistence.save(any())).thenAnswer(inv -> {
@@ -122,7 +123,7 @@ class SummaryServiceTest {
         });
 
         // Act
-        Summary result = summaryService.summarize(ARTICLE_URL, false, null, null);
+        Summary result = summaryService.summarize(USER_ID, ARTICLE_URL, false, null, null);
 
         // Assert
         assertThat(result.getTitle()).isEqualTo(ARTICLE_TITLE);
@@ -136,13 +137,13 @@ class SummaryServiceTest {
     void shouldRouteToOllamaForDefaultModel() {
         // Arrange — model=null → falls back to ollamaProperties.model()
         when(urlValidator.validate(ARTICLE_URL)).thenReturn(URI.create(NORMALIZED_URL));
-        when(summaryPersistence.findByUrl(NORMALIZED_URL)).thenReturn(Optional.empty());
+        when(summaryPersistence.findByUrl(USER_ID, NORMALIZED_URL)).thenReturn(Optional.empty());
         when(articleFetcher.fetch(NORMALIZED_URL)).thenReturn(new ArticleFetcherService.ArticleContent(ARTICLE_TITLE, ARTICLE_TEXT));
         when(ollamaSummarizer.summarize(anyString(), isNull(), eq("gemma3:4b"))).thenReturn(SUMMARY_TEXT);
         when(summaryPersistence.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        summaryService.summarize(ARTICLE_URL, false, null, null);
+        summaryService.summarize(USER_ID, ARTICLE_URL, false, null, null);
 
         // Assert
         verify(ollamaSummarizer).summarize(anyString(), isNull(), eq("gemma3:4b"));
@@ -157,14 +158,14 @@ class SummaryServiceTest {
         settings.setOpenaiApiKey(apiKey);
 
         when(urlValidator.validate(ARTICLE_URL)).thenReturn(URI.create(NORMALIZED_URL));
-        when(summaryPersistence.findByUrl(NORMALIZED_URL)).thenReturn(Optional.empty());
+        when(summaryPersistence.findByUrl(USER_ID, NORMALIZED_URL)).thenReturn(Optional.empty());
         when(articleFetcher.fetch(NORMALIZED_URL)).thenReturn(new ArticleFetcherService.ArticleContent(ARTICLE_TITLE, ARTICLE_TEXT));
-        when(settingsPersistence.findDefault()).thenReturn(Optional.of(settings));
+        when(settingsPersistence.findByUserId(USER_ID)).thenReturn(Optional.of(settings));
         when(openAiSummarizer.summarize(anyString(), isNull(), eq("gpt-4o"), eq(apiKey))).thenReturn(SUMMARY_TEXT);
         when(summaryPersistence.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        summaryService.summarize(ARTICLE_URL, false, null, "gpt-4o");
+        summaryService.summarize(USER_ID, ARTICLE_URL, false, null, "gpt-4o");
 
         // Assert
         verify(openAiSummarizer).summarize(anyString(), isNull(), eq("gpt-4o"), eq(apiKey));
@@ -179,14 +180,14 @@ class SummaryServiceTest {
         settings.setOpenaiApiKey(apiKey);
 
         when(urlValidator.validate(ARTICLE_URL)).thenReturn(URI.create(NORMALIZED_URL));
-        when(summaryPersistence.findByUrl(NORMALIZED_URL)).thenReturn(Optional.empty());
+        when(summaryPersistence.findByUrl(USER_ID, NORMALIZED_URL)).thenReturn(Optional.empty());
         when(articleFetcher.fetch(NORMALIZED_URL)).thenReturn(new ArticleFetcherService.ArticleContent(ARTICLE_TITLE, ARTICLE_TEXT));
-        when(settingsPersistence.findDefault()).thenReturn(Optional.of(settings));
+        when(settingsPersistence.findByUserId(USER_ID)).thenReturn(Optional.of(settings));
         when(openAiSummarizer.summarize(anyString(), isNull(), eq("o3-mini"), eq(apiKey))).thenReturn(SUMMARY_TEXT);
         when(summaryPersistence.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        summaryService.summarize(ARTICLE_URL, false, null, "o3-mini");
+        summaryService.summarize(USER_ID, ARTICLE_URL, false, null, "o3-mini");
 
         // Assert
         verify(openAiSummarizer).summarize(anyString(), isNull(), eq("o3-mini"), eq(apiKey));
@@ -201,14 +202,14 @@ class SummaryServiceTest {
         settings.setOpenaiApiKey(apiKey);
 
         when(urlValidator.validate(ARTICLE_URL)).thenReturn(URI.create(NORMALIZED_URL));
-        when(summaryPersistence.findByUrl(NORMALIZED_URL)).thenReturn(Optional.empty());
+        when(summaryPersistence.findByUrl(USER_ID, NORMALIZED_URL)).thenReturn(Optional.empty());
         when(articleFetcher.fetch(NORMALIZED_URL)).thenReturn(new ArticleFetcherService.ArticleContent(ARTICLE_TITLE, ARTICLE_TEXT));
-        when(settingsPersistence.findDefault()).thenReturn(Optional.of(settings));
+        when(settingsPersistence.findByUserId(USER_ID)).thenReturn(Optional.of(settings));
         when(openAiSummarizer.summarize(anyString(), isNull(), eq("o4-mini"), eq(apiKey))).thenReturn(SUMMARY_TEXT);
         when(summaryPersistence.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        summaryService.summarize(ARTICLE_URL, false, null, "o4-mini");
+        summaryService.summarize(USER_ID, ARTICLE_URL, false, null, "o4-mini");
 
         // Assert
         verify(openAiSummarizer).summarize(anyString(), isNull(), eq("o4-mini"), eq(apiKey));
@@ -226,7 +227,7 @@ class SummaryServiceTest {
         when(summaryPersistence.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        Summary result = summaryService.summarizeText(text, null, null, null, null);
+        Summary result = summaryService.summarizeText(USER_ID, text, null, null, null, null);
 
         // Assert
         assertThat(result.getTitle()).isEqualTo("My Extracted Title");
@@ -242,7 +243,7 @@ class SummaryServiceTest {
         when(summaryPersistence.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        Summary result = summaryService.summarizeText(text, null, null, null, null);
+        Summary result = summaryService.summarizeText(USER_ID, text, null, null, null, null);
 
         // Assert
         assertThat(result.getTitle()).isEqualTo("Pasted Article");
@@ -254,12 +255,12 @@ class SummaryServiceTest {
         // Arrange
         String sourceUrl = "https://example.com/original";
         Summary cached = buildSummary("cached-text-id", sourceUrl, "Cached Text Title", "Cached text summary");
-        when(summaryPersistence.findByUrl(sourceUrl)).thenReturn(Optional.of(cached));
+        when(summaryPersistence.findByUrl(USER_ID, sourceUrl)).thenReturn(Optional.of(cached));
 
         String text = "Some article text. ".repeat(10);
 
         // Act
-        Summary result = summaryService.summarizeText(text, null, null, null, sourceUrl);
+        Summary result = summaryService.summarizeText(USER_ID, text, null, null, null, sourceUrl);
 
         // Assert
         assertThat(result.getId()).isEqualTo("cached-text-id");
@@ -274,16 +275,16 @@ class SummaryServiceTest {
         when(summaryPersistence.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        summaryService.summarizeText(text, "My Title", null, null, null);
+        summaryService.summarizeText(USER_ID, text, "My Title", null, null, null);
 
         // Assert
-        verify(summaryPersistence, never()).findByUrl(any());
+        verify(summaryPersistence, never()).findByUrl(any(), any());
         verify(ollamaSummarizer).summarize(anyString(), isNull(), anyString());
     }
 
     @Test
     void shouldThrowWhenTextIsBlank() {
-        assertThatThrownBy(() -> summaryService.summarizeText("  ", null, null, null, null))
+        assertThatThrownBy(() -> summaryService.summarizeText(USER_ID, "  ", null, null, null, null))
                 .isInstanceOf(InvalidUrlException.class)
                 .hasMessageContaining("text must not be blank");
     }
@@ -293,6 +294,7 @@ class SummaryServiceTest {
     private Summary buildSummary(String id, String url, String title, String summaryText) {
         Summary s = new Summary();
         s.setId(id);
+        s.setUserId(USER_ID);
         s.setUrl(url);
         s.setTitle(title);
         s.setSummary(summaryText);

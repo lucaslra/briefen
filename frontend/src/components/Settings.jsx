@@ -3,6 +3,138 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { STRINGS } from '../constants/strings'
 import styles from './Settings.module.css'
 import { useNotification } from '../hooks/useNotification'
+import { apiFetch } from '../apiFetch.js'
+import { useUsers } from '../hooks/useUsers'
+import { formatRelativeDate } from '../utils/relativeDate'
+
+function UsersTab({ currentUserId }) {
+  const { users, loading: usersLoading, createUser, deleteUser } = useUsers()
+  const [newUsername, setNewUsername] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [newRole, setNewRole] = useState('USER')
+  const [createError, setCreateError] = useState(null)
+  const [createLoading, setCreateLoading] = useState(false)
+
+  async function handleCreateUser(e) {
+    e.preventDefault()
+    if (!newUsername.trim() || !newPassword.trim()) return
+    setCreateError(null)
+    setCreateLoading(true)
+    try {
+      await createUser(newUsername.trim(), newPassword, newRole)
+      setNewUsername('')
+      setNewPassword('')
+      setNewRole('USER')
+    } catch (err) {
+      setCreateError(err.message === 'taken' ? STRINGS.USERS_CREATE_ERROR_TAKEN : STRINGS.USERS_CREATE_ERROR_GENERIC)
+    } finally {
+      setCreateLoading(false)
+    }
+  }
+
+  async function handleDeleteUser(id, uname) {
+    if (!window.confirm(STRINGS.USERS_DELETE_CONFIRM.replace('{username}', uname))) return
+    try {
+      await deleteUser(id)
+    } catch {
+      alert(STRINGS.USERS_DELETE_ERROR)
+    }
+  }
+
+  return (
+    <>
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>{STRINGS.USERS_HEADING}</h3>
+        <p className={styles.sectionDesc}>{STRINGS.USERS_SUBHEADING}</p>
+
+        {usersLoading ? (
+          <p className={styles.providerHint}>{STRINGS.USERS_LOADING}</p>
+        ) : users.length === 0 ? (
+          <p className={styles.providerHint}>{STRINGS.USERS_EMPTY}</p>
+        ) : (
+          <div className={styles.userList}>
+            {users.map(u => (
+              <div key={u.id} className={styles.userRow}>
+                <div className={styles.userMeta}>
+                  <span className={styles.userUsername}>{u.username}</span>
+                  <span className={styles.userBadge}>{u.role}</span>
+                  {u.createdAt && (
+                    <span className={styles.userDate}>{formatRelativeDate(u.createdAt)}</span>
+                  )}
+                </div>
+                {u.id !== currentUserId && !u.mainAdmin && (
+                  <button
+                    className={styles.apiKeyRemoveBtn}
+                    onClick={() => handleDeleteUser(u.id, u.username)}
+                  >
+                    {STRINGS.USERS_DELETE_BUTTON}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>{STRINGS.USERS_CREATE_HEADING}</h3>
+        <form onSubmit={handleCreateUser}>
+          <div className={styles.apiKeyGroup}>
+            <label className={styles.apiKeyLabel}>{STRINGS.USERS_USERNAME_LABEL}</label>
+            <div className={styles.apiKeyRow}>
+              <input
+                type="text"
+                className={styles.apiKeyInput}
+                value={newUsername}
+                onChange={e => setNewUsername(e.target.value)}
+                placeholder={STRINGS.USERS_USERNAME_PLACEHOLDER}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+          <div className={styles.apiKeyGroup} style={{ marginTop: '12px' }}>
+            <label className={styles.apiKeyLabel}>{STRINGS.USERS_PASSWORD_LABEL}</label>
+            <div className={styles.apiKeyRow}>
+              <input
+                type="password"
+                className={styles.apiKeyInput}
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder={STRINGS.USERS_PASSWORD_PLACEHOLDER}
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+          <div className={styles.apiKeyGroup} style={{ marginTop: '12px' }}>
+            <label className={styles.apiKeyLabel}>{STRINGS.USERS_ROLE_LABEL}</label>
+            <div className={styles.apiKeyRow}>
+              <select
+                className={styles.apiKeyInput}
+                value={newRole}
+                onChange={e => setNewRole(e.target.value)}
+              >
+                <option value="USER">{STRINGS.USERS_ROLE_USER}</option>
+                <option value="ADMIN">{STRINGS.USERS_ROLE_ADMIN}</option>
+              </select>
+            </div>
+          </div>
+          {createError && (
+            <p style={{ color: 'var(--error)', fontSize: '0.85rem', marginTop: '8px' }}>{createError}</p>
+          )}
+          <div style={{ marginTop: '16px' }}>
+            <button
+              type="submit"
+              className={styles.apiKeySaveBtn}
+              disabled={!newUsername.trim() || !newPassword.trim() || createLoading}
+            >
+              {STRINGS.USERS_CREATE_BUTTON}
+            </button>
+          </div>
+        </form>
+      </section>
+    </>
+  )
+}
 
 const LENGTH_OPTIONS = [
   { value: 'shorter', label: STRINGS.SETTINGS_LENGTH_SHORT, description: STRINGS.SETTINGS_LENGTH_SHORT_DESC },
@@ -10,17 +142,19 @@ const LENGTH_OPTIONS = [
   { value: 'longer', label: STRINGS.SETTINGS_LENGTH_LONG, description: STRINGS.SETTINGS_LENGTH_LONG_DESC },
 ]
 
-const TABS = [
+const BASE_TABS = [
   { id: 'summarization', label: STRINGS.SETTINGS_TAB_SUMMARIZATION },
   { id: 'integrations', label: STRINGS.SETTINGS_TAB_INTEGRATIONS },
   { id: 'preferences', label: STRINGS.SETTINGS_TAB_PREFERENCES },
 ]
 
-const TAB_IDS = TABS.map(t => t.id)
-
-export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
+export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin = false, currentUserId = null }) {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const TABS = isAdmin
+    ? [...BASE_TABS, { id: 'users', label: STRINGS.SETTINGS_TAB_USERS }]
+    : BASE_TABS
+  const TAB_IDS = TABS.map(t => t.id)
   const initialTab = TAB_IDS.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'summarization'
   const [tab, setTab] = useState(initialTab)
 
@@ -44,7 +178,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
   const { supported, permission, requestPermission } = useNotification()
 
   useEffect(() => {
-    fetch('/api/version')
+    apiFetch('/api/version')
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data) setAppVersion(data.version) })
       .catch(() => {})
@@ -52,7 +186,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
 
   useEffect(() => {
     // modelsLoading is already initialized to true
-    fetch('/api/models')
+    apiFetch('/api/models')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data) {
@@ -106,7 +240,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
     onUpdateSetting('openaiApiKey', keyDraft.trim())
     setKeySaved(true)
     setTimeout(() => setKeySaved(false), 2000)
-    fetch('/api/models').then(r => r.json()).then(data => {
+    apiFetch('/api/models').then(r => r.ok ? r.json() : null).then(data => {
       if (data) setProviders(data.providers)
     }).catch(() => {})
   }
@@ -119,7 +253,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
     if (selectedModel && (selectedModel.startsWith('gpt-') || selectedModel.startsWith('o'))) {
       onUpdateSetting('model', defaultModel)
     }
-    fetch('/api/models').then(r => r.json()).then(data => {
+    apiFetch('/api/models').then(r => r.ok ? r.json() : null).then(data => {
       if (data) setProviders(data.providers)
     }).catch(() => {})
   }
@@ -129,7 +263,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
     onUpdateSetting('anthropicApiKey', anthropicKeyDraft.trim())
     setAnthropicKeySaved(true)
     setTimeout(() => setAnthropicKeySaved(false), 2000)
-    fetch('/api/models').then(r => r.json()).then(data => {
+    apiFetch('/api/models').then(r => r.ok ? r.json() : null).then(data => {
       if (data) setProviders(data.providers)
     }).catch(() => {})
   }
@@ -142,7 +276,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
     if (selectedModel && selectedModel.startsWith('claude-')) {
       onUpdateSetting('model', defaultModel)
     }
-    fetch('/api/models').then(r => r.json()).then(data => {
+    apiFetch('/api/models').then(r => r.ok ? r.json() : null).then(data => {
       if (data) setProviders(data.providers)
     }).catch(() => {})
   }
@@ -458,6 +592,9 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings }) {
           )}
         </section>
       )}
+
+      {/* ── Users tab (admin only) ── */}
+      {isAdmin && tab === 'users' && <UsersTab currentUserId={currentUserId} />}
 
       {appVersion && (
         <p className={styles.versionFooter}>{STRINGS.SETTINGS_VERSION_PREFIX} v{appVersion}</p>

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test.describe('API endpoints', () => {
   test('GET /api/summaries returns a list', async ({ request }) => {

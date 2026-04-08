@@ -6,6 +6,7 @@ import com.briefen.dto.SummarizeResponse;
 import com.briefen.dto.UpdateNotesRequest;
 import com.briefen.exception.InvalidUrlException;
 import com.briefen.model.Summary;
+import com.briefen.security.BriefenUserDetails;
 import com.briefen.service.SummaryService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -38,9 +40,11 @@ public class SummarizeController {
 
     @PostMapping("/summarize")
     public SummarizeResponse summarize(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
             @Valid @RequestBody SummarizeRequest request,
             @RequestParam(defaultValue = "false") boolean refresh) {
 
+        String userId = userDetails.userId();
         boolean hasUrl = request.url() != null && !request.url().isBlank();
         boolean hasText = request.text() != null && !request.text().isBlank();
 
@@ -50,9 +54,9 @@ public class SummarizeController {
 
         Summary summary;
         if (hasText) {
-            summary = summaryService.summarizeText(request.text(), request.title(), request.lengthHint(), request.model(), request.sourceUrl());
+            summary = summaryService.summarizeText(userId, request.text(), request.title(), request.lengthHint(), request.model(), request.sourceUrl());
         } else {
-            summary = summaryService.summarize(request.url(), refresh, request.lengthHint(), request.model());
+            summary = summaryService.summarize(userId, request.url(), refresh, request.lengthHint(), request.model());
         }
 
         return SummarizeResponse.from(summary);
@@ -60,16 +64,18 @@ public class SummarizeController {
 
     @GetMapping("/summaries")
     public Page<SummarizeResponse> summaries(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(200) int size,
             @RequestParam(defaultValue = "all") String filter,
             @RequestParam(required = false) String search) {
-        return summaryService.getSummaries(page, size, filter, search)
+        return summaryService.getSummaries(userDetails.userId(), page, size, filter, search)
                 .map(SummarizeResponse::from);
     }
 
     @GetMapping("/summaries/export")
     public ResponseEntity<StreamingResponseBody> exportSummaries(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
             @RequestParam(defaultValue = "md") String format,
             @RequestParam(defaultValue = "all") String filter,
             @RequestParam(required = false) String search) {
@@ -78,7 +84,7 @@ public class SummarizeController {
             return ResponseEntity.badRequest().build();
         }
 
-        List<Summary> summaries = summaryService.getAllSummaries(filter, search);
+        List<Summary> summaries = summaryService.getAllSummaries(userDetails.userId(), filter, search);
 
         StreamingResponseBody body = outputStream -> {
             Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
@@ -107,40 +113,44 @@ public class SummarizeController {
     }
 
     @GetMapping("/summaries/unread-count")
-    public Map<String, Long> unreadCount() {
-        return Map.of("count", summaryService.getUnreadCount());
+    public Map<String, Long> unreadCount(@AuthenticationPrincipal BriefenUserDetails userDetails) {
+        return Map.of("count", summaryService.getUnreadCount(userDetails.userId()));
     }
 
     @PatchMapping("/summaries/{id}/read-status")
     public SummarizeResponse updateReadStatus(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
             @PathVariable String id,
             @RequestBody ReadStatusRequest request) {
         if (request.isRead() == null) {
             throw new InvalidUrlException("isRead field is required");
         }
-        return SummarizeResponse.from(summaryService.updateReadStatus(id, request.isRead()));
+        return SummarizeResponse.from(summaryService.updateReadStatus(userDetails.userId(), id, request.isRead()));
     }
 
     @PatchMapping("/summaries/read-status/bulk")
-    public Map<String, Long> markAllAsRead() {
-        return Map.of("updated", summaryService.markAllAsRead());
+    public Map<String, Long> markAllAsRead(@AuthenticationPrincipal BriefenUserDetails userDetails) {
+        return Map.of("updated", summaryService.markAllAsRead(userDetails.userId()));
     }
 
     @PatchMapping("/summaries/unread-status/bulk")
-    public Map<String, Long> markAllAsUnread() {
-        return Map.of("updated", summaryService.markAllAsUnread());
+    public Map<String, Long> markAllAsUnread(@AuthenticationPrincipal BriefenUserDetails userDetails) {
+        return Map.of("updated", summaryService.markAllAsUnread(userDetails.userId()));
     }
 
     @PatchMapping("/summaries/{id}/notes")
     public SummarizeResponse updateNotes(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
             @PathVariable String id,
             @RequestBody UpdateNotesRequest request) {
-        return SummarizeResponse.from(summaryService.updateNotes(id, request.notes()));
+        return SummarizeResponse.from(summaryService.updateNotes(userDetails.userId(), id, request.notes()));
     }
 
     @DeleteMapping("/summaries/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteSummary(@PathVariable String id) {
-        summaryService.deleteSummary(id);
+    public void deleteSummary(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
+            @PathVariable String id) {
+        summaryService.deleteSummary(userDetails.userId(), id);
     }
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { STRINGS } from '../constants/strings'
+import { apiFetch } from '../apiFetch.js'
 
 const PAGE_SIZE = 20
 
@@ -22,7 +23,7 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
       })
       if (currentSearch) params.set('search', currentSearch)
 
-      const res = await fetch(`/api/summaries?${params}`)
+      const res = await apiFetch(`/api/summaries?${params}`)
       if (!res.ok) return
 
       const data = await res.json()
@@ -83,7 +84,7 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
     setItemErrors(prev => { const next = { ...prev }; delete next[id]; return next })
 
     try {
-      const res = await fetch(`/api/summaries/${id}/read-status`, {
+      const res = await apiFetch(`/api/summaries/${id}/read-status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isRead: newIsRead }),
@@ -115,7 +116,7 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
     setItemErrors(prev => { const next = { ...prev }; delete next[id]; return next })
 
     try {
-      const res = await fetch(`/api/summaries/${id}`, { method: 'DELETE' })
+      const res = await apiFetch(`/api/summaries/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error()
       refreshUnreadCount?.()
     } catch {
@@ -141,7 +142,7 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
     setItemErrors(prev => { const next = { ...prev }; delete next[id]; return next })
 
     try {
-      const res = await fetch(`/api/summaries/${id}/notes`, {
+      const res = await apiFetch(`/api/summaries/${id}/notes`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notes }),
@@ -165,7 +166,7 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
     setItems(prev => prev.map(item => ({ ...item, isRead: true })))
 
     try {
-      const res = await fetch('/api/summaries/read-status/bulk', { method: 'PATCH' })
+      const res = await apiFetch('/api/summaries/read-status/bulk', { method: 'PATCH' })
       if (!res.ok) throw new Error()
       refreshUnreadCount?.()
       return true
@@ -182,7 +183,7 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
     setItems(prev => prev.map(item => ({ ...item, isRead: false })))
 
     try {
-      const res = await fetch('/api/summaries/unread-status/bulk', { method: 'PATCH' })
+      const res = await apiFetch('/api/summaries/unread-status/bulk', { method: 'PATCH' })
       if (!res.ok) throw new Error()
       refreshUnreadCount?.()
       return true

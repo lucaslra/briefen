@@ -4,8 +4,10 @@ import com.briefen.dto.UserSettingsDto;
 import com.briefen.exception.InvalidUrlException;
 import com.briefen.model.UserSettings;
 import com.briefen.persistence.SettingsPersistence;
+import com.briefen.security.BriefenUserDetails;
 import com.briefen.validation.UrlValidator;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -22,16 +24,28 @@ public class SettingsController {
     }
 
     @GetMapping
-    public UserSettingsDto get() {
-        UserSettings settings = settingsPersistence.findDefault()
-                .orElseGet(UserSettings::new);
+    public UserSettingsDto get(@AuthenticationPrincipal BriefenUserDetails userDetails) {
+        String userId = userDetails.userId();
+        UserSettings settings = settingsPersistence.findByUserId(userId)
+                .orElseGet(() -> {
+                    var s = new UserSettings();
+                    s.setId(userId);
+                    return s;
+                });
         return UserSettingsDto.fromMasked(settings);
     }
 
     @PutMapping
-    public UserSettingsDto update(@RequestBody UserSettingsDto dto) {
-        UserSettings settings = settingsPersistence.findDefault()
-                .orElseGet(UserSettings::new);
+    public UserSettingsDto update(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
+            @RequestBody UserSettingsDto dto) {
+        String userId = userDetails.userId();
+        UserSettings settings = settingsPersistence.findByUserId(userId)
+                .orElseGet(() -> {
+                    var s = new UserSettings();
+                    s.setId(userId);
+                    return s;
+                });
 
         if (dto.defaultLength() != null) {
             settings.setDefaultLength(dto.defaultLength());

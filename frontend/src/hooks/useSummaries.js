@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { apiFetch } from '../apiFetch.js'
 
 export function useSummaries() {
   const [summaries, setSummaries] = useState([])
@@ -9,7 +10,7 @@ export function useSummaries() {
   const fetchPage = useCallback(async (pageNum, replace = false) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/summaries?page=${pageNum}&size=10`)
+      const res = await apiFetch(`/api/summaries?page=${pageNum}&size=10`)
       if (!res.ok) return
 
       const data = await res.json()

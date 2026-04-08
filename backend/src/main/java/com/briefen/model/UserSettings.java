@@ -3,14 +3,11 @@ package com.briefen.model;
 import java.time.Instant;
 
 /**
- * Stores user preferences. Since Briefen has no auth, a single
- * document with a well-known id ("default") is used.
+ * Stores user preferences. The id field holds the user's ID (primary key).
  */
 public class UserSettings {
 
-    public static final String DEFAULT_ID = "default";
-
-    private String id = DEFAULT_ID;
+    private String id;
 
     private String defaultLength = "default"; // "shorter" | "default" | "longer"
     private String model; // null means use server default from application.yml

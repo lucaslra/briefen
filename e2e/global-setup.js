@@ -19,6 +19,10 @@ const BACKEND_PORT = process.env.BACKEND_PORT || '8082';
 const BASE_URL = `http://localhost:${BACKEND_PORT}`;
 const DB_PATH = join(tmpdir(), `briefen-e2e-${Date.now()}.db`);
 
+// Known credentials injected into the managed backend so tests can authenticate
+const E2E_USERNAME = 'e2e-admin';
+const E2E_PASSWORD = 'e2e-secret-1';
+
 // ── Java detection ────────────────────────────────────────────────────────────
 
 function findJavaHome() {
@@ -121,6 +125,8 @@ function startBackend(javaHome, ollamaBaseUrl) {
     OLLAMA_BASE_URL: ollamaBaseUrl,
     BRIEFEN_DB_PATH: DB_PATH,
     SERVER_PORT: BACKEND_PORT,
+    BRIEFEN_AUTH_USERNAME: E2E_USERNAME,
+    BRIEFEN_AUTH_PASSWORD: E2E_PASSWORD,
   };
 
   const proc = spawn('./mvnw', ['spring-boot:run', '-q'], {
@@ -183,6 +189,8 @@ export default async function globalSetup() {
   global.__E2E_BACKEND__ = backendProc;
   global.__E2E_DB_PATH__ = DB_PATH;
 
-  // 6. Expose the base URL for test files via env
+  // 6. Expose base URL and credentials for test files
   process.env.BASE_URL = BASE_URL;
+  process.env.E2E_USERNAME = E2E_USERNAME;
+  process.env.E2E_PASSWORD = E2E_PASSWORD;
 }

@@ -62,18 +62,18 @@ public class WebhookService {
      * Enqueues a webhook delivery on a virtual thread.
      * Returns immediately; never throws.
      */
-    public void send(Summary summary) {
-        String url = resolveUrl();
+    public void send(Summary summary, String userId) {
+        String url = resolveUrl(userId);
         if (url == null) return;
         Thread.ofVirtual().start(() -> deliver(summary, url));
     }
 
     /**
-     * Resolves the effective webhook URL.
-     * Settings UI value takes precedence over the environment variable.
+     * Resolves the effective webhook URL for the given user.
+     * User's settings value takes precedence over the environment variable.
      */
-    private String resolveUrl() {
-        String settingsUrl = settingsPersistence.findDefault()
+    private String resolveUrl(String userId) {
+        String settingsUrl = settingsPersistence.findByUserId(userId)
                 .map(UserSettings::getWebhookUrl)
                 .filter(url -> url != null && !url.isBlank())
                 .orElse(null);

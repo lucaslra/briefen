@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { STRINGS } from '../constants/strings'
+import { apiFetch } from '../apiFetch.js'
 
 /**
  * Status per URL: 'queued' | 'processing' | 'done' | 'error'
@@ -43,7 +44,7 @@ export function useBatchSummarize() {
       if (model) payload.model = model
 
       try {
-        const res = await fetch('/api/summarize', {
+        const res = await apiFetch('/api/summarize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),

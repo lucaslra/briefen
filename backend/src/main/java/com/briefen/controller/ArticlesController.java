@@ -3,11 +3,13 @@ package com.briefen.controller;
 import com.briefen.dto.ArticleQueueResponse;
 import com.briefen.dto.ArticleSubmitRequest;
 import com.briefen.exception.InvalidUrlException;
+import com.briefen.security.BriefenUserDetails;
 import com.briefen.service.SummaryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -31,17 +33,21 @@ public class ArticlesController {
     }
 
     @PostMapping
-    public ResponseEntity<ArticleQueueResponse> submitArticle(@RequestBody ArticleSubmitRequest request) {
+    public ResponseEntity<ArticleQueueResponse> submitArticle(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
+            @RequestBody ArticleSubmitRequest request) {
         if (request.url() == null || request.url().isBlank()) {
             throw new InvalidUrlException("A URL must be provided.");
         }
 
         String id = UUID.randomUUID().toString();
         String url = request.url();
+        // Capture userId before spawning virtual thread — SecurityContext does not propagate
+        String userId = userDetails.userId();
 
         Thread.ofVirtual().start(() -> {
             try {
-                summaryService.summarize(url, false, null, null);
+                summaryService.summarize(userId, url, false, null, null);
             } catch (Exception e) {
                 log.warn("Background summarization failed for {}: {}", url, e.getMessage());
             }

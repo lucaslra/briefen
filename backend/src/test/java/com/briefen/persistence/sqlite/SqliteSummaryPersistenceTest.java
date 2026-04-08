@@ -22,6 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class SqliteSummaryPersistenceTest {
 
+    private static final String USER_ID = "persistence-test-user";
+
     @Autowired
     private SummaryPersistence persistence;
 
@@ -37,7 +39,7 @@ class SqliteSummaryPersistenceTest {
 
         // Act
         persistence.save(summary);
-        Optional<Summary> found = persistence.findByUrl("https://example.com/test");
+        Optional<Summary> found = persistence.findByUrl(USER_ID, "https://example.com/test");
 
         // Assert
         assertThat(found).isPresent();
@@ -48,7 +50,7 @@ class SqliteSummaryPersistenceTest {
     @Test
     void shouldReturnEmptyWhenUrlNotFound() {
         // Act
-        Optional<Summary> found = persistence.findByUrl("https://nonexistent.example.com");
+        Optional<Summary> found = persistence.findByUrl(USER_ID, "https://nonexistent.example.com");
 
         // Assert
         assertThat(found).isEmpty();
@@ -71,7 +73,7 @@ class SqliteSummaryPersistenceTest {
         persistence.save(newest);
 
         // Act
-        Page<Summary> page = persistence.findAll(0, 10);
+        Page<Summary> page = persistence.findAll(USER_ID, 0, 10);
 
         // Assert — newest first
         assertThat(page.getContent()).hasSize(3);
@@ -91,7 +93,7 @@ class SqliteSummaryPersistenceTest {
         persistence.save(read2);
 
         // Act
-        Page<Summary> page = persistence.findAll(0, 10, "unread", null);
+        Page<Summary> page = persistence.findAll(USER_ID, 0, 10, "unread", null);
 
         // Assert
         assertThat(page.getContent()).hasSize(1);
@@ -110,7 +112,7 @@ class SqliteSummaryPersistenceTest {
         persistence.save(read2);
 
         // Act
-        Page<Summary> page = persistence.findAll(0, 10, "read", null);
+        Page<Summary> page = persistence.findAll(USER_ID, 0, 10, "read", null);
 
         // Assert
         assertThat(page.getContent()).hasSize(2);
@@ -127,7 +129,7 @@ class SqliteSummaryPersistenceTest {
         persistence.save(otherArticle);
 
         // Act — search with lowercase; title has "Java" (capitalized)
-        Page<Summary> page = persistence.findAll(0, 10, "all", "java");
+        Page<Summary> page = persistence.findAll(USER_ID, 0, 10, "all", "java");
 
         // Assert
         assertThat(page.getContent()).hasSize(1);
@@ -144,7 +146,7 @@ class SqliteSummaryPersistenceTest {
         persistence.save(nonMatching);
 
         // Act
-        Page<Summary> page = persistence.findAll(0, 10, "all", "REST APIs");
+        Page<Summary> page = persistence.findAll(USER_ID, 0, 10, "all", "REST APIs");
 
         // Assert
         assertThat(page.getContent()).hasSize(1);
@@ -159,11 +161,11 @@ class SqliteSummaryPersistenceTest {
         persistence.save(buildSummary("https://example.com/c", "C", "Content", false));
 
         // Act
-        long updated = persistence.markAllAsRead();
+        long updated = persistence.markAllAsRead(USER_ID);
 
         // Assert
         assertThat(updated).isEqualTo(3);
-        Page<Summary> unread = persistence.findAll(0, 10, "unread", null);
+        Page<Summary> unread = persistence.findAll(USER_ID, 0, 10, "unread", null);
         assertThat(unread.getContent()).isEmpty();
     }
 
@@ -175,11 +177,11 @@ class SqliteSummaryPersistenceTest {
         persistence.save(buildSummary("https://example.com/c", "C", "Content", true));
 
         // Act
-        long updated = persistence.markAllAsUnread();
+        long updated = persistence.markAllAsUnread(USER_ID);
 
         // Assert
         assertThat(updated).isEqualTo(3);
-        Page<Summary> read = persistence.findAll(0, 10, "read", null);
+        Page<Summary> read = persistence.findAll(USER_ID, 0, 10, "read", null);
         assertThat(read.getContent()).isEmpty();
     }
 
@@ -191,7 +193,7 @@ class SqliteSummaryPersistenceTest {
         persistence.save(buildSummary("https://example.com/read1", "Read 1", "Content", true));
 
         // Act
-        long count = persistence.countUnread();
+        long count = persistence.countUnread(USER_ID);
 
         // Assert
         assertThat(count).isEqualTo(2);
@@ -204,10 +206,10 @@ class SqliteSummaryPersistenceTest {
         String id = saved.getId();
 
         // Act
-        persistence.deleteById(id);
+        persistence.deleteById(USER_ID, id);
 
         // Assert
-        assertThat(persistence.findById(id)).isEmpty();
+        assertThat(persistence.findById(USER_ID, id)).isEmpty();
     }
 
     @Test
@@ -220,11 +222,11 @@ class SqliteSummaryPersistenceTest {
         saved.setTitle("Updated Title");
         saved.setSummary("Updated summary content");
 
-        // Act — save again with same URL but updated fields
+        // Act — save again with same URL+userId but updated fields
         Summary updated = persistence.save(saved);
 
         // Assert — only one record exists, with updated content
-        List<Summary> all = persistence.findAll("all", null);
+        List<Summary> all = persistence.findAll(USER_ID, "all", null);
         assertThat(all).hasSize(1);
         assertThat(updated.getTitle()).isEqualTo("Updated Title");
         assertThat(updated.getSummary()).isEqualTo("Updated summary content");
@@ -236,19 +238,40 @@ class SqliteSummaryPersistenceTest {
         Summary saved = persistence.save(buildSummary("https://example.com/exists", "Exists", "Content", false));
 
         // Act & Assert
-        assertThat(persistence.existsById(saved.getId())).isTrue();
+        assertThat(persistence.existsById(USER_ID, saved.getId())).isTrue();
     }
 
     @Test
     void shouldReturnFalseForNonExistingId() {
         // Act & Assert
-        assertThat(persistence.existsById("non-existing-id")).isFalse();
+        assertThat(persistence.existsById(USER_ID, "non-existing-id")).isFalse();
+    }
+
+    @Test
+    void shouldIsolateSummariesBetweenUsers() {
+        // Arrange — save a summary for USER_ID and another for a different user
+        persistence.save(buildSummary("https://example.com/mine", "Mine", "Content", false));
+
+        Summary other = buildSummary("https://example.com/mine", "Theirs", "Content", false);
+        other.setUserId("other-user-id");
+        persistence.save(other);
+
+        // Act — each user sees only their own
+        List<Summary> mine = persistence.findAll(USER_ID, "all", null);
+        List<Summary> theirs = persistence.findAll("other-user-id", "all", null);
+
+        // Assert
+        assertThat(mine).hasSize(1);
+        assertThat(mine.get(0).getTitle()).isEqualTo("Mine");
+        assertThat(theirs).hasSize(1);
+        assertThat(theirs.get(0).getTitle()).isEqualTo("Theirs");
     }
 
     // ---- Helpers ----
 
     private Summary buildSummary(String url, String title, String summaryText, boolean isRead) {
         Summary s = new Summary();
+        s.setUserId(USER_ID);
         s.setUrl(url);
         s.setTitle(title);
         s.setSummary(summaryText);

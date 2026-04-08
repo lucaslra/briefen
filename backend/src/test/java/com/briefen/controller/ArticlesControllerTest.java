@@ -1,12 +1,14 @@
 package com.briefen.controller;
 
 import com.briefen.model.Summary;
+import com.briefen.security.WithMockBriefenUser;
 import com.briefen.service.SummaryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -22,7 +24,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @ActiveProfiles("test")
+@WithMockBriefenUser
 class ArticlesControllerTest {
+
+    private static final String TEST_USER_ID = "test-user-id";
 
     @Autowired
     private WebApplicationContext context;
@@ -34,13 +39,15 @@ class ArticlesControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
     }
 
     @Test
     void shouldReturn202ForValidUrl() throws Exception {
         Summary summary = buildSummary("https://example.com/article");
-        when(summaryService.summarize(eq("https://example.com/article"), eq(false), isNull(), isNull()))
+        when(summaryService.summarize(anyString(), eq("https://example.com/article"), eq(false), isNull(), isNull()))
                 .thenReturn(summary);
 
         mockMvc.perform(post("/api/articles")
@@ -74,6 +81,7 @@ class ArticlesControllerTest {
 
     private Summary buildSummary(String url) {
         Summary s = new Summary();
+        s.setUserId(TEST_USER_ID);
         s.setUrl(url);
         s.setTitle("Test Article");
         s.setSummary("A short summary.");

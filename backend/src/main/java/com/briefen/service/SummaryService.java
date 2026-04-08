@@ -68,14 +68,14 @@ public class SummaryService {
     /**
      * Summarize from a URL — fetches the article, summarizes, and caches the result.
      */
-    public Summary summarize(String url, boolean refresh, String lengthHint, String model) {
+    public Summary summarize(String userId, String url, boolean refresh, String lengthHint, String model) {
         URI validatedUri = urlValidator.validate(url);
         String normalizedUrl = validatedUri.toString();
         boolean isLengthAdjustment = lengthHint != null && !lengthHint.isBlank();
 
         // Only use cache for default-length summaries
         if (!refresh && !isLengthAdjustment) {
-            Optional<Summary> cached = summaryPersistence.findByUrl(normalizedUrl);
+            Optional<Summary> cached = summaryPersistence.findByUrl(userId, normalizedUrl);
             if (cached.isPresent()) {
                 log.info("Returning cached summary for {}", normalizedUrl);
                 return cached.get();
@@ -84,19 +84,21 @@ public class SummaryService {
 
         ArticleFetcherService.ArticleContent article = articleFetcher.fetch(normalizedUrl);
         String effectiveModel = (model != null && !model.isBlank()) ? model : ollamaProperties.model();
-        String summaryText = dispatchSummarize(article.text(), lengthHint, effectiveModel);
+        String summaryText = dispatchSummarize(userId, article.text(), lengthHint, effectiveModel);
 
         // Length-adjusted summaries are transient — don't persist them
         if (isLengthAdjustment) {
             Summary transient_ = new Summary(normalizedUrl, article.title(), summaryText, effectiveModel);
+            transient_.setUserId(userId);
             log.info("Generated {} summary for {} (not persisted)", lengthHint, normalizedUrl);
             return transient_;
         }
 
         // Upsert: update existing or create new
-        Summary summary = summaryPersistence.findByUrl(normalizedUrl)
+        Summary summary = summaryPersistence.findByUrl(userId, normalizedUrl)
                 .orElseGet(Summary::new);
         boolean isNew = summary.getId() == null;
+        summary.setUserId(userId);
         summary.setUrl(normalizedUrl);
         summary.setTitle(article.title());
         summary.setSummary(summaryText);
@@ -108,14 +110,14 @@ public class SummaryService {
         }
 
         Summary saved = summaryPersistence.save(summary);
-        webhookService.send(saved);
+        webhookService.send(saved, userId);
         return saved;
     }
 
     /**
      * Summarize from raw pasted text — no URL fetching, no caching.
      */
-    public Summary summarizeText(String text, String title, String lengthHint, String model, String sourceUrl) {
+    public Summary summarizeText(String userId, String text, String title, String lengthHint, String model, String sourceUrl) {
         if (text == null || text.isBlank()) {
             throw new InvalidUrlException("Article text must not be blank");
         }
@@ -125,7 +127,7 @@ public class SummaryService {
         // Check cache by sourceUrl before generating (skip for length adjustments)
         String effectiveUrl = (sourceUrl != null && !sourceUrl.isBlank()) ? sourceUrl.trim() : null;
         if (!isLengthAdjustment && effectiveUrl != null) {
-            Optional<Summary> cached = summaryPersistence.findByUrl(effectiveUrl);
+            Optional<Summary> cached = summaryPersistence.findByUrl(userId, effectiveUrl);
             if (cached.isPresent()) {
                 log.info("Returning cached summary for source URL: {}", effectiveUrl);
                 return cached.get();
@@ -133,7 +135,7 @@ public class SummaryService {
         }
 
         String effectiveModel = (model != null && !model.isBlank()) ? model : ollamaProperties.model();
-        String summaryText = dispatchSummarize(text, lengthHint, effectiveModel);
+        String summaryText = dispatchSummarize(userId, text, lengthHint, effectiveModel);
 
         // Extract title from LLM response if not provided
         String effectiveTitle = (title != null && !title.isBlank()) ? title.trim() : null;
@@ -143,11 +145,11 @@ public class SummaryService {
             summaryText = parsed.body();
         }
 
-        // Upsert when a sourceUrl is provided (avoids duplicate key on the unique URL index)
+        // Upsert when a sourceUrl is provided (avoids duplicate key on the unique URL+userId index)
         Summary result;
         boolean isNew;
         if (effectiveUrl != null) {
-            var existing = summaryPersistence.findByUrl(effectiveUrl);
+            var existing = summaryPersistence.findByUrl(userId, effectiveUrl);
             result = existing.orElseGet(Summary::new);
             isNew = existing.isEmpty();
             result.setUrl(effectiveUrl);
@@ -155,6 +157,7 @@ public class SummaryService {
             result = new Summary();
             isNew = true;
         }
+        result.setUserId(userId);
         result.setTitle(effectiveTitle);
         result.setSummary(summaryText);
         result.setModelUsed(effectiveModel);
@@ -164,7 +167,7 @@ public class SummaryService {
             result.setSavedAt(result.getCreatedAt());
         }
         result = summaryPersistence.save(result);
-        webhookService.send(result);
+        webhookService.send(result, userId);
         log.info("Generated and saved summary from pasted text ({} chars, title='{}')", text.length(), effectiveTitle);
         return result;
     }
@@ -173,7 +176,6 @@ public class SummaryService {
 
     /**
      * Extracts a markdown H1 title from the beginning of the summary text.
-     * If found, returns the title and the remaining body separately.
      */
     private TitleAndBody extractTitle(String text) {
         if (text != null && text.startsWith("# ")) {
@@ -189,65 +191,65 @@ public class SummaryService {
         return new TitleAndBody("Pasted Article", text);
     }
 
-    public Page<Summary> getSummaries(int page, int size) {
-        return summaryPersistence.findAll(page, size);
+    public Page<Summary> getSummaries(String userId, int page, int size) {
+        return summaryPersistence.findAll(userId, page, size);
     }
 
-    public Page<Summary> getSummaries(int page, int size, String filter) {
-        return getSummaries(page, size, filter, null);
+    public Page<Summary> getSummaries(String userId, int page, int size, String filter) {
+        return getSummaries(userId, page, size, filter, null);
     }
 
-    public Page<Summary> getSummaries(int page, int size, String filter, String search) {
-        return summaryPersistence.findAll(page, size, filter, search);
+    public Page<Summary> getSummaries(String userId, int page, int size, String filter, String search) {
+        return summaryPersistence.findAll(userId, page, size, filter, search);
     }
 
-    public List<Summary> getAllSummaries(String filter, String search) {
-        return summaryPersistence.findAll(filter, search);
+    public List<Summary> getAllSummaries(String userId, String filter, String search) {
+        return summaryPersistence.findAll(userId, filter, search);
     }
 
-    public Summary updateReadStatus(String id, boolean isRead) {
-        Summary summary = summaryPersistence.findById(id)
+    public Summary updateReadStatus(String userId, String id, boolean isRead) {
+        Summary summary = summaryPersistence.findById(userId, id)
                 .orElseThrow(() -> new SummaryNotFoundException(id));
         summary.setIsRead(isRead);
         return summaryPersistence.save(summary);
     }
 
-    public Summary updateNotes(String id, String notes) {
-        Summary summary = summaryPersistence.findById(id)
+    public Summary updateNotes(String userId, String id, String notes) {
+        Summary summary = summaryPersistence.findById(userId, id)
                 .orElseThrow(() -> new SummaryNotFoundException(id));
         summary.setNotes((notes != null && !notes.isEmpty()) ? notes : null);
         return summaryPersistence.save(summary);
     }
 
-    public void deleteSummary(String id) {
-        if (!summaryPersistence.existsById(id)) {
+    public void deleteSummary(String userId, String id) {
+        if (!summaryPersistence.existsById(userId, id)) {
             throw new SummaryNotFoundException(id);
         }
-        summaryPersistence.deleteById(id);
+        summaryPersistence.deleteById(userId, id);
     }
 
-    public long markAllAsRead() {
-        return summaryPersistence.markAllAsRead();
+    public long markAllAsRead(String userId) {
+        return summaryPersistence.markAllAsRead(userId);
     }
 
-    public long markAllAsUnread() {
-        return summaryPersistence.markAllAsUnread();
+    public long markAllAsUnread(String userId) {
+        return summaryPersistence.markAllAsUnread(userId);
     }
 
-    public long getUnreadCount() {
-        return summaryPersistence.countUnread();
+    public long getUnreadCount(String userId) {
+        return summaryPersistence.countUnread(userId);
     }
 
     /**
      * Routes to the correct summarizer based on the model name.
      */
-    private String dispatchSummarize(String articleText, String lengthHint, String model) {
+    private String dispatchSummarize(String userId, String articleText, String lengthHint, String model) {
         if (isOpenAiModel(model)) {
-            String apiKey = loadOpenAiKey();
+            String apiKey = loadOpenAiKey(userId);
             return openAiSummarizer.summarize(articleText, lengthHint, model, apiKey);
         }
         if (isAnthropicModel(model)) {
-            String apiKey = loadAnthropicKey();
+            String apiKey = loadAnthropicKey(userId);
             return anthropicSummarizer.summarize(articleText, lengthHint, model, apiKey);
         }
         return ollamaSummarizer.summarize(articleText, lengthHint, model);
@@ -265,16 +267,16 @@ public class SummaryService {
                 || model.startsWith("claude-"));
     }
 
-    private String loadOpenAiKey() {
-        return settingsPersistence.findDefault()
+    private String loadOpenAiKey(String userId) {
+        return settingsPersistence.findByUserId(userId)
                 .map(UserSettings::getOpenaiApiKey)
                 .filter(key -> key != null && !key.isBlank())
                 .orElseThrow(() -> new SummarizationException(
                         "OpenAI API key not configured. Please add your key in Settings.", false));
     }
 
-    private String loadAnthropicKey() {
-        return settingsPersistence.findDefault()
+    private String loadAnthropicKey(String userId) {
+        return settingsPersistence.findByUserId(userId)
                 .map(UserSettings::getAnthropicApiKey)
                 .filter(key -> key != null && !key.isBlank())
                 .orElseThrow(() -> new SummarizationException(

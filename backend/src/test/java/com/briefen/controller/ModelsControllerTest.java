@@ -3,10 +3,12 @@ package com.briefen.controller;
 import com.briefen.config.OllamaProperties;
 import com.briefen.model.UserSettings;
 import com.briefen.persistence.SettingsPersistence;
+import com.briefen.security.WithMockBriefenUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,7 +23,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @ActiveProfiles("test")
+@WithMockBriefenUser
 class ModelsControllerTest {
+
+    private static final String TEST_USER_ID = "test-user-id";
 
     @Autowired
     private WebApplicationContext context;
@@ -36,14 +41,16 @@ class ModelsControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
     }
 
     @Test
     void shouldReturn200WithProvidersArray() throws Exception {
         // Arrange
         when(ollamaProperties.model()).thenReturn("gemma3:4b");
-        when(settingsPersistence.findDefault()).thenReturn(Optional.empty());
+        when(settingsPersistence.findByUserId(TEST_USER_ID)).thenReturn(Optional.empty());
 
         // Act & Assert
         mockMvc.perform(get("/api/models"))
@@ -56,7 +63,7 @@ class ModelsControllerTest {
     void shouldIncludeOllamaProviderWithModels() throws Exception {
         // Arrange
         when(ollamaProperties.model()).thenReturn("gemma3:4b");
-        when(settingsPersistence.findDefault()).thenReturn(Optional.empty());
+        when(settingsPersistence.findByUserId(TEST_USER_ID)).thenReturn(Optional.empty());
 
         // Act & Assert
         mockMvc.perform(get("/api/models"))
@@ -70,7 +77,7 @@ class ModelsControllerTest {
     void shouldMarkOpenAiAsUnconfiguredWhenNoApiKey() throws Exception {
         // Arrange — no settings → no openai key
         when(ollamaProperties.model()).thenReturn("gemma3:4b");
-        when(settingsPersistence.findDefault()).thenReturn(Optional.empty());
+        when(settingsPersistence.findByUserId(TEST_USER_ID)).thenReturn(Optional.empty());
 
         // Act & Assert
         mockMvc.perform(get("/api/models"))
@@ -85,7 +92,7 @@ class ModelsControllerTest {
         UserSettings settings = new UserSettings();
         settings.setOpenaiApiKey("sk-real-key-abc123");
         when(ollamaProperties.model()).thenReturn("gemma3:4b");
-        when(settingsPersistence.findDefault()).thenReturn(Optional.of(settings));
+        when(settingsPersistence.findByUserId(TEST_USER_ID)).thenReturn(Optional.of(settings));
 
         // Act & Assert
         mockMvc.perform(get("/api/models"))
@@ -98,12 +105,12 @@ class ModelsControllerTest {
     void shouldIncludeOpenAiModelsInResponse() throws Exception {
         // Arrange
         when(ollamaProperties.model()).thenReturn("gemma3:4b");
-        when(settingsPersistence.findDefault()).thenReturn(Optional.empty());
+        when(settingsPersistence.findByUserId(TEST_USER_ID)).thenReturn(Optional.empty());
 
         // Act & Assert
         mockMvc.perform(get("/api/models"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.providers[1].models").isArray())
-                .andExpect(jsonPath("$.providers[1].models[?(@.id == 'o4-mini')]").exists());
+                .andExpect(jsonPath("$.providers[1].models[?(@.id == 'gpt-5.4')]").exists());
     }
 }

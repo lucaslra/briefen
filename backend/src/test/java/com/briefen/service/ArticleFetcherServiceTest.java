@@ -5,10 +5,17 @@ import com.briefen.exception.ArticleFetchException;
 import com.briefen.validation.UrlValidator;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.time.Duration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -137,5 +144,90 @@ class ArticleFetcherServiceTest {
         assertThatThrownBy(() -> articleFetcherService.fetch("http://localhost:" + wireMock.port() + "/blocked"))
                 .isInstanceOf(ArticleFetchException.class)
                 .hasMessageContaining("bot protection");
+    }
+
+    @Test
+    void shouldExtractTextFromPdf() throws Exception {
+        // Arrange — build a minimal PDF in memory using PDFBox
+        String expectedText = "Criteria for modularization. ".repeat(10);
+        byte[] pdfBytes = buildPdf("Criteria for Modularization", expectedText);
+
+        wireMock.stubFor(get(urlEqualTo("/paper.pdf"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/pdf")
+                        .withBody(pdfBytes)));
+
+        // Act
+        ArticleFetcherService.ArticleContent content =
+                articleFetcherService.fetch("http://localhost:" + wireMock.port() + "/paper.pdf");
+
+        // Assert
+        assertThat(content.title()).isEqualTo("Criteria for Modularization");
+        assertThat(content.text()).contains("modularization");
+    }
+
+    @Test
+    void shouldUseFilenameAsTitleWhenPdfHasNoMetadataTitle() throws Exception {
+        // Arrange — PDF with no title in document information
+        byte[] pdfBytes = buildPdf(null, "Some PDF content about software engineering. ".repeat(5));
+
+        wireMock.stubFor(get(urlEqualTo("/criteria_for_modularization.pdf"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/pdf")
+                        .withBody(pdfBytes)));
+
+        // Act
+        ArticleFetcherService.ArticleContent content = articleFetcherService
+                .fetch("http://localhost:" + wireMock.port() + "/criteria_for_modularization.pdf");
+
+        // Assert — filename with underscores replaced by spaces, .pdf stripped
+        assertThat(content.title()).isEqualTo("criteria for modularization");
+    }
+
+    @Test
+    void shouldThrowExtractionExceptionForEmptyPdf() throws Exception {
+        // Arrange — valid PDF structure but no text content
+        byte[] pdfBytes = buildPdf("Empty", "");
+
+        wireMock.stubFor(get(urlEqualTo("/empty.pdf"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/pdf")
+                        .withBody(pdfBytes)));
+
+        // Act & Assert
+        assertThatThrownBy(() -> articleFetcherService.fetch("http://localhost:" + wireMock.port() + "/empty.pdf"))
+                .isInstanceOf(ArticleExtractionException.class)
+                .hasMessageContaining("too short");
+    }
+
+    /** Creates a minimal single-page PDF with the given title (metadata) and body text. */
+    private byte[] buildPdf(String title, String bodyText) throws Exception {
+        try (PDDocument doc = new PDDocument();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            if (title != null) {
+                doc.getDocumentInformation().setTitle(title);
+            }
+            PDPage page = new PDPage(PDRectangle.A4);
+            doc.addPage(page);
+            if (bodyText != null && !bodyText.isBlank()) {
+                try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
+                    cs.beginText();
+                    cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+                    cs.newLineAtOffset(50, 700);
+                    // PDFBox can't write very long strings in one call — split into lines
+                    int chunkSize = 80;
+                    for (int i = 0; i < bodyText.length(); i += chunkSize) {
+                        cs.showText(bodyText.substring(i, Math.min(i + chunkSize, bodyText.length())));
+                        cs.newLineAtOffset(0, -15);
+                    }
+                    cs.endText();
+                }
+            }
+            doc.save(out);
+            return out.toByteArray();
+        }
     }
 }

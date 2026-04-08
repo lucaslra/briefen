@@ -13,7 +13,7 @@ import java.time.Instant;
 public class SqliteUserSettingsEntity {
 
     @Id
-    private String id = UserSettings.DEFAULT_ID;
+    private String id;
 
     private String defaultLength = "default";
     private String model;

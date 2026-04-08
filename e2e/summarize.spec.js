@@ -8,7 +8,7 @@
  *   or:       make e2e-managed
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 const MANAGED = process.env.E2E_MANAGED === 'true';
 

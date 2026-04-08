@@ -5,6 +5,7 @@ import com.briefen.exception.InvalidUrlException;
 import com.briefen.exception.SummarizationException;
 import com.briefen.exception.SummaryNotFoundException;
 import com.briefen.model.Summary;
+import com.briefen.security.WithMockBriefenUser;
 import com.briefen.service.SummaryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,7 +32,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @ActiveProfiles("test")
+@WithMockBriefenUser
 class SummarizeControllerTest {
+
+    private static final String TEST_USER_ID = "test-user-id";
 
     @Autowired
     private WebApplicationContext context;
@@ -42,7 +47,9 @@ class SummarizeControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
     }
 
     // ---- POST /api/summarize ----
@@ -51,7 +58,7 @@ class SummarizeControllerTest {
     void shouldReturn200WithSummaryForValidUrl() throws Exception {
         // Arrange
         Summary summary = buildSummary("abc123", "https://example.com/article");
-        when(summaryService.summarize(eq("https://example.com/article"), eq(false), isNull(), isNull()))
+        when(summaryService.summarize(eq(TEST_USER_ID), eq("https://example.com/article"), eq(false), isNull(), isNull()))
                 .thenReturn(summary);
 
         // Act & Assert
@@ -80,7 +87,7 @@ class SummarizeControllerTest {
     @Test
     void shouldReturn400WhenUrlIsInvalid() throws Exception {
         // Arrange
-        when(summaryService.summarize(anyString(), anyBoolean(), any(), any()))
+        when(summaryService.summarize(anyString(), anyString(), anyBoolean(), any(), any()))
                 .thenThrow(new InvalidUrlException("URL must use HTTP or HTTPS scheme."));
 
         // Act & Assert
@@ -96,7 +103,7 @@ class SummarizeControllerTest {
     @Test
     void shouldReturn502WhenArticleFetchFails() throws Exception {
         // Arrange
-        when(summaryService.summarize(anyString(), anyBoolean(), any(), any()))
+        when(summaryService.summarize(anyString(), anyString(), anyBoolean(), any(), any()))
                 .thenThrow(new ArticleFetchException("Failed to fetch article: HTTP 404"));
 
         // Act & Assert
@@ -112,7 +119,7 @@ class SummarizeControllerTest {
     @Test
     void shouldReturn504WhenSummarizationTimesOut() throws Exception {
         // Arrange
-        when(summaryService.summarize(anyString(), anyBoolean(), any(), any()))
+        when(summaryService.summarize(anyString(), anyString(), anyBoolean(), any(), any()))
                 .thenThrow(new SummarizationException("Summarization timed out.", true));
 
         // Act & Assert
@@ -129,7 +136,7 @@ class SummarizeControllerTest {
     void shouldReturn200ForTextSummarization() throws Exception {
         // Arrange
         Summary summary = buildSummary("text-id", null);
-        when(summaryService.summarizeText(anyString(), any(), any(), any(), any()))
+        when(summaryService.summarizeText(anyString(), anyString(), any(), any(), any(), any()))
                 .thenReturn(summary);
 
         // Act & Assert
@@ -149,7 +156,7 @@ class SummarizeControllerTest {
         // Arrange
         List<Summary> items = List.of(buildSummary("id-1", "https://example.com/1"));
         Page<Summary> page = new PageImpl<>(items, PageRequest.of(0, 10), 1);
-        when(summaryService.getSummaries(eq(0), eq(10), eq("all"), isNull()))
+        when(summaryService.getSummaries(eq(TEST_USER_ID), eq(0), eq(10), eq("all"), isNull()))
                 .thenReturn(page);
 
         // Act & Assert
@@ -164,7 +171,7 @@ class SummarizeControllerTest {
     @Test
     void shouldReturn200ForUnreadCount() throws Exception {
         // Arrange
-        when(summaryService.getUnreadCount()).thenReturn(7L);
+        when(summaryService.getUnreadCount(TEST_USER_ID)).thenReturn(7L);
 
         // Act & Assert
         mockMvc.perform(get("/api/summaries/unread-count"))
@@ -178,7 +185,7 @@ class SummarizeControllerTest {
     void shouldReturn404ForUnknownSummaryId() throws Exception {
         // Arrange
         doThrow(new SummaryNotFoundException("unknown-id"))
-                .when(summaryService).deleteSummary("unknown-id");
+                .when(summaryService).deleteSummary(TEST_USER_ID, "unknown-id");
 
         // Act & Assert
         mockMvc.perform(delete("/api/summaries/unknown-id"))
@@ -189,7 +196,7 @@ class SummarizeControllerTest {
     @Test
     void shouldReturn204ForSuccessfulDelete() throws Exception {
         // Arrange
-        doNothing().when(summaryService).deleteSummary("existing-id");
+        doNothing().when(summaryService).deleteSummary(TEST_USER_ID, "existing-id");
 
         // Act & Assert
         mockMvc.perform(delete("/api/summaries/existing-id"))
@@ -203,7 +210,7 @@ class SummarizeControllerTest {
         // Arrange
         Summary summary = buildSummary("id-1", "https://example.com/1");
         summary.setIsRead(true);
-        when(summaryService.updateReadStatus("id-1", true)).thenReturn(summary);
+        when(summaryService.updateReadStatus(TEST_USER_ID, "id-1", true)).thenReturn(summary);
 
         // Act & Assert
         mockMvc.perform(patch("/api/summaries/id-1/read-status")
@@ -227,7 +234,7 @@ class SummarizeControllerTest {
     @Test
     void shouldReturn200ForBulkMarkAllRead() throws Exception {
         // Arrange
-        when(summaryService.markAllAsRead()).thenReturn(3L);
+        when(summaryService.markAllAsRead(TEST_USER_ID)).thenReturn(3L);
 
         // Act & Assert
         mockMvc.perform(patch("/api/summaries/read-status/bulk"))
@@ -242,7 +249,7 @@ class SummarizeControllerTest {
         // Arrange
         Summary summary = buildSummary("id-1", "https://example.com/1");
         summary.setNotes("My note");
-        when(summaryService.updateNotes("id-1", "My note")).thenReturn(summary);
+        when(summaryService.updateNotes(TEST_USER_ID, "id-1", "My note")).thenReturn(summary);
 
         // Act & Assert
         mockMvc.perform(patch("/api/summaries/id-1/notes")
@@ -257,6 +264,7 @@ class SummarizeControllerTest {
     private Summary buildSummary(String id, String url) {
         Summary s = new Summary();
         s.setId(id);
+        s.setUserId(TEST_USER_ID);
         s.setUrl(url);
         s.setTitle("Test Title");
         s.setSummary("Test summary content.");

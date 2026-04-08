@@ -2,6 +2,7 @@ package com.briefen.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -35,5 +36,15 @@ public class SqliteConfig {
         dataSource.setDriverClassName(driverClassName);
         dataSource.setMaximumPoolSize(1);
         return dataSource;
+    }
+
+    @Bean
+    public CommandLineRunner enableWalMode(DataSource dataSource) {
+        return args -> {
+            try (var conn = dataSource.getConnection();
+                 var stmt = conn.createStatement()) {
+                stmt.execute("PRAGMA journal_mode=WAL");
+            }
+        };
     }
 }

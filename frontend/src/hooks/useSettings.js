@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { apiFetch } from '../apiFetch.js'
 
 const STORAGE_KEY = 'briefen-settings'
 
@@ -42,7 +43,7 @@ export function useSettings() {
   // On mount, fetch the authoritative settings from the API
   useEffect(() => {
     let cancelled = false
-    fetch('/api/settings')
+    apiFetch('/api/settings')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (!cancelled && data) {
@@ -69,7 +70,7 @@ export function useSettings() {
 
     // Only send the changed field to avoid overwriting masked keys
     // with their masked representations (e.g., "sk-...abc1").
-    return fetch('/api/settings', {
+    return apiFetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ [key]: value }),
@@ -77,7 +78,7 @@ export function useSettings() {
       if (!res.ok) return res.text().then(t => { throw new Error(t || 'Save failed') })
     }).catch(err => {
       // Revert optimistic update by re-fetching authoritative settings
-      fetch('/api/settings')
+      apiFetch('/api/settings')
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (data) {
@@ -99,14 +100,14 @@ export function useSettings() {
       return next
     })
 
-    return fetch('/api/settings', {
+    return apiFetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
     }).then(res => {
       if (!res.ok) return res.text().then(t => { throw new Error(t || 'Save failed') })
     }).catch(err => {
-      fetch('/api/settings')
+      apiFetch('/api/settings')
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (data) {

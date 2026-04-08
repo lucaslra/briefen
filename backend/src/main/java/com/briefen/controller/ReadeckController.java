@@ -2,11 +2,13 @@ package com.briefen.controller;
 
 import com.briefen.model.UserSettings;
 import com.briefen.persistence.SettingsPersistence;
+import com.briefen.security.BriefenUserDetails;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -49,8 +51,8 @@ public class ReadeckController {
      * Returns whether Readeck is configured (has both URL and API key).
      */
     @GetMapping("/status")
-    public Map<String, Object> status() {
-        var settings = loadSettings();
+    public Map<String, Object> status(@AuthenticationPrincipal BriefenUserDetails userDetails) {
+        var settings = loadSettings(userDetails.userId());
         boolean configured = settings.getReadeckUrl() != null && settings.getReadeckApiKey() != null;
         return Map.of("configured", configured);
     }
@@ -61,12 +63,13 @@ public class ReadeckController {
      */
     @GetMapping("/bookmarks")
     public String listBookmarks(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
             @RequestParam(defaultValue = "1") @Min(1) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status) {
 
-        var settings = requireReadeck();
+        var settings = requireReadeck(userDetails.userId());
         var uriBuilder = new StringBuilder(settings.getReadeckUrl())
                 .append("/api/bookmarks?page=").append(page)
                 .append("&limit=").append(limit);
@@ -85,9 +88,11 @@ public class ReadeckController {
      * Gets a single bookmark's metadata.
      */
     @GetMapping("/bookmarks/{id}")
-    public String getBookmark(@PathVariable String id) {
+    public String getBookmark(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
+            @PathVariable String id) {
         sanitizeId(id);
-        var settings = requireReadeck();
+        var settings = requireReadeck(userDetails.userId());
         String url = settings.getReadeckUrl() + "/api/bookmarks/" + id;
         return proxyGetWithRetry(url, settings.getReadeckApiKey());
     }
@@ -98,9 +103,11 @@ public class ReadeckController {
      * (which returns only the article body, no Readeck chrome) and extracts plain text.
      */
     @GetMapping("/bookmarks/{id}/article")
-    public Map<String, String> getArticleContent(@PathVariable String id) {
+    public Map<String, String> getArticleContent(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
+            @PathVariable String id) {
         sanitizeId(id);
-        var settings = requireReadeck();
+        var settings = requireReadeck(userDetails.userId());
 
         // Fetch bookmark metadata for the title
         String metaUrl = settings.getReadeckUrl() + "/api/bookmarks/" + id;
@@ -157,13 +164,13 @@ public class ReadeckController {
         }
     }
 
-    private UserSettings loadSettings() {
-        return settingsPersistence.findDefault()
+    private UserSettings loadSettings(String userId) {
+        return settingsPersistence.findByUserId(userId)
                 .orElseGet(UserSettings::new);
     }
 
-    private UserSettings requireReadeck() {
-        var settings = loadSettings();
+    private UserSettings requireReadeck(String userId) {
+        var settings = loadSettings(userId);
         if (settings.getReadeckUrl() == null || settings.getReadeckApiKey() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Readeck is not configured. Set both the Readeck URL and API key in Settings.");

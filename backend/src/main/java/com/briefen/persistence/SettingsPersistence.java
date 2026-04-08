@@ -6,7 +6,7 @@ import java.util.Optional;
 
 public interface SettingsPersistence {
 
-    Optional<UserSettings> findDefault();
+    Optional<UserSettings> findByUserId(String userId);
 
     UserSettings save(UserSettings settings);
 }

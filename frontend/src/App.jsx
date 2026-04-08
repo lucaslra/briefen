@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { STRINGS } from './constants/strings'
 import { useTheme } from './hooks/useTheme'
+import { useAuth } from './hooks/useAuth'
 import { useSummarize } from './hooks/useSummarize'
 import { useBatchSummarize } from './hooks/useBatchSummarize'
 import { useSummaries } from './hooks/useSummaries'
@@ -11,6 +12,7 @@ import { useNotification } from './hooks/useNotification'
 import { useReadeck } from './hooks/useReadeck'
 import { useUnreadCount } from './hooks/useUnreadCount'
 import { Header } from './components/Header'
+import { Login } from './components/Login'
 import { UrlInput } from './components/UrlInput'
 import { LoadingSkeleton } from './components/LoadingSkeleton'
 import { BatchProgress } from './components/BatchProgress'
@@ -138,6 +140,7 @@ function HomePage({ settings, refreshUnreadCount }) {
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
+  const { isAuthenticated, username, userId, role, login, logout } = useAuth()
   const { settings, updateSetting, updateSettings } = useSettings()
   const { unreadCount, refreshUnreadCount } = useUnreadCount()
   const mainRef = useRef(null)
@@ -150,12 +153,18 @@ export default function App() {
     }
   }, [location.pathname])
 
+  if (!isAuthenticated) {
+    return <Login onLogin={login} />
+  }
+
   return (
     <>
       <Header
         theme={theme}
         onToggleTheme={toggleTheme}
         unreadCount={unreadCount}
+        onLogout={logout}
+        username={username}
       />
 
       <main ref={mainRef} tabIndex={-1} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 20px', paddingBottom: '40px', outline: 'none' }}>
@@ -167,6 +176,8 @@ export default function App() {
               settings={settings}
               onUpdateSetting={updateSetting}
               onUpdateSettings={updateSettings}
+              isAdmin={role === 'ADMIN'}
+              currentUserId={userId}
             />
           } />
         </Routes>

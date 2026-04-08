@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { STRINGS } from '../constants/strings'
+import { apiFetch } from '../apiFetch.js'
 
 export function useSummarize() {
   const [data, setData] = useState(null)
@@ -21,7 +22,7 @@ export function useSummarize() {
 
     const qs = refresh ? '?refresh=true' : ''
     try {
-      const res = await fetch(`/api/summarize${qs}`, {
+      const res = await apiFetch(`/api/summarize${qs}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -62,7 +63,7 @@ export function useSummarize() {
     if (sourceUrl) payload.sourceUrl = sourceUrl
 
     try {
-      const res = await fetch('/api/summarize', {
+      const res = await apiFetch('/api/summarize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

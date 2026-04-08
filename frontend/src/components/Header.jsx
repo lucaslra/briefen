@@ -3,7 +3,7 @@ import { STRINGS } from '../constants/strings'
 import { ThemeToggle } from './ThemeToggle'
 import styles from './Header.module.css'
 
-export function Header({ theme, onToggleTheme, unreadCount }) {
+export function Header({ theme, onToggleTheme, unreadCount, onLogout, username }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
@@ -48,6 +48,23 @@ export function Header({ theme, onToggleTheme, unreadCount }) {
           </svg>
         </button>
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+        {onLogout && (
+          <>
+            {username && <span className={styles.username}>{username}</span>}
+            <button
+              className={styles.iconBtn}
+              onClick={onLogout}
+              title={STRINGS.LOGOUT_BUTTON}
+              aria-label={STRINGS.LOGOUT_BUTTON}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M13 15l4-5-4-5" />
+                <path d="M17 10H7" />
+                <path d="M7 3H4a1 1 0 00-1 1v12a1 1 0 001 1h3" />
+              </svg>
+            </button>
+          </>
+        )}
       </div>
     </header>
   )

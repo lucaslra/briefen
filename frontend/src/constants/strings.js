@@ -167,6 +167,43 @@ export const STRINGS = {
   BATCH_DISMISS: 'Done',
 
   SETTINGS_VERSION_PREFIX: 'Briefen',
+
+  // Login
+  LOGIN_SUBTITLE: 'Sign in to continue',
+  LOGIN_USERNAME_LABEL: 'Username',
+  LOGIN_PASSWORD_LABEL: 'Password',
+  LOGIN_BUTTON: 'Sign in',
+  LOGIN_SIGNING_IN: 'Signing in\u2026',
+  LOGIN_INVALID_CREDENTIALS: 'Invalid username or password.',
+
+  // Header logout
+  LOGOUT_BUTTON: 'Sign out',
+
+  // User management (admin only)
+  SETTINGS_TAB_USERS: 'Users',
+  USERS_HEADING: 'User Accounts',
+  USERS_SUBHEADING: 'Create and manage user accounts for this Briefen instance.',
+  USERS_TABLE_USERNAME: 'Username',
+  USERS_TABLE_ROLE: 'Role',
+  USERS_TABLE_CREATED: 'Created',
+  USERS_TABLE_ACTIONS: 'Actions',
+  USERS_DELETE_BUTTON: 'Delete',
+  USERS_DELETE_CONFIRM: 'Delete user "{username}"? This cannot be undone.',
+  USERS_DELETE_SELF_HINT: 'You cannot delete your own account.',
+  USERS_CREATE_HEADING: 'Add User',
+  USERS_USERNAME_LABEL: 'Username',
+  USERS_USERNAME_PLACEHOLDER: 'Username',
+  USERS_PASSWORD_LABEL: 'Password',
+  USERS_PASSWORD_PLACEHOLDER: 'Password',
+  USERS_ROLE_LABEL: 'Role',
+  USERS_ROLE_USER: 'User',
+  USERS_ROLE_ADMIN: 'Admin',
+  USERS_CREATE_BUTTON: 'Create User',
+  USERS_CREATE_ERROR_TAKEN: 'Username already taken.',
+  USERS_CREATE_ERROR_GENERIC: 'Failed to create user. Please try again.',
+  USERS_DELETE_ERROR: 'Failed to delete user. Please try again.',
+  USERS_LOADING: 'Loading users\u2026',
+  USERS_EMPTY: 'No users found.',
 }
 
 /**

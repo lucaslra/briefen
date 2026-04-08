@@ -19,8 +19,8 @@ public class SqliteSettingsPersistence implements SettingsPersistence {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<UserSettings> findDefault() {
-        return repository.findById(UserSettings.DEFAULT_ID)
+    public Optional<UserSettings> findByUserId(String userId) {
+        return repository.findById(userId)
                 .map(SqliteUserSettingsEntity::toDomain);
     }
 
