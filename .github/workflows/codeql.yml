@@ -37,7 +37,7 @@ jobs:
           cache-dependency-path: backend/pom.xml
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@3b1a19a80ab047f35cbb237b5bd9bdc1e14f166c  # v3
+        uses: github/codeql-action/init@5c8a8a642e79153f5d047b10ec1cba1d1cc65699  # v3
         with:
           languages: ${{ matrix.language }}
           queries: security-and-quality
@@ -47,6 +47,6 @@ jobs:
         run: cd backend && ./mvnw --batch-mode --quiet -DskipTests package
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@3b1a19a80ab047f35cbb237b5bd9bdc1e14f166c  # v3
+        uses: github/codeql-action/analyze@5c8a8a642e79153f5d047b10ec1cba1d1cc65699  # v3
         with:
           category: /language:${{ matrix.language }}
