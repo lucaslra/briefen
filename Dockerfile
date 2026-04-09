@@ -10,6 +10,13 @@
 # ---------------------------------------------------------------------------
 FROM node:22-alpine AS frontend-build
 
+# APP_BASE_PATH sets the Vite base URL baked into asset paths.
+# Must match SERVER_CONTEXT_PATH at runtime.
+# Example: --build-arg APP_BASE_PATH=/briefen/
+# Default: / (root — correct for the pre-built GHCR image)
+ARG APP_BASE_PATH=/
+ENV VITE_APP_BASE_PATH=${APP_BASE_PATH}
+
 WORKDIR /app/frontend
 
 # Enable pnpm via corepack
@@ -82,7 +89,7 @@ RUN mkdir -p /data && chown -R briefen:briefen /app /data
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD curl -sf http://localhost:8080/actuator/health | grep -q '"status":"UP"' || exit 1
+  CMD curl -sf "http://localhost:8080${SERVER_CONTEXT_PATH:-}/actuator/health" | grep -q '"status":"UP"' || exit 1
 
 USER briefen
 

@@ -12,7 +12,7 @@
 - **Summarize any article** — paste a URL or raw text, get a concise summary
 - **Batch summarization** — process multiple URLs at once
 - **Reading list** — save, filter (unread/read/all), search, and annotate summaries
-- **Multiple LLM providers** — Ollama (local, default) or OpenAI (optional, API key required)
+- **Multiple LLM providers** — Ollama (local, default), OpenAI, or Anthropic Claude (optional, API key required)
 - **Readeck integration** — browse and summarize bookmarks from a self-hosted Readeck instance
 - **Length control** — shorter, default, or longer summaries; regenerate on demand
 - **Export** — download summaries as Markdown
@@ -29,7 +29,7 @@ Browser (React) → Spring Boot API → Jsoup (fetch article) → Ollama or Open
 |----------------|--------------------------------------------|
 | Frontend       | React 19 (Vite, pnpm, plain JS)           |
 | Backend        | Java 25, Spring Boot 4.0.5, Maven         |
-| LLM            | Ollama (local) or OpenAI (cloud)           |
+| LLM            | Ollama (local), OpenAI, or Anthropic Claude (cloud) |
 | Database       | SQLite (file-based, zero setup)            |
 | Orchestration  | Docker Compose                             |
 
@@ -41,14 +41,48 @@ Browser (React) → Spring Boot API → Jsoup (fetch article) → Ollama or Open
 
 ## Quick Start
 
+### Self-Hosting (Docker — no build required)
+
+The fastest path to a running instance. Uses the pre-built image from GHCR.
+
 ```bash
-# 1. Start infrastructure (Ollama)
+# Start the full stack (Ollama + Briefen app)
+docker compose -f docker-compose.sample.yml up -d
+
+# Watch the logs — Ollama pulls models on first run (~1–5 min depending on your connection)
+docker compose -f docker-compose.sample.yml logs -f
+```
+
+Open **http://localhost:8080**. On first start Briefen generates admin credentials and prints them to the container log:
+
+```
+=================================================================
+Briefen — initial admin credentials
+  Username : admin
+  Password : <random 32-char hex>
+Set BRIEFEN_AUTH_USERNAME / BRIEFEN_AUTH_PASSWORD to use your own.
+=================================================================
+```
+
+To set your own credentials, add them to the compose file's `environment:` block before the first start:
+
+```yaml
+BRIEFEN_AUTH_USERNAME: alice
+BRIEFEN_AUTH_PASSWORD: changeme
+```
+
+> See **[docs/getting-started.md](docs/getting-started.md)** for a full walkthrough including reverse proxy setup, cloud LLM providers, and backups.
+
+### Local Development
+
+```bash
+# 1. Start infrastructure (Ollama only)
 make up
 
-# 2. Wait for Ollama to pull the model (first time only, ~1-2 min)
+# 2. Wait for Ollama to pull the model (first time only, ~1–2 min)
 docker compose logs -f ollama
 
-# 3. Start backend and frontend
+# 3. Start backend and frontend with hot-reload
 make dev
 ```
 
@@ -56,7 +90,7 @@ make dev
 - Backend API: http://localhost:8080
 - Health check: http://localhost:8080/actuator/health
 
-Or run backend and frontend separately:
+Or run each service independently:
 
 ```bash
 make backend   # in one terminal
@@ -112,33 +146,66 @@ Briefen uses **SQLite** — a file-based database that requires zero setup. The 
 
 ### Backup & Restore
 
-**Your entire Briefen state** (summaries, notes, API keys, settings) lives in a single file. Backing up is just copying that file.
+**Your entire Briefen state** (summaries, notes, API keys, settings) lives in a single SQLite file.
 
-#### Docker deployments (named volume)
+> ⚠️ A plain `cp` or `tar` of a **running** SQLite database can produce a corrupt backup if a write occurs mid-copy. Use one of the safe methods below.
+
+#### Online backup (app stays running) — Docker
+
+SQLite's built-in `.backup` command is crash-safe under concurrent writes. This is the recommended method for Docker deployments.
 
 ```bash
-# Find where Docker stores the volume on your host
-docker volume inspect briefen_briefen_data
+# Create a safe online backup while the app is running
+docker exec briefen-app sqlite3 /data/briefen.db ".backup /data/briefen-backup.db"
 
-# Back up — creates a compressed archive on the host
+# Copy the backup file out of the container volume to the host
+docker run --rm \
+  -v briefen_briefen_data:/data \
+  -v "$(pwd)":/backup \
+  alpine cp /data/briefen-backup.db /backup/briefen-backup-$(date +%Y%m%d).db
+
+# (Optional) remove the temporary backup file from the volume
+docker exec briefen-app rm /data/briefen-backup.db
+```
+
+#### Offline backup (stop → copy → restart) — Docker
+
+Use this if `sqlite3` is not available in the container or you want a compressed archive.
+
+```bash
+# Stop the app to ensure no writes during backup
+docker compose -f docker-compose.sample.yml stop app
+
+# Create a compressed archive from the volume
 docker run --rm \
   -v briefen_briefen_data:/data \
   -v "$(pwd)":/backup \
   alpine tar czf /backup/briefen-backup-$(date +%Y%m%d).tar.gz -C /data .
 
-# Restore — stops the app first to avoid write conflicts
-docker compose down
+# Restart
+docker compose -f docker-compose.sample.yml start app
+```
+
+#### Restore — Docker
+
+```bash
+docker compose -f docker-compose.sample.yml down
+
 docker run --rm \
   -v briefen_briefen_data:/data \
   -v "$(pwd)":/backup \
   alpine sh -c "rm -rf /data/* && tar xzf /backup/briefen-backup-YYYYMMDD.tar.gz -C /data"
-docker compose up -d
+
+docker compose -f docker-compose.sample.yml up -d
 ```
 
 #### Local / bare-metal deployments
 
 ```bash
-# Back up
+# Safe online backup (requires sqlite3 CLI)
+sqlite3 ./data/briefen.db ".backup ./briefen-backup-$(date +%Y%m%d).db"
+
+# Or stop the app first, then copy
 cp ./data/briefen.db ./briefen-backup-$(date +%Y%m%d).db
 
 # Restore
@@ -153,29 +220,66 @@ For continuous replication to S3-compatible storage (Cloudflare R2, Backblaze B2
 
 ## Changing the Ollama Model
 
-The default model is `gemma3:4b`, chosen for its excellent summarization quality with 128K context window. To change it:
+The default model is `gemma3:4b`, chosen for its excellent summarization quality with a 128K context window. To change it, set the `OLLAMA_MODEL` environment variable:
 
-1. Edit `docker-compose.yml` — change the model name in the `ollama` service command
-2. Edit `backend/src/main/resources/application.yml` — update `ollama.model`
-3. Restart: `make down && make up`
+```yaml
+# docker-compose.sample.yml → environment:
+OLLAMA_MODEL: gemma2:2b
+```
 
-Good alternatives: `gemma2:2b` (faster, lighter), `mistral` (7B, higher quality), `llama3` (8B), `phi3` (3.8B).
+Or in a `.env` file for local development:
+
+```bash
+OLLAMA_MODEL=gemma2:2b
+```
+
+The model must be pulled in Ollama before it can be used. Models are pulled automatically on first start in the default Docker Compose setup. To pull a model manually:
+
+```bash
+docker exec briefen-ollama ollama pull gemma2:2b
+```
+
+Good alternatives: `gemma2:2b` (faster, lighter), `llama3.2:3b` (~2 GB, well-rounded), `mistral` (7B, higher quality), `phi3` (3.8B, efficient).
+
+Users can also override the model per-session from the model picker in the browser without changing any server configuration.
 
 ## OpenAI Integration
 
-Briefen can optionally use OpenAI models instead of local Ollama. To enable:
+Briefen can optionally use OpenAI models instead of local Ollama.
 
-1. Go to **Settings → Integrations** in the browser UI
+**Option A — environment variable (recommended for self-hosted deployments):**
+
+Set `BRIEFEN_OPENAI_API_KEY` before first startup. Briefen seeds it into the admin settings automatically — no UI visit required.
+
+```yaml
+# docker-compose.sample.yml → environment:
+BRIEFEN_OPENAI_API_KEY: sk-...
+```
+
+**Option B — browser UI:**
+
+1. Go to **Settings → Integrations**
 2. Enter your OpenAI API key
 3. Select an OpenAI model from the model picker
 
-The API key is stored server-side. No data is sent to OpenAI unless you explicitly select an OpenAI model.
+The API key is stored server-side in SQLite and masked in the UI. No data is sent to OpenAI unless you explicitly select an OpenAI model.
 
 ## Anthropic Integration
 
-Briefen can optionally use Anthropic Claude models. To enable:
+Briefen can optionally use Anthropic Claude models.
 
-1. Go to **Settings → Integrations** in the browser UI
+**Option A — environment variable (recommended for self-hosted deployments):**
+
+Set `BRIEFEN_ANTHROPIC_API_KEY` before first startup. Briefen seeds it into the admin settings automatically.
+
+```yaml
+# docker-compose.sample.yml → environment:
+BRIEFEN_ANTHROPIC_API_KEY: sk-ant-...
+```
+
+**Option B — browser UI:**
+
+1. Go to **Settings → Integrations**
 2. Enter your Anthropic API key
 3. Select a Claude model from the model picker
 
@@ -195,23 +299,32 @@ The Readeck API key never reaches the browser — all requests are proxied throu
 
 ### Authentication
 
-Briefen includes **optional HTTP Basic Auth**. By default it is disabled so local single-user installs work without any configuration. To enable it, set two environment variables:
+Briefen uses **HTTP Basic Auth** on every route except `/actuator/health`. Authentication is always active — credentials are created automatically on first startup.
+
+**Choosing your own credentials (recommended):**
+
+Set both variables before the first start:
 
 ```bash
 BRIEFEN_AUTH_USERNAME=alice
 BRIEFEN_AUTH_PASSWORD=changeme
 ```
 
-When both are set, every route except `/actuator/health` requires a valid username and password. The browser will show a native auth dialog on first visit, and most HTTP clients (curl, Postman, etc.) support Basic Auth natively.
+**Auto-generated credentials (default):**
+
+If neither variable is set, Briefen generates a random password, prints it prominently to stdout/logs on first boot, and stores the BCrypt hash in the database. Check the container logs after starting:
 
 ```bash
-# curl example with auth
+docker compose -f docker-compose.sample.yml logs app | grep -A4 "initial admin"
+```
+
+**Using the API with auth:**
+
+```bash
 curl -u alice:changeme http://localhost:8080/api/summaries
 ```
 
-> ⚠️ **Always use HTTPS when auth is enabled.** HTTP Basic Auth transmits credentials as base64, which is trivially decoded on an unencrypted connection. Put Briefen behind a TLS-terminating reverse proxy (Nginx, Traefik, Caddy) before exposing it to the internet.
-
-When auth is not configured, all API endpoints remain open — this is intentional for local use.
+> ⚠️ **Always use HTTPS when exposed to untrusted networks.** HTTP Basic Auth transmits credentials as base64, which is trivially decoded on unencrypted connections. Put Briefen behind a TLS-terminating reverse proxy (Nginx, Traefik, Caddy) before exposing it to the internet.
 
 ### Ollama exposure
 
@@ -269,12 +382,15 @@ All runtime behaviour is controlled through environment variables. In local deve
 |---|---|---|
 | `BRIEFEN_DB_PATH` | `./data/briefen.db` | Path to the SQLite database file. In Docker, point this at a named-volume mount path (e.g. `/data/briefen.db`). |
 | `SERVER_PORT` | `8080` | HTTP port the server listens on. |
+| `SERVER_CONTEXT_PATH` | `/` | URL sub-path prefix (e.g. `/briefen/` for `myserver.com/briefen/`). Requires a local image build with `--build-arg APP_BASE_PATH=<path>` to bake the matching asset paths into the frontend. The pre-built GHCR image always uses `/`. |
 | `SERVER_FORWARD_HEADERS_STRATEGY` | `NONE` | Set to `FRAMEWORK` when running behind a reverse proxy (Nginx, Traefik, Caddy) to trust `X-Forwarded-For` / `X-Forwarded-Proto` headers. |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Base URL of the Ollama API. Override when Ollama runs in a separate container or host. |
 | `OLLAMA_MODEL` | `gemma3:4b` | Default Ollama model used for summarization. The model must be pulled in Ollama first. |
-| `BRIEFEN_CORS_ALLOWED_ORIGINS` | *(empty — CORS disabled)* | Comma-separated list of allowed CORS origins. Only required when the frontend is served from a different origin than the backend. |
-| `BRIEFEN_AUTH_USERNAME` | *(empty — auth disabled)* | Username for HTTP Basic Auth. Set together with `BRIEFEN_AUTH_PASSWORD` to enable authentication. |
-| `BRIEFEN_AUTH_PASSWORD` | *(empty — auth disabled)* | Password for HTTP Basic Auth. Set together with `BRIEFEN_AUTH_USERNAME`. Always use HTTPS when auth is enabled. |
+| `BRIEFEN_OPENAI_API_KEY` | *(empty — OpenAI disabled)* | OpenAI API key. When set on first startup, seeds into admin settings so cloud models are available immediately. Does not overwrite a key already saved in the database. |
+| `BRIEFEN_ANTHROPIC_API_KEY` | *(empty — Anthropic disabled)* | Anthropic API key. Same first-startup seeding behaviour as `BRIEFEN_OPENAI_API_KEY`. |
+| `BRIEFEN_CORS_ALLOWED_ORIGINS` | *(empty — CORS disabled)* | Comma-separated list of allowed CORS origins. Required when the Firefox extension or a custom frontend runs on a different origin than the backend (e.g. `moz-extension://*`). |
+| `BRIEFEN_AUTH_USERNAME` | `admin` | Username for the admin account. Set before first startup to choose your own; if omitted a random password is generated and printed to the container log. |
+| `BRIEFEN_AUTH_PASSWORD` | *(auto-generated)* | Plaintext password for the admin account — Briefen hashes it with BCrypt. Set before first startup; if omitted a random 32-char password is generated. Always use HTTPS when the app is internet-facing. |
 | `BRIEFEN_WEBHOOK_URL` | *(empty — webhooks disabled)* | HTTP/S URL to POST a JSON notification to whenever a summary is saved. Compatible with Home Assistant, ntfy, Gotify, and any HTTP endpoint. |
 
 ---
@@ -319,6 +435,42 @@ BRIEFEN_WEBHOOK_URL=https://homeassistant.local:8123/api/webhook/briefen-summary
 # Gotify expects a different body format — use an intermediary like n8n or a small proxy
 BRIEFEN_WEBHOOK_URL=https://gotify.example.com/message?token=YOUR_TOKEN
 ```
+
+---
+
+## Firefox Extension
+
+The Briefen extension adds a toolbar button that sends the current tab's URL to your Briefen instance with one click.
+
+### Installation
+
+The extension is not yet published to AMO. Install it temporarily via `about:debugging`:
+
+1. Open Firefox → address bar → `about:debugging#/runtime/this-firefox`
+2. Click **Load Temporary Add-on…**
+3. Navigate to `extension/` in the repo and select `manifest.json`
+
+For persistent installation across Firefox restarts, sign the extension via the [AMO Developer Hub](https://addons.mozilla.org/developers/) or use Firefox Developer Edition which allows unsigned extensions.
+
+### Configuration
+
+After installing, click the extension icon → **Options** (or right-click → Manage Extension → Options):
+
+| Field | Value |
+|-------|-------|
+| **Briefen URL** | Your instance URL, e.g. `http://localhost:8080` or `https://briefen.example.com` |
+| **Username** | Your Briefen username (default: `admin`) |
+| **Password** | Your Briefen password |
+
+### CORS requirement for remote instances
+
+If your Briefen instance is on a different origin than the extension, add the extension origin to `BRIEFEN_CORS_ALLOWED_ORIGINS`:
+
+```yaml
+BRIEFEN_CORS_ALLOWED_ORIGINS: moz-extension://*
+```
+
+This is not required when Briefen is on `localhost`.
 
 ---
 

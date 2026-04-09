@@ -48,17 +48,17 @@ Briefen is designed as a **local-first, single-user application**. By default:
 - Readeck API keys are stored server-side and never sent to the browser
 - OpenAI and Anthropic API keys are stored server-side with masked display in the UI
 
-If you expose Briefen to the internet, you are responsible for adding authentication and TLS — the application does not include these by default.
+If you expose Briefen to the internet, ensure it is behind a TLS-terminating reverse proxy so that HTTP Basic Auth credentials are not transmitted in the clear.
 
 ### Deployment Threat Model
 
 Briefen's security posture assumes:
 
-- The server runs on `localhost` or a trusted private network
-- A single trusted user operates all endpoints
-- There is **no authentication** — all API endpoints are open by design
+- The server runs on `localhost` or a trusted private network, or is behind a TLS-terminating reverse proxy when internet-facing
+- A single trusted user (the admin account) operates all endpoints
+- **HTTP Basic Auth is always active** — credentials are created on first startup from `BRIEFEN_AUTH_USERNAME` / `BRIEFEN_AUTH_PASSWORD`, or auto-generated and printed to the container log if those variables are not set
 
-**Consequences for network-exposed deployments:** Any client that can reach the server can read/modify all data, configure API keys, and trigger LLM inference. Place an authentication layer (e.g. HTTP Basic Auth via Nginx/Caddy) in front of Briefen before exposing it to untrusted networks.
+**Consequences for network-exposed deployments without TLS:** Basic Auth credentials are transmitted as base64 on every request, which is trivially decoded on unencrypted connections. Always terminate TLS at a reverse proxy (Nginx, Traefik, Caddy) before exposing Briefen to the internet.
 
 ### Sensitive Data Stored
 
@@ -78,7 +78,7 @@ The following are intentional design trade-offs, not vulnerabilities:
 
 | Risk | Rationale |
 |------|-----------|
-| No authentication on any endpoint | Single-user local app |
-| API keys stored in plaintext | Local SQLite file; filesystem protection is sufficient |
-| Plaintext HTTP to Ollama | Same Docker network / localhost only |
+| HTTP Basic Auth (not bearer tokens or sessions) | Stateless, simple, and sufficient for single-user self-hosted use; avoids session storage complexity |
+| API keys stored in SQLite plaintext | Local file; filesystem-level protection (`chmod 600`) is sufficient for the target deployment model |
+| Plaintext HTTP to Ollama | Same Docker network / localhost only; Ollama has no authentication to protect |
 | Readeck proxy does not block private IPs | Readeck is self-hosted; blocking private IPs would break the integration |

@@ -13,6 +13,9 @@ function getGitCommit() {
 }
 
 export default defineConfig({
+  // APP_BASE_PATH is injected as VITE_APP_BASE_PATH by the Dockerfile build stage.
+  // In local dev it defaults to '/' (served from root via the Vite dev server).
+  base: process.env.VITE_APP_BASE_PATH || '/',
   define: {
     __APP_COMMIT__: JSON.stringify(getGitCommit()),
     __BUILD_DATE__: JSON.stringify(new Date().toISOString().split('T')[0]),

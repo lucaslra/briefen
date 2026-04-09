@@ -1,14 +1,15 @@
 # Self-hosting compose file — uses the pre-built image from GHCR.
-# Copy this file and customise it:
+# No build step required. Start the full stack with a single command:
+#
+#   docker compose -f docker-compose.sample.yml up -d
+#
+# To customise (recommended for persistent changes):
 #   cp docker-compose.sample.yml my-compose.yml
+#   # edit my-compose.yml, then:
 #   docker compose -f my-compose.yml up -d
 
 # =============================================================================
 # Briefen — Sample docker-compose
-#
-# USAGE:
-#   cp docker-compose.sample.yml docker-compose.override.yml
-#   docker compose up
 #
 # This file is self-contained and ready to run. Customise the environment
 # variables below to match your setup, then start the stack.
@@ -142,14 +143,19 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
 
       # ── OpenAI (optional cloud provider) ──────────────────────────────
-      # Set this to enable OpenAI models. The key is stored in SQLite and
-      # can also be configured from the Settings page in the browser.
-      # OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Seeded into admin settings on first startup. Does not overwrite a key
+      # already saved in the database. Can also be set via the Settings page.
+      # BRIEFEN_OPENAI_API_KEY: ${BRIEFEN_OPENAI_API_KEY:-}
 
       # ── Anthropic (optional cloud provider) ───────────────────────────
-      # Set this to enable Anthropic/Claude models. Same storage behaviour
-      # as the OpenAI key above.
-      # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # Same seeding behaviour as BRIEFEN_OPENAI_API_KEY above.
+      # BRIEFEN_ANTHROPIC_API_KEY: ${BRIEFEN_ANTHROPIC_API_KEY:-}
+
+      # ── Sub-path deployment (optional) ────────────────────────────────
+      # Serve Briefen at a sub-path, e.g. myserver.com/briefen/.
+      # Requires a local image build with --build-arg APP_BASE_PATH=/briefen/
+      # (the pre-built GHCR image only supports root /). See .env.example.
+      # SERVER_CONTEXT_PATH: /briefen/
 
       # ── Webhook notifications (optional) ──────────────────────────────
       # When set, Briefen POSTs a JSON payload to this URL every time a

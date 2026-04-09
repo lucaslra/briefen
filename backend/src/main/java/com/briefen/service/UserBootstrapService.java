@@ -43,6 +43,8 @@ public class UserBootstrapService {
     private final PasswordEncoder passwordEncoder;
     private final String configuredUsername;
     private final String configuredPassword;
+    private final String openaiApiKey;
+    private final String anthropicApiKey;
 
     public UserBootstrapService(
             UserPersistence userPersistence,
@@ -50,13 +52,17 @@ public class UserBootstrapService {
             SummaryPersistence summaryPersistence,
             PasswordEncoder passwordEncoder,
             @Value("${briefen.auth.username:}") String configuredUsername,
-            @Value("${briefen.auth.password:}") String configuredPassword) {
+            @Value("${briefen.auth.password:}") String configuredPassword,
+            @Value("${briefen.openai.api-key:}") String openaiApiKey,
+            @Value("${briefen.anthropic.api-key:}") String anthropicApiKey) {
         this.userPersistence = userPersistence;
         this.settingsPersistence = settingsPersistence;
         this.summaryPersistence = summaryPersistence;
         this.passwordEncoder = passwordEncoder;
         this.configuredUsername = configuredUsername;
         this.configuredPassword = configuredPassword;
+        this.openaiApiKey = openaiApiKey;
+        this.anthropicApiKey = anthropicApiKey;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -103,6 +109,7 @@ Set BRIEFEN_AUTH_USERNAME / BRIEFEN_AUTH_PASSWORD to use your own.
         }
 
         migrateLegacyData(userId);
+        seedApiKeys(userId);
     }
 
     /**
@@ -136,6 +143,41 @@ Set BRIEFEN_AUTH_USERNAME / BRIEFEN_AUTH_PASSWORD to use your own.
         target.setReadeckUrl(source.getReadeckUrl());
         target.setWebhookUrl(source.getWebhookUrl());
         return target;
+    }
+
+    /**
+     * Seeds OpenAI/Anthropic API keys from environment variables into the admin's settings.
+     * Only runs when the env vars are set. Does not overwrite keys already present in the
+     * database (e.g. from legacy migration or a previous seed).
+     */
+    private void seedApiKeys(String adminUserId) {
+        if ((openaiApiKey == null || openaiApiKey.isBlank())
+                && (anthropicApiKey == null || anthropicApiKey.isBlank())) {
+            return;
+        }
+
+        UserSettings settings = settingsPersistence.findByUserId(adminUserId)
+                .orElseGet(() -> {
+                    var s = new UserSettings();
+                    s.setId(adminUserId);
+                    return s;
+                });
+
+        boolean changed = false;
+        if (openaiApiKey != null && !openaiApiKey.isBlank()
+                && (settings.getOpenaiApiKey() == null || settings.getOpenaiApiKey().isBlank())) {
+            settings.setOpenaiApiKey(openaiApiKey);
+            changed = true;
+        }
+        if (anthropicApiKey != null && !anthropicApiKey.isBlank()
+                && (settings.getAnthropicApiKey() == null || settings.getAnthropicApiKey().isBlank())) {
+            settings.setAnthropicApiKey(anthropicApiKey);
+            changed = true;
+        }
+        if (changed) {
+            settingsPersistence.save(settings);
+            log.info("Seeded cloud LLM API keys from environment into admin settings");
+        }
     }
 
     private static String generateRandomPassword() {

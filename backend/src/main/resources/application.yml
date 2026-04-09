@@ -15,6 +15,9 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  address: ${SERVER_BIND_ADDRESS:0.0.0.0}
+  servlet:
+    context-path: ${SERVER_CONTEXT_PATH:/}
   forward-headers-strategy: ${SERVER_FORWARD_HEADERS_STRATEGY:NONE}
   tomcat:
     connection-timeout: 310s
@@ -43,6 +46,14 @@ briefen:
     password: ${BRIEFEN_AUTH_PASSWORD:}
   webhook:
     url: ${BRIEFEN_WEBHOOK_URL:}
+  openai:
+    api-key: ${BRIEFEN_OPENAI_API_KEY:}
+  anthropic:
+    api-key: ${BRIEFEN_ANTHROPIC_API_KEY:}
+
+logging:
+  level:
+    com.briefen: ${BRIEFEN_LOG_LEVEL:INFO}
 
 management:
   endpoints:

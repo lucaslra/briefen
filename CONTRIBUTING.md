@@ -26,10 +26,13 @@ Frontend runs at http://localhost:5173, backend at http://localhost:8080.
 
 ## Project Structure
 
-This is a monorepo with two sub-projects:
+This is a monorepo with three main areas:
 
 - **`backend/`** — Java 25, Spring Boot 4.0.x, Maven
 - **`frontend/`** — React 19, Vite, pnpm, plain JavaScript (no TypeScript)
+- **`extension/`** — Firefox browser extension (Manifest V2, vanilla JS)
+- **`docs/`** — User-facing documentation (getting started, env vars, reverse proxy)
+- **`e2e/`** — Playwright end-to-end tests
 
 See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
 
@@ -87,7 +90,7 @@ docs: update API endpoint table in README
 - Fill out the PR template
 - Ensure CI passes (lint, build, tests)
 - Add a brief description of what changed and why
-- If adding a new feature, update the relevant documentation
+- If adding a new feature, update the relevant documentation (README, `docs/`, and `.env.example` for any new env vars)
 
 ## Reporting Issues
 
@@ -96,6 +99,18 @@ Use the [issue templates](https://github.com/lucaslra/briefen/issues/new/choose)
 - Steps to reproduce (for bugs)
 - Expected vs actual behavior
 - Browser/OS/Docker versions if relevant
+
+## Documentation
+
+The `docs/` directory contains user-facing guides:
+
+| File | Purpose |
+|---|---|
+| `docs/getting-started.md` | Step-by-step deployment guide (Docker, local build, dev) |
+| `docs/environment-variables.md` | Complete reference for all env vars and accepted values |
+| `docs/reverse-proxy.md` | Nginx, Caddy, and Traefik configuration examples |
+
+When adding or changing a feature that affects deployment or configuration, update the relevant docs file and `.env.example`. If a new environment variable is introduced, add it to all three: `application.yml`, `.env.example`, and `docs/environment-variables.md`.
 
 ## What Not to Commit
 
