@@ -21,7 +21,7 @@ const DB_PATH = join(tmpdir(), `briefen-e2e-${Date.now()}.db`);
 
 // Known credentials injected into the managed backend so tests can authenticate
 const E2E_USERNAME = 'e2e-admin';
-const E2E_PASSWORD = 'e2e-secret-1';
+const E2E_PASSWORD = 'E2e-secret-1!';
 
 // ── Java detection ────────────────────────────────────────────────────────────
 
@@ -125,8 +125,6 @@ function startBackend(javaHome, ollamaBaseUrl) {
     OLLAMA_BASE_URL: ollamaBaseUrl,
     BRIEFEN_DB_PATH: DB_PATH,
     SERVER_PORT: BACKEND_PORT,
-    BRIEFEN_AUTH_USERNAME: E2E_USERNAME,
-    BRIEFEN_AUTH_PASSWORD: E2E_PASSWORD,
   };
 
   const proc = spawn('./mvnw', ['spring-boot:run', '-q'], {
@@ -145,6 +143,21 @@ function startBackend(javaHome, ollamaBaseUrl) {
   proc.on('error', err => { throw err; });
 
   return proc;
+}
+
+// ── First-run setup via API ─────────────────────────────────────────────────
+
+async function createAdminViaSetupApi(baseUrl, username, password) {
+  const res = await fetch(`${baseUrl}/api/setup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Setup API returned ${res.status}: ${body}`);
+  }
+  console.log(`[e2e] Admin account '${username}' created via setup API`);
 }
 
 // ── Global setup entry point ──────────────────────────────────────────────────
@@ -182,14 +195,18 @@ export default async function globalSetup() {
   // 4. Wait for Spring Boot health
   console.log(`[e2e] Waiting for health at ${BASE_URL}/actuator/health…`);
   await waitForHealth(`${BASE_URL}/actuator/health`);
-  console.log('[e2e] Backend healthy — tests starting');
+  console.log('[e2e] Backend healthy');
 
-  // 5. Persist state for globalTeardown (same Node.js process)
+  // 5. Create the admin account via the first-run setup API
+  await createAdminViaSetupApi(BASE_URL, E2E_USERNAME, E2E_PASSWORD);
+  console.log('[e2e] Setup complete — tests starting');
+
+  // 6. Persist state for globalTeardown (same Node.js process)
   global.__E2E_WIREMOCK__ = wiremock;
   global.__E2E_BACKEND__ = backendProc;
   global.__E2E_DB_PATH__ = DB_PATH;
 
-  // 6. Expose base URL and credentials for test files
+  // 7. Expose base URL and credentials for test files
   process.env.BASE_URL = BASE_URL;
   process.env.E2E_USERNAME = E2E_USERNAME;
   process.env.E2E_PASSWORD = E2E_PASSWORD;

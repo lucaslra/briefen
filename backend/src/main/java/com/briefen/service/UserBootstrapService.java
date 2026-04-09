@@ -10,24 +10,20 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
-import java.util.HexFormat;
-import java.util.UUID;
+import java.util.List;
 
 /**
- * Creates the initial admin user on first startup.
+ * Runs on application startup to handle data migrations and API key seeding.
  *
- * Priority:
- *   1. BRIEFEN_AUTH_USERNAME + BRIEFEN_AUTH_PASSWORD env vars (explicit bootstrap)
- *   2. Generates a random password and logs it at WARN level (auto-bootstrap)
+ * The initial admin account is created through the browser-based first-run
+ * setup flow ({@link SetupService}). This service handles:
+ *   - Migrating pre-multi-user data (legacy settings row + orphaned summaries)
+ *   - Seeding cloud LLM API keys from environment variables into the admin's settings
  *
- * Also migrates pre-multi-user data:
- *   - Legacy "default" settings row → copied to the admin's userId
- *   - Summaries with user_id=NULL → assigned to the admin user
+ * Both tasks are idempotent and only take effect when relevant data exists.
  */
 @Service
 public class UserBootstrapService {
@@ -40,9 +36,6 @@ public class UserBootstrapService {
     private final UserPersistence userPersistence;
     private final SettingsPersistence settingsPersistence;
     private final SummaryPersistence summaryPersistence;
-    private final PasswordEncoder passwordEncoder;
-    private final String configuredUsername;
-    private final String configuredPassword;
     private final String openaiApiKey;
     private final String anthropicApiKey;
 
@@ -50,17 +43,11 @@ public class UserBootstrapService {
             UserPersistence userPersistence,
             SettingsPersistence settingsPersistence,
             SummaryPersistence summaryPersistence,
-            PasswordEncoder passwordEncoder,
-            @Value("${briefen.auth.username:}") String configuredUsername,
-            @Value("${briefen.auth.password:}") String configuredPassword,
             @Value("${briefen.openai.api-key:}") String openaiApiKey,
             @Value("${briefen.anthropic.api-key:}") String anthropicApiKey) {
         this.userPersistence = userPersistence;
         this.settingsPersistence = settingsPersistence;
         this.summaryPersistence = summaryPersistence;
-        this.passwordEncoder = passwordEncoder;
-        this.configuredUsername = configuredUsername;
-        this.configuredPassword = configuredPassword;
         this.openaiApiKey = openaiApiKey;
         this.anthropicApiKey = anthropicApiKey;
     }
@@ -68,48 +55,15 @@ public class UserBootstrapService {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void bootstrap() {
-        if (userPersistence.count() > 0) {
-            log.debug("Users already exist — skipping bootstrap");
+        List<User> admins = userPersistence.findByRole("ADMIN");
+        if (admins.isEmpty()) {
+            log.info("No admin account found — waiting for first-run setup via the browser");
             return;
         }
 
-        String username = (configuredUsername != null && !configuredUsername.isBlank())
-                ? configuredUsername : "admin";
-        String password;
-        boolean generated = false;
-
-        if (configuredPassword != null && !configuredPassword.isBlank()) {
-            password = configuredPassword;
-        } else {
-            password = generateRandomPassword();
-            generated = true;
-        }
-
-        if (generated) {
-            String banner = """
-
-=================================================================
-Briefen — initial admin credentials
-  Username : %s
-  Password : %s
-Set BRIEFEN_AUTH_USERNAME / BRIEFEN_AUTH_PASSWORD to use your own.
-=================================================================
-""".formatted(username, password);
-            System.out.println(banner); // stdout — printed before DB write so it's never lost
-            log.warn(banner);
-        }
-
-        String userId = UUID.randomUUID().toString();
-        var user = new User(userId, username, passwordEncoder.encode(password), "ADMIN");
-        user.setMainAdmin(true);
-        userPersistence.save(user);
-
-        if (!generated) {
-            log.info("Created admin user '{}'", username);
-        }
-
-        migrateLegacyData(userId);
-        seedApiKeys(userId);
+        String adminUserId = admins.getFirst().getId();
+        migrateLegacyData(adminUserId);
+        seedApiKeys(adminUserId);
     }
 
     /**
@@ -180,9 +134,4 @@ Set BRIEFEN_AUTH_USERNAME / BRIEFEN_AUTH_PASSWORD to use your own.
         }
     }
 
-    private static String generateRandomPassword() {
-        byte[] bytes = new byte[16];
-        new SecureRandom().nextBytes(bytes);
-        return HexFormat.of().formatHex(bytes);
-    }
 }

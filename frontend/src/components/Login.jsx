@@ -38,6 +38,7 @@ export function Login({ onLogin }) {
             </label>
             <input
               id="login-username"
+              name="username"
               type="text"
               className={styles.input}
               value={username}
@@ -54,6 +55,7 @@ export function Login({ onLogin }) {
             </label>
             <input
               id="login-password"
+              name="password"
               type="password"
               className={styles.input}
               value={password}

@@ -179,6 +179,24 @@ export const STRINGS = {
   // Header logout
   LOGOUT_BUTTON: 'Sign out',
 
+  // First-run setup
+  SETUP_TITLE: 'Welcome to Briefen',
+  SETUP_SUBTITLE: 'Create your admin account to get started.',
+  SETUP_USERNAME_LABEL: 'Username',
+  SETUP_PASSWORD_LABEL: 'Password',
+  SETUP_CONFIRM_PASSWORD_LABEL: 'Confirm Password',
+  SETUP_BUTTON: 'Create Account',
+  SETUP_CREATING: 'Creating account\u2026',
+  SETUP_PASSWORD_MIN_LENGTH: 'At least 8 characters',
+  SETUP_PASSWORD_UPPERCASE: 'At least one uppercase letter',
+  SETUP_PASSWORD_LOWERCASE: 'At least one lowercase letter',
+  SETUP_PASSWORD_DIGIT: 'At least one digit',
+  SETUP_PASSWORD_SPECIAL: 'At least one special character',
+  SETUP_PASSWORD_MISMATCH: 'Passwords do not match',
+  SETUP_USERNAME_MIN_LENGTH: 'Username must be at least 3 characters',
+  SETUP_ERROR_GENERIC: 'Something went wrong. Please try again.',
+  SETUP_ERROR_CONFLICT: 'Setup has already been completed. Please reload.',
+
   // User management (admin only)
   SETTINGS_TAB_USERS: 'Users',
   USERS_HEADING: 'User Accounts',

@@ -168,18 +168,6 @@ services:
       #    "model":"gemma3:4b","createdAt":"2026-04-07T10:00:00Z"}
       # BRIEFEN_WEBHOOK_URL: ${BRIEFEN_WEBHOOK_URL:-}
 
-      # ── Authentication (optional) ──────────────────────────────────────
-      # Uncomment and set both variables to enable HTTP Basic Auth.
-      # When set, ALL routes (except /actuator/health) require a username
-      # and password. Leave unset for open local-use (default).
-      #
-      # WARNING: Use HTTPS in front of Briefen when auth is enabled — HTTP
-      # Basic Auth transmits credentials in base64, which is trivially decoded
-      # on unencrypted connections. A TLS-terminating reverse proxy (Nginx,
-      # Traefik, Caddy) is the recommended setup.
-      # BRIEFEN_AUTH_USERNAME: ${BRIEFEN_AUTH_USERNAME:-}
-      # BRIEFEN_AUTH_PASSWORD: ${BRIEFEN_AUTH_PASSWORD:-}
-
     volumes:
       - briefen_data:/data
     depends_on:

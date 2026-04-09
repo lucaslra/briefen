@@ -45,18 +45,7 @@ git clone https://github.com/lucaslra/briefen.git
 cd briefen
 ```
 
-### Step 2 — (Optional) Set your credentials
-
-Open `docker-compose.sample.yml` in an editor and uncomment the auth lines under `app → environment:`:
-
-```yaml
-BRIEFEN_AUTH_USERNAME: alice
-BRIEFEN_AUTH_PASSWORD: changeme
-```
-
-If you skip this step Briefen will generate a random password on first start (see Step 4).
-
-### Step 3 — Start the stack
+### Step 2 — Start the stack
 
 ```bash
 docker compose -f docker-compose.sample.yml up -d
@@ -74,28 +63,17 @@ Briefen starts serving at **http://localhost:8080** once the health check turns 
 docker compose -f docker-compose.sample.yml ps   # STATUS should show "healthy"
 ```
 
-### Step 4 — Find your password (if you skipped Step 2)
+### Step 3 — Create your admin account
 
-```bash
-docker compose -f docker-compose.sample.yml logs app | grep -A5 "initial admin"
-```
+1. Open **http://localhost:8080** — on first launch you'll see the **Setup** screen
+2. Choose a username (3+ characters) and a strong password (8+ characters, must include uppercase, lowercase, digit, and special character)
+3. Click **Create Account**
 
-You'll see something like:
+Your credentials are stored as a BCrypt hash in the database. This setup screen only appears once — subsequent visits go straight to the login page.
 
-```
-=================================================================
-Briefen — initial admin credentials
-  Username : admin
-  Password : 3f9a2c1b...
-Set BRIEFEN_AUTH_USERNAME / BRIEFEN_AUTH_PASSWORD to use your own.
-=================================================================
-```
+### Step 4 — Summarize something
 
-> These credentials are generated once and stored as a BCrypt hash in the database. Re-running `docker compose up` on an existing database skips bootstrap entirely.
-
-### Step 5 — Open the app and summarize something
-
-1. Open **http://localhost:8080** and log in
+1. Log in with the credentials you just created
 2. Paste any article URL into the input box
 3. Click **Summarize** — the first request may take 10–30 seconds while the model warms up
 
@@ -148,7 +126,7 @@ And if using a sub-path, add to `environment:`:
 SERVER_CONTEXT_PATH: /briefen/
 ```
 
-### Step 4 — Start the stack and follow Steps 3–5 from Option 1
+### Step 4 — Start the stack and follow Steps 2–4 from Option 1
 
 ```bash
 docker compose -f docker-compose.sample.yml up -d

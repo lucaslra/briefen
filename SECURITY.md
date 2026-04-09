@@ -56,7 +56,7 @@ Briefen's security posture assumes:
 
 - The server runs on `localhost` or a trusted private network, or is behind a TLS-terminating reverse proxy when internet-facing
 - A single trusted user (the admin account) operates all endpoints
-- **HTTP Basic Auth is always active** — credentials are created on first startup from `BRIEFEN_AUTH_USERNAME` / `BRIEFEN_AUTH_PASSWORD`, or auto-generated and printed to the container log if those variables are not set
+- **HTTP Basic Auth is always active** — the admin account is created through the browser-based first-run setup flow, which enforces a strong password policy (8+ characters, uppercase, lowercase, digit, special character)
 
 **Consequences for network-exposed deployments without TLS:** Basic Auth credentials are transmitted as base64 on every request, which is trivially decoded on unencrypted connections. Always terminate TLS at a reverse proxy (Nginx, Traefik, Caddy) before exposing Briefen to the internet.
 

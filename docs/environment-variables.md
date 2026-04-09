@@ -11,8 +11,7 @@ All runtime behaviour is controlled through environment variables. This document
 ```yaml
 environment:
   SERVER_PORT: 9000
-  BRIEFEN_AUTH_USERNAME: alice
-  BRIEFEN_AUTH_PASSWORD: changeme
+  OLLAMA_MODEL: gemma2:2b
 ```
 
 **`.env` file (local development):** copy `.env.example` to `.env` at the repo root. Spring Boot loads it automatically on startup via `spring.config.import`.
@@ -26,7 +25,7 @@ make dev
 **Shell environment:** export variables before running the JAR directly.
 
 ```bash
-export BRIEFEN_AUTH_PASSWORD=changeme
+export OLLAMA_MODEL=gemma2:2b
 java -jar app.jar
 ```
 
@@ -41,8 +40,6 @@ java -jar app.jar
 | [`SERVER_BIND_ADDRESS`](#server_bind_address) | `0.0.0.0` | No |
 | [`SERVER_CONTEXT_PATH`](#server_context_path) | `/` | No |
 | [`SERVER_FORWARD_HEADERS_STRATEGY`](#server_forward_headers_strategy) | `NONE` | No |
-| [`BRIEFEN_AUTH_USERNAME`](#briefen_auth_username) | `admin` | No |
-| [`BRIEFEN_AUTH_PASSWORD`](#briefen_auth_password) | *(auto-generated)* | No |
 | [`BRIEFEN_CORS_ALLOWED_ORIGINS`](#briefen_cors_allowed_origins) | *(empty — disabled)* | No |
 | [`OLLAMA_BASE_URL`](#ollama_base_url) | `http://localhost:11434` | No |
 | [`OLLAMA_MODEL`](#ollama_model) | `gemma3:4b` | No |
@@ -161,58 +158,6 @@ SERVER_FORWARD_HEADERS_STRATEGY: FRAMEWORK
 ```
 
 > Always pair this with `FRAMEWORK` when you expose Briefen via HTTPS through a proxy. Without it, Spring Boot generates `http://` redirect URLs even on an HTTPS deployment.
-
----
-
-## Authentication
-
-### `BRIEFEN_AUTH_USERNAME`
-
-Username for the admin account. Briefen always requires authentication — this variable controls the username of the account created on first startup.
-
-| | |
-|---|---|
-| **Type** | String |
-| **Default** | `admin` |
-| **When used** | First startup only. If a user already exists in the database, this variable is ignored. |
-
-```yaml
-BRIEFEN_AUTH_USERNAME: alice
-```
-
----
-
-### `BRIEFEN_AUTH_PASSWORD`
-
-Plaintext password for the admin account. Briefen hashes it with BCrypt before storing — do **not** pre-hash the value.
-
-| | |
-|---|---|
-| **Type** | String (plaintext) |
-| **Default** | Auto-generated 32-character random hex string |
-| **When used** | First startup only. If a user already exists in the database, this variable is ignored. |
-
-```yaml
-BRIEFEN_AUTH_PASSWORD: changeme
-```
-
-**If this variable is not set:** a random password is generated on first startup and printed to stdout and the application log:
-
-```
-=================================================================
-Briefen — initial admin credentials
-  Username : admin
-  Password : 3f9a2c1b...
-Set BRIEFEN_AUTH_USERNAME / BRIEFEN_AUTH_PASSWORD to use your own.
-=================================================================
-```
-
-Retrieve it from container logs:
-```bash
-docker compose logs app | grep -A5 "initial admin"
-```
-
-> **Security:** Always use HTTPS when the app is accessible from outside localhost. HTTP Basic Auth transmits credentials as base64 on every request, which is trivially decoded on unencrypted connections.
 
 ---
 
@@ -508,8 +453,6 @@ Some variables interact with each other in non-obvious ways:
 |---|---|
 | `SERVER_CONTEXT_PATH=/briefen/` | Build the image locally with `--build-arg APP_BASE_PATH=/briefen/` |
 | `SERVER_BIND_ADDRESS=127.0.0.1` | Ensure the reverse proxy connects to `127.0.0.1:8080`, not via a Docker network alias |
-| `BRIEFEN_AUTH_USERNAME` | Also set `BRIEFEN_AUTH_PASSWORD` (both or neither) |
-| `BRIEFEN_AUTH_PASSWORD` | Also set `BRIEFEN_AUTH_USERNAME` (both or neither) |
 | `SERVER_FORWARD_HEADERS_STRATEGY=FRAMEWORK` | Ensure your reverse proxy sends `X-Forwarded-Proto` and `X-Forwarded-Host` headers |
 | `BRIEFEN_CORS_ALLOWED_ORIGINS` including `moz-extension://*` | Use the Firefox extension with a remote Briefen instance |
 | `OLLAMA_MODEL` (non-default model) | Ensure that model is pulled in Ollama — it is not auto-pulled for custom values |

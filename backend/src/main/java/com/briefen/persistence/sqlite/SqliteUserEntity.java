@@ -27,6 +27,9 @@ public class SqliteUserEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
     @Column(name = "main_admin", nullable = false, columnDefinition = "BOOLEAN NOT NULL DEFAULT 0")
     private boolean mainAdmin;
 
@@ -39,6 +42,7 @@ public class SqliteUserEntity {
         entity.passwordHash = u.getPasswordHash();
         entity.role = u.getRole();
         entity.createdAt = u.getCreatedAt();
+        entity.updatedAt = u.getUpdatedAt();
         entity.mainAdmin = u.isMainAdmin();
         return entity;
     }
@@ -50,6 +54,7 @@ public class SqliteUserEntity {
         u.setPasswordHash(passwordHash);
         u.setRole(role);
         u.setCreatedAt(createdAt);
+        u.setUpdatedAt(updatedAt);
         u.setMainAdmin(mainAdmin);
         return u;
     }
@@ -68,6 +73,9 @@ public class SqliteUserEntity {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 
     public boolean isMainAdmin() { return mainAdmin; }
     public void setMainAdmin(boolean mainAdmin) { this.mainAdmin = mainAdmin; }

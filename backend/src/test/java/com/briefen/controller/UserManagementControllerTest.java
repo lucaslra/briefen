@@ -180,11 +180,23 @@ class UserManagementControllerTest {
         var adminUser = new User("other-id", "alice", "hash", "ADMIN");
         adminUser.setMainAdmin(false);
         when(userPersistence.findById("other-id")).thenReturn(Optional.of(adminUser));
+        when(userPersistence.countByRole("ADMIN")).thenReturn(2L);
 
         mockMvc.perform(delete("/api/users/other-id"))
                 .andExpect(status().isNoContent());
 
         verify(userPersistence).deleteById("other-id");
+    }
+
+    @Test
+    void shouldReturn403WhenDeletingSoleRemainingAdmin() throws Exception {
+        var adminUser = new User("other-id", "alice", "hash", "ADMIN");
+        adminUser.setMainAdmin(false);
+        when(userPersistence.findById("other-id")).thenReturn(Optional.of(adminUser));
+        when(userPersistence.countByRole("ADMIN")).thenReturn(1L);
+
+        mockMvc.perform(delete("/api/users/other-id"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

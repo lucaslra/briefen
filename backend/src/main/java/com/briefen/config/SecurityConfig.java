@@ -14,11 +14,11 @@ import org.springframework.security.web.SecurityFilterChain;
  * Always-on HTTP Basic Auth backed by the users table.
  *
  * Authentication is required for all endpoints except /actuator/health
- * (used by Docker HEALTHCHECK and reverse-proxy health probes).
+ * (used by Docker HEALTHCHECK and reverse-proxy health probes) and
+ * /api/setup/** (used by the browser-based first-run setup flow).
  *
- * The initial admin user is created by {@link com.briefen.service.UserBootstrapService}
- * on first startup from the BRIEFEN_AUTH_USERNAME / BRIEFEN_AUTH_PASSWORD env vars.
- * If those are absent a random password is generated and logged.
+ * The initial admin account is created through the browser-based setup
+ * flow ({@link com.briefen.service.SetupService}).
  */
 @Configuration
 @EnableWebSecurity
@@ -39,6 +39,7 @@ public class SecurityConfig {
                         // Static frontend assets and health probe are public.
                         // Only /api/** requires authentication.
                         .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/api/setup/**", "/api/setup").permitAll()
                         .requestMatchers("/", "/index.html", "/assets/**", "/favicon.svg", "/favicon.ico").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()

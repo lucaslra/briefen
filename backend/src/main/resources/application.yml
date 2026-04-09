@@ -41,9 +41,6 @@ article:
 briefen:
   cors:
     allowed-origins: ${BRIEFEN_CORS_ALLOWED_ORIGINS:}
-  auth:
-    username: ${BRIEFEN_AUTH_USERNAME:}
-    password: ${BRIEFEN_AUTH_PASSWORD:}
   webhook:
     url: ${BRIEFEN_WEBHOOK_URL:}
   openai:

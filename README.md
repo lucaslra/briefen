@@ -53,23 +53,7 @@ docker compose -f docker-compose.sample.yml up -d
 docker compose -f docker-compose.sample.yml logs -f
 ```
 
-Open **http://localhost:8080**. On first start Briefen generates admin credentials and prints them to the container log:
-
-```
-=================================================================
-Briefen — initial admin credentials
-  Username : admin
-  Password : <random 32-char hex>
-Set BRIEFEN_AUTH_USERNAME / BRIEFEN_AUTH_PASSWORD to use your own.
-=================================================================
-```
-
-To set your own credentials, add them to the compose file's `environment:` block before the first start:
-
-```yaml
-BRIEFEN_AUTH_USERNAME: alice
-BRIEFEN_AUTH_PASSWORD: changeme
-```
+Open **http://localhost:8080**. On first launch you'll see the **Setup** screen — create your admin account with a username and strong password. This only appears once; subsequent visits go straight to login.
 
 > See **[docs/getting-started.md](docs/getting-started.md)** for a full walkthrough including reverse proxy setup, cloud LLM providers, and backups.
 
@@ -299,24 +283,7 @@ The Readeck API key never reaches the browser — all requests are proxied throu
 
 ### Authentication
 
-Briefen uses **HTTP Basic Auth** on every route except `/actuator/health`. Authentication is always active — credentials are created automatically on first startup.
-
-**Choosing your own credentials (recommended):**
-
-Set both variables before the first start:
-
-```bash
-BRIEFEN_AUTH_USERNAME=alice
-BRIEFEN_AUTH_PASSWORD=changeme
-```
-
-**Auto-generated credentials (default):**
-
-If neither variable is set, Briefen generates a random password, prints it prominently to stdout/logs on first boot, and stores the BCrypt hash in the database. Check the container logs after starting:
-
-```bash
-docker compose -f docker-compose.sample.yml logs app | grep -A4 "initial admin"
-```
+Briefen uses **HTTP Basic Auth** on every route except `/actuator/health`. Authentication is always active — on first launch, the browser-based setup screen prompts you to create an admin account with a strong password.
 
 **Using the API with auth:**
 
@@ -389,8 +356,6 @@ All runtime behaviour is controlled through environment variables. In local deve
 | `BRIEFEN_OPENAI_API_KEY` | *(empty — OpenAI disabled)* | OpenAI API key. When set on first startup, seeds into admin settings so cloud models are available immediately. Does not overwrite a key already saved in the database. |
 | `BRIEFEN_ANTHROPIC_API_KEY` | *(empty — Anthropic disabled)* | Anthropic API key. Same first-startup seeding behaviour as `BRIEFEN_OPENAI_API_KEY`. |
 | `BRIEFEN_CORS_ALLOWED_ORIGINS` | *(empty — CORS disabled)* | Comma-separated list of allowed CORS origins. Required when the Firefox extension or a custom frontend runs on a different origin than the backend (e.g. `moz-extension://*`). |
-| `BRIEFEN_AUTH_USERNAME` | `admin` | Username for the admin account. Set before first startup to choose your own; if omitted a random password is generated and printed to the container log. |
-| `BRIEFEN_AUTH_PASSWORD` | *(auto-generated)* | Plaintext password for the admin account — Briefen hashes it with BCrypt. Set before first startup; if omitted a random 32-char password is generated. Always use HTTPS when the app is internet-facing. |
 | `BRIEFEN_WEBHOOK_URL` | *(empty — webhooks disabled)* | HTTP/S URL to POST a JSON notification to whenever a summary is saved. Compatible with Home Assistant, ntfy, Gotify, and any HTTP endpoint. |
 
 ---

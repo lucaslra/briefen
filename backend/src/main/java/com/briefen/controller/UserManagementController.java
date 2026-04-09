@@ -73,7 +73,7 @@ public class UserManagementController {
         return UserDto.from(userPersistence.save(user));
     }
 
-    /** Deletes a user by ID. Admin only. Cannot delete yourself or any admin account. */
+    /** Deletes a user by ID. Admin only. Cannot delete yourself, the main admin, or the sole remaining admin. */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -86,6 +86,9 @@ public class UserManagementController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         if (target.isMainAdmin()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot delete the main admin account");
+        }
+        if ("ADMIN".equals(target.getRole()) && userPersistence.countByRole("ADMIN") <= 1) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot delete the sole remaining admin account");
         }
         userPersistence.deleteById(id);
     }

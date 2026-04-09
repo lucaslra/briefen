@@ -92,6 +92,7 @@ Browser → Spring Boot (:8080, serves React static + API)
   - `ModelsController` — `/api/models` lists available LLM providers and models
   - `SettingsController` — `/api/settings` read/update user preferences
   - `ReadeckController` — `/api/readeck/*` proxies requests to a user-configured Readeck instance (API key stays server-side)
+  - `SetupController` — `/api/setup` first-run admin account creation (unauthenticated)
   - `UserManagementController` — `/api/admin/users` user management (admin only)
   - `VersionController` — `/api/version` build info
   - `HealthController` — supplementary health endpoint
@@ -101,14 +102,15 @@ Browser → Spring Boot (:8080, serves React static + API)
   - `OllamaSummarizerService` / `OpenAiSummarizerService` / `AnthropicSummarizerService` — LLM summarizers
   - `SummaryService` — orchestration: cache lookup, fetching, summarizing, persisting
   - `WebhookService` — fire-and-forget POST on summary save (virtual thread)
-  - `UserBootstrapService` — creates admin account on first startup; seeds API keys from env vars
+  - `UserBootstrapService` — migrates pre-multi-user data and seeds cloud LLM API keys from env vars on startup
+  - `SetupService` — handles browser-based first-run admin account creation
 - **model/** — plain domain POJOs (no persistence annotations): `Summary`, `UserSettings`, `User`
 - **persistence/** — SQLite persistence layer:
   - `SummaryPersistence` / `SettingsPersistence` / `UserPersistence` — interfaces
   - `persistence/sqlite/` — JPA implementations using JpaRepository + JpaSpecificationExecutor
 - **dto/** — request/response records
 - **security/** — `BriefenUserDetails`, `BriefenUserDetailsService`
-- **config/** — `SecurityConfig` (HTTP Basic Auth, always on), `SecurityHeadersFilter` (CSP, X-Frame-Options, etc.), `CorsConfig`, `OllamaProperties`, `OpenAiProperties`, `AnthropicProperties`, RestClient beans, `OllamaHealthIndicator`, `ApplicationReadinessValidator`, `WebConfig` (SPA routing), `SqliteConfig`
+- **config/** — `SecurityConfig` (HTTP Basic Auth, always on; `/api/setup/**` unauthenticated for first-run flow), `SecurityHeadersFilter` (CSP, X-Frame-Options, etc.), `CorsConfig`, `OllamaProperties`, `OpenAiProperties`, `AnthropicProperties`, RestClient beans, `OllamaHealthIndicator`, `ApplicationReadinessValidator`, `WebConfig` (SPA routing), `SqliteConfig`
 
 Key `application.yml` settings (all configurable via env vars):
 ```yaml
@@ -120,8 +122,6 @@ server.forward-headers-strategy:${SERVER_FORWARD_HEADERS_STRATEGY:NONE}
 ollama.base-url:                ${OLLAMA_BASE_URL:http://localhost:11434}
 ollama.model:                   ${OLLAMA_MODEL:gemma3:4b}
 ollama.timeout:                 300s
-briefen.auth.username:          ${BRIEFEN_AUTH_USERNAME:}
-briefen.auth.password:          ${BRIEFEN_AUTH_PASSWORD:}
 briefen.cors.allowed-origins:   ${BRIEFEN_CORS_ALLOWED_ORIGINS:}
 briefen.openai.api-key:         ${BRIEFEN_OPENAI_API_KEY:}
 briefen.anthropic.api-key:      ${BRIEFEN_ANTHROPIC_API_KEY:}
@@ -182,6 +182,6 @@ All `/api` requests go through Vite's dev proxy to the Spring Boot backend. Fetc
 - **Backend tests** — JUnit 5 via Spring Boot Test; WireMock for HTTP integration tests
 - **E2E tests** — Playwright in `e2e/`
 - **pnpm** is the frontend package manager (not npm/yarn)
-- **New env vars** — when adding one, update all four: `application.yml`, `.env.example`, `docs/environment-variables.md`, and `docker-compose.sample.yml` (as a commented entry)
-- **Auth is always on** — `SecurityConfig` requires authentication on all routes except `/actuator/health`; `UserBootstrapService` creates the admin account on first startup
+- **New env vars** — when adding one, update all of: `application.yml`, `.env.example`, `docs/environment-variables.md`, and `docker-compose.sample.yml` (as a commented entry)
+- **Auth is always on** — `SecurityConfig` requires authentication on all routes except `/actuator/health` and `/api/setup/**`; the admin account is created through the browser-based first-run setup flow (`SetupService`)
 - **Flyway not ddl-auto** — schema changes go in a new versioned migration file (`V{n}__description.sql`), never by editing existing migrations or relying on `ddl-auto: update`

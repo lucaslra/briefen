@@ -9,7 +9,8 @@ public class User {
     private String passwordHash;
     private String role; // "USER" or "ADMIN"
     private Instant createdAt;
-    private boolean mainAdmin; // true only for the bootstrap admin — never deletable
+    private Instant updatedAt;
+    private boolean mainAdmin; // true only for the bootstrap/setup admin — never deletable
 
     public User() {}
 
@@ -19,6 +20,7 @@ public class User {
         this.passwordHash = passwordHash;
         this.role = role;
         this.createdAt = Instant.now();
+        this.updatedAt = this.createdAt;
     }
 
     public String getId() { return id; }
@@ -35,6 +37,9 @@ public class User {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 
     public boolean isMainAdmin() { return mainAdmin; }
     public void setMainAdmin(boolean mainAdmin) { this.mainAdmin = mainAdmin; }

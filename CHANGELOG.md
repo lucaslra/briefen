@@ -9,7 +9,7 @@ Briefen uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
-- Optional HTTP Basic Auth — set `BRIEFEN_AUTH_USERNAME` and `BRIEFEN_AUTH_PASSWORD` to protect all routes; `/actuator/health` remains public for health probes. When neither variable is set, a random password is auto-generated on first startup and printed to the container log.
+- HTTP Basic Auth with browser-based first-run setup — on first launch, the browser prompts you to create an admin account with a strong password (8+ chars, uppercase, lowercase, digit, special character). All routes except `/actuator/health` and `/api/setup/**` require authentication.
 - Outgoing webhook notifications — set `BRIEFEN_WEBHOOK_URL` to receive a JSON `summary.completed` event every time a summary is saved. Fire-and-forget on a virtual thread; failures are logged and do not affect summarization. Compatible with Home Assistant, ntfy, Gotify, and any HTTP endpoint.
 - Cloud LLM API key seeding via environment variables — set `BRIEFEN_OPENAI_API_KEY` or `BRIEFEN_ANTHROPIC_API_KEY` to pre-configure cloud providers at deploy time without logging into the UI. Keys are written into admin settings on first startup only; existing values in the database are never overwritten.
 - Sub-path deployment support — set `SERVER_CONTEXT_PATH` (e.g. `/briefen/`) to serve the app at a URL prefix. Requires a local image build with `--build-arg APP_BASE_PATH=<path>` so Vite bakes the correct asset paths; the pre-built GHCR image always uses `/`. React Router `basename` is wired to `import.meta.env.BASE_URL` automatically.

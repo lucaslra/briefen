@@ -57,4 +57,16 @@ public class SqliteUserPersistence implements UserPersistence {
     public long count() {
         return repository.count();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countByRole(String role) {
+        return repository.countByRole(role);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> findByRole(String role) {
+        return repository.findByRole(role).stream().map(SqliteUserEntity::toDomain).toList();
+    }
 }

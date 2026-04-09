@@ -20,4 +20,8 @@ public interface UserPersistence {
     boolean existsByUsername(String username);
 
     long count();
+
+    long countByRole(String role);
+
+    List<User> findByRole(String role);
 }

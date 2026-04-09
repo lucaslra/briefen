@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import { STRINGS } from './constants/strings'
 import { useTheme } from './hooks/useTheme'
 import { useAuth } from './hooks/useAuth'
+import { useSetup } from './hooks/useSetup'
 import { useSummarize } from './hooks/useSummarize'
 import { useBatchSummarize } from './hooks/useBatchSummarize'
 import { useSummaries } from './hooks/useSummaries'
@@ -13,6 +14,7 @@ import { useReadeck } from './hooks/useReadeck'
 import { useUnreadCount } from './hooks/useUnreadCount'
 import { Header } from './components/Header'
 import { Login } from './components/Login'
+import { Setup } from './components/Setup'
 import { UrlInput } from './components/UrlInput'
 import { LoadingSkeleton } from './components/LoadingSkeleton'
 import { BatchProgress } from './components/BatchProgress'
@@ -140,6 +142,7 @@ function HomePage({ settings, refreshUnreadCount }) {
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
+  const { setupRequired, loading: setupLoading, completeSetup } = useSetup()
   const { isAuthenticated, username, userId, role, login, logout } = useAuth()
   const { settings, updateSetting, updateSettings } = useSettings()
   const { unreadCount, refreshUnreadCount } = useUnreadCount()
@@ -152,6 +155,14 @@ export default function App() {
       mainRef.current.focus({ preventScroll: true })
     }
   }, [location.pathname])
+
+  // Show nothing while checking setup status
+  if (setupLoading) return null
+
+  // First-run setup guard — blocks all other views
+  if (setupRequired) {
+    return <Setup onComplete={completeSetup} />
+  }
 
   if (!isAuthenticated) {
     return <Login onLogin={login} />
