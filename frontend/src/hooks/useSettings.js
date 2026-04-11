@@ -11,6 +11,7 @@ const DEFAULTS = {
   anthropicApiKey: null,
   readeckApiKey: null,
   readeckUrl: null,
+  customPrompt: null,
 }
 
 /**

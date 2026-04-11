@@ -47,6 +47,8 @@ java -jar app.jar
 | [`BRIEFEN_ANTHROPIC_API_KEY`](#briefen_anthropic_api_key) | *(empty — disabled)* | No |
 | [`BRIEFEN_WEBHOOK_URL`](#briefen_webhook_url) | *(empty — disabled)* | No |
 | [`BRIEFEN_LOG_LEVEL`](#briefen_log_level) | `INFO` | No |
+| [`BRIEFEN_LOG_FORMAT`](#briefen_log_format) | *(unset — human-readable)* | No |
+| [`BRIEFEN_DEFAULT_PROMPT`](#briefen_default_prompt) | *(unset — built-in prompt)* | No |
 
 **Build-time only:**
 
@@ -176,8 +178,14 @@ Comma-separated list of origins that are permitted to make cross-origin requests
 # Firefox extension only
 BRIEFEN_CORS_ALLOWED_ORIGINS: moz-extension://*
 
-# Extension + local dev frontend
-BRIEFEN_CORS_ALLOWED_ORIGINS: moz-extension://*,http://localhost:5173
+# Chrome extension only
+BRIEFEN_CORS_ALLOWED_ORIGINS: chrome-extension://*
+
+# Both extensions
+BRIEFEN_CORS_ALLOWED_ORIGINS: moz-extension://*,chrome-extension://*
+
+# Extensions + local dev frontend
+BRIEFEN_CORS_ALLOWED_ORIGINS: moz-extension://*,chrome-extension://*,http://localhost:5173
 
 # Specific remote origin
 BRIEFEN_CORS_ALLOWED_ORIGINS: https://briefen.example.com
@@ -189,6 +197,7 @@ BRIEFEN_CORS_ALLOWED_ORIGINS: https://briefen.example.com
 |---|---|
 | Browser accessing Briefen on the same origin | No |
 | Firefox extension connecting to a remote Briefen instance | **Yes** — add `moz-extension://*` |
+| Chrome extension connecting to a remote Briefen instance | **Yes** — add `chrome-extension://*` |
 | Vite dev server (port 5173) calling the backend (port 8080) | **Yes** — add `http://localhost:5173` |
 | Vite dev server accessing its own Vite proxy | No — the proxy rewrites the origin |
 
@@ -369,6 +378,54 @@ BRIEFEN_LOG_LEVEL: DEBUG
 ```
 
 > To increase verbosity across all code (including Spring Boot internals), use the Spring Boot native variable `LOGGING_LEVEL_ROOT=DEBUG`. See [Advanced / undocumented](#advanced--undocumented).
+
+---
+
+### `BRIEFEN_LOG_FORMAT`
+
+Controls the log output format. Set to `json` for structured JSON logs (one JSON object per line), useful for log aggregation tools like Loki, Grafana, Datadog, or simple `jq` filtering. When unset or any other value, Briefen uses Spring Boot's default human-readable console format.
+
+| | |
+|---|---|
+| **Type** | String |
+| **Default** | *(unset — human-readable)* |
+
+| Value | Output format |
+|---|---|
+| *(unset)* | Human-readable with timestamps, colours, and thread names — **default** |
+| `json` | Structured JSON via [logstash-logback-encoder](https://github.com/logfellow/logstash-logback-encoder). One JSON object per line with `timestamp`, `level`, `logger_name`, `message`, and `stack_trace` fields. |
+
+```yaml
+BRIEFEN_LOG_FORMAT: json
+```
+
+**Example JSON output:**
+
+```json
+{"timestamp":"2026-04-11T10:00:00.000+00:00","level":"INFO","logger_name":"com.briefen.service.SummaryService","message":"Returning cached summary for https://example.com/article","thread_name":"http-nio-8080-exec-1"}
+```
+
+> Pairs well with Docker's `json-file` log driver and `jq` for ad-hoc filtering: `docker logs briefen-app | jq 'select(.level == "ERROR")'`
+
+---
+
+## Summarization
+
+### `BRIEFEN_DEFAULT_PROMPT`
+
+A custom system prompt that replaces the built-in summarization instructions for all users who have not configured a personal custom prompt in **Settings → Summarization**. Useful for setting a deployment-wide output language, tone, or format.
+
+| | |
+|---|---|
+| **Type** | String (free text) |
+| **Default** | *(unset — built-in English summarization prompt)* |
+| **Priority** | User's personal custom prompt (set via Settings UI) > this variable > built-in prompt |
+
+```yaml
+BRIEFEN_DEFAULT_PROMPT: "You are an article summarizer. Write summaries in Spanish. Use 3-5 concise paragraphs. Start with a markdown H1 title."
+```
+
+> The built-in prompt instructs the LLM to produce an English summary with a markdown H1 title, 3–6 paragraphs, and a Key Quotes section. Override this when you need a different language, format, or style across your entire instance.
 
 ---
 

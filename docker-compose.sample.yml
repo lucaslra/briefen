@@ -151,6 +151,17 @@ services:
       # Same seeding behaviour as BRIEFEN_OPENAI_API_KEY above.
       # BRIEFEN_ANTHROPIC_API_KEY: ${BRIEFEN_ANTHROPIC_API_KEY:-}
 
+      # ── Logging ──────────────────────────────────────────────────────
+      # Set to "json" for structured JSON logs (one JSON object per line).
+      # Useful for log aggregation with Loki, Grafana, or jq filtering.
+      # BRIEFEN_LOG_FORMAT: json
+
+      # ── Custom summarization prompt (optional) ────────────────────────
+      # Override the built-in summarization system prompt instance-wide.
+      # Useful for setting a default output language or format.
+      # Users can still override this per-account via Settings.
+      # BRIEFEN_DEFAULT_PROMPT: "Summarize in Spanish. Use 3-5 paragraphs."
+
       # ── Sub-path deployment (optional) ────────────────────────────────
       # Serve Briefen at a sub-path, e.g. myserver.com/briefen/.
       # Requires a local image build with --build-arg APP_BASE_PATH=/briefen/

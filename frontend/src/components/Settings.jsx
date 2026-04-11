@@ -173,6 +173,8 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin 
   const [readeckSaved, setReadeckSaved] = useState(false)
   const [webhookUrlDraft, setWebhookUrlDraft] = useState('')
   const [webhookSaved, setWebhookSaved] = useState(false)
+  const [promptDraft, setPromptDraft] = useState('')
+  const [promptSaved, setPromptSaved] = useState(false)
   const [modelsLoading, setModelsLoading] = useState(true)
   const [appVersion, setAppVersion] = useState(null)
   const { supported, permission, requestPermission } = useNotification()
@@ -224,6 +226,12 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin 
   if (prevWebhookUrl !== settings.webhookUrl) {
     setPrevWebhookUrl(settings.webhookUrl)
     if (settings.webhookUrl) setWebhookUrlDraft(settings.webhookUrl)
+  }
+
+  const [prevCustomPrompt, setPrevCustomPrompt] = useState(settings.customPrompt)
+  if (prevCustomPrompt !== settings.customPrompt) {
+    setPrevCustomPrompt(settings.customPrompt)
+    setPromptDraft(settings.customPrompt || '')
   }
 
   const selectedModel = settings.model || defaultModel
@@ -421,6 +429,46 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin 
               )}
             </section>
           )}
+
+          <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_PROMPT_HEADING}</h3>
+            <p className={styles.sectionDesc}>{STRINGS.SETTINGS_PROMPT_SUBHEADING}</p>
+
+            <div className={styles.apiKeyGroup}>
+              <textarea
+                className={styles.promptTextarea}
+                value={promptDraft}
+                onChange={e => setPromptDraft(e.target.value)}
+                placeholder={STRINGS.SETTINGS_PROMPT_PLACEHOLDER}
+                rows={6}
+              />
+              <div className={styles.apiKeyRow}>
+                <button
+                  className={styles.apiKeySaveBtn}
+                  onClick={() => {
+                    onUpdateSetting('customPrompt', promptDraft.trim() || '')
+                    setPromptSaved(true)
+                    setTimeout(() => setPromptSaved(false), 2000)
+                  }}
+                  disabled={promptDraft === (settings.customPrompt || '')}
+                >
+                  {promptSaved ? STRINGS.SETTINGS_PROMPT_SAVED : STRINGS.SETTINGS_PROMPT_SAVE}
+                </button>
+                {(settings.customPrompt != null && settings.customPrompt !== '') && (
+                  <button
+                    className={styles.apiKeyRemoveBtn}
+                    onClick={() => {
+                      if (!window.confirm(STRINGS.SETTINGS_PROMPT_CONFIRM_RESET)) return
+                      onUpdateSetting('customPrompt', '')
+                      setPromptDraft('')
+                    }}
+                  >
+                    {STRINGS.SETTINGS_PROMPT_RESET}
+                  </button>
+                )}
+              </div>
+            </div>
+          </section>
         </>
       )}
 

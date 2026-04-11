@@ -207,6 +207,31 @@
   border-color: var(--accent);
 }
 
+.promptTextarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  font-family: monospace;
+  color: var(--text);
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition);
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.promptTextarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.promptTextarea::placeholder {
+  color: var(--text-muted);
+}
+
 .apiKeyInput::placeholder {
   color: var(--text-muted);
 }

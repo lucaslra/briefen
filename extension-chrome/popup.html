@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Briefen</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <img src="icons/icon-48.svg" alt="" class="logo" width="20" height="20">
+      <span class="brand">Briefen</span>
+    </header>
+
+    <main class="main">
+      <!-- Idle state -->
+      <div id="state-idle" class="state">
+        <p class="url-preview" id="tab-url" title=""></p>
+        <button id="send-btn" class="btn btn-primary">
+          Send to Briefen
+        </button>
+      </div>
+
+      <!-- Loading state -->
+      <div id="state-loading" class="state hidden">
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="status-text">Sending&hellip;</p>
+      </div>
+
+      <!-- Success state -->
+      <div id="state-success" class="state hidden">
+        <div class="icon-circle icon-circle--success" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <p class="status-text status-text--success">Added to Briefen</p>
+        <p class="status-sub">Summarization is running in the background.</p>
+      </div>
+
+      <!-- Error state -->
+      <div id="state-error" class="state hidden">
+        <div class="icon-circle icon-circle--error" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </div>
+        <p class="status-text status-text--error" id="error-message">Something went wrong.</p>
+        <button id="retry-btn" class="btn btn-ghost">Try again</button>
+      </div>
+
+      <!-- Unsupported page state -->
+      <div id="state-unsupported" class="state hidden">
+        <p class="status-text status-text--muted">This page can&rsquo;t be summarized.</p>
+        <p class="status-sub">Open an article or web page first.</p>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <a id="settings-link" href="#" class="settings-link">Settings</a>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

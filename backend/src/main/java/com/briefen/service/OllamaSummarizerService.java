@@ -18,28 +18,6 @@ public class OllamaSummarizerService {
 
     private static final Logger log = LoggerFactory.getLogger(OllamaSummarizerService.class);
 
-    private static final String BASE_PROMPT = """
-            You are a skilled article summarizer. Given the text of an article, produce a clear and faithful summary.
-
-            Guidelines:
-            - %s
-            - Start with a brief introduction stating the article's main topic.
-            - Cover the key points, arguments, and findings.
-            - End with the conclusion or main takeaway if the article has one.
-            - Use clear, accessible English.
-            - Do NOT add information that is not present in the article.
-            - Do NOT include your own opinions or commentary.
-            - Do NOT include inline parenthetical citations throughout the summary paragraphs — keep the summary clean.
-            - At the end of the summary, include a "Key Quotes" section with 2-4 direct, verbatim short quotes from the article that support the most important claims in the summary.
-            - Each quote must be in quotation marks, attributed with brief context such as the section or speaker if known.
-            - Do NOT invent dates, URLs, or any metadata not present in the article.
-            - Begin the response with a single markdown H1 heading (# Title) that captures the article's topic. Use the article's own title if available, or create a concise, descriptive one.
-            """;
-
-    private static final String LENGTH_DEFAULT = "Write 3 to 6 concise paragraphs depending on the article's length and complexity.";
-    private static final String LENGTH_SHORTER = "Write 1 to 2 short, concise paragraphs capturing only the most essential points.";
-    private static final String LENGTH_LONGER = "Write 6 to 10 detailed paragraphs providing thorough coverage of all points, arguments, and nuances.";
-
     private final RestClient ollamaRestClient;
     private final OllamaProperties properties;
 
@@ -50,32 +28,35 @@ public class OllamaSummarizerService {
 
     /**
      * @param modelOverride if non-null/blank, use this model instead of the configured default
+     * @param customPrompt  user or deployment-level custom prompt (nullable)
+     * @param deploymentPrompt deployment-wide default prompt from env var (nullable)
      */
+    public String summarize(String articleText, String lengthHint, String modelOverride,
+                            String customPrompt, String deploymentPrompt) {
+        return doSummarize(articleText, lengthHint, resolveModel(modelOverride), customPrompt, deploymentPrompt);
+    }
+
     public String summarize(String articleText, String lengthHint, String modelOverride) {
-        return doSummarize(articleText, lengthHint, resolveModel(modelOverride));
+        return doSummarize(articleText, lengthHint, resolveModel(modelOverride), null, null);
     }
 
     public String summarize(String articleText, String lengthHint) {
-        return doSummarize(articleText, lengthHint, properties.model());
+        return doSummarize(articleText, lengthHint, properties.model(), null, null);
     }
 
     private String resolveModel(String modelOverride) {
         return (modelOverride != null && !modelOverride.isBlank()) ? modelOverride : properties.model();
     }
 
-    private String doSummarize(String articleText, String lengthHint, String model) {
-        String lengthGuideline = switch (lengthHint != null ? lengthHint.toLowerCase() : "") {
-            case "shorter" -> LENGTH_SHORTER;
-            case "longer" -> LENGTH_LONGER;
-            default -> LENGTH_DEFAULT;
-        };
+    private String doSummarize(String articleText, String lengthHint, String model,
+                               String customPrompt, String deploymentPrompt) {
         int numPredict = switch (lengthHint != null ? lengthHint.toLowerCase() : "") {
             case "shorter" -> 384;
             case "longer" -> 2048;
             default -> 1024;
         };
 
-        String systemPrompt = BASE_PROMPT.formatted(lengthGuideline);
+        String systemPrompt = PromptBuilder.build(customPrompt, deploymentPrompt, lengthHint);
         String prompt = systemPrompt + "\n\nArticle text:\n---\n" + articleText + "\n---\n\nSummary:";
 
         Map<String, Object> request = Map.of(

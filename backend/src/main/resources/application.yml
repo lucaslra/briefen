@@ -1,6 +1,10 @@
 spring:
   application:
     name: briefen
+  profiles:
+    # BRIEFEN_LOG_FORMAT=json activates the "json" Spring profile,
+    # which switches logback-spring.xml from human-readable to structured JSON output.
+    include: ${BRIEFEN_LOG_FORMAT:}
   config:
     # Loads .env file if present (KEY=VALUE format). No-op when missing (CI/Docker use real env vars).
     import: optional:file:.env[.properties]
@@ -47,6 +51,7 @@ briefen:
     api-key: ${BRIEFEN_OPENAI_API_KEY:}
   anthropic:
     api-key: ${BRIEFEN_ANTHROPIC_API_KEY:}
+  default-prompt: ${BRIEFEN_DEFAULT_PROMPT:}
 
 logging:
   level:

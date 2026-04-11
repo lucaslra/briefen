@@ -70,7 +70,7 @@ class OpenAiSummarizerServiceTest {
                         .withBody(responseBody)));
 
         // Act
-        String result = service.summarize(ARTICLE_TEXT, null, "gpt-4o", API_KEY);
+        String result = service.summarize(ARTICLE_TEXT, null, "gpt-4o", API_KEY, null, null);
 
         // Assert
         assertThat(result).contains("This is the OpenAI summary.");
@@ -86,7 +86,7 @@ class OpenAiSummarizerServiceTest {
                         .withBody("{\"error\":{\"message\":\"Invalid API key\"}}")));
 
         // Act & Assert
-        assertThatThrownBy(() -> service.summarize(ARTICLE_TEXT, null, "gpt-4o", "bad-key"))
+        assertThatThrownBy(() -> service.summarize(ARTICLE_TEXT, null, "gpt-4o", "bad-key", null, null))
                 .isInstanceOf(SummarizationException.class)
                 .hasMessageContaining("Invalid OpenAI API key")
                 .satisfies(ex -> assertThat(((SummarizationException) ex).isTimeout()).isFalse());
@@ -102,7 +102,7 @@ class OpenAiSummarizerServiceTest {
                         .withBody("{\"error\":{\"message\":\"Rate limit exceeded\"}}")));
 
         // Act & Assert
-        assertThatThrownBy(() -> service.summarize(ARTICLE_TEXT, null, "gpt-4o", API_KEY))
+        assertThatThrownBy(() -> service.summarize(ARTICLE_TEXT, null, "gpt-4o", API_KEY, null, null))
                 .isInstanceOf(SummarizationException.class)
                 .hasMessageContaining("rate limit")
                 .satisfies(ex -> assertThat(((SummarizationException) ex).isTimeout()).isTrue());
@@ -127,7 +127,7 @@ class OpenAiSummarizerServiceTest {
                         .withBody(responseBody)));
 
         // Act
-        service.summarize(ARTICLE_TEXT, null, "gpt-4o", API_KEY);
+        service.summarize(ARTICLE_TEXT, null, "gpt-4o", API_KEY, null, null);
 
         // Assert — Authorization header was sent
         wireMock.verify(postRequestedFor(urlEqualTo("/v1/chat/completions"))
@@ -149,7 +149,7 @@ class OpenAiSummarizerServiceTest {
                         .withBody(responseBody)));
 
         // Act & Assert
-        assertThatThrownBy(() -> service.summarize(ARTICLE_TEXT, null, "gpt-4o", API_KEY))
+        assertThatThrownBy(() -> service.summarize(ARTICLE_TEXT, null, "gpt-4o", API_KEY, null, null))
                 .isInstanceOf(SummarizationException.class)
                 .hasMessageContaining("no choices");
     }

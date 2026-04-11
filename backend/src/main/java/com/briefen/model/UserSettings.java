@@ -17,6 +17,7 @@ public class UserSettings {
     private String readeckApiKey;
     private String readeckUrl;
     private String webhookUrl;
+    private String customPrompt;
     private Instant updatedAt;
 
     public UserSettings() {
@@ -71,6 +72,12 @@ public class UserSettings {
     public String getWebhookUrl() { return webhookUrl; }
     public void setWebhookUrl(String webhookUrl) {
         this.webhookUrl = webhookUrl;
+        this.updatedAt = Instant.now();
+    }
+
+    public String getCustomPrompt() { return customPrompt; }
+    public void setCustomPrompt(String customPrompt) {
+        this.customPrompt = customPrompt;
         this.updatedAt = Instant.now();
     }
 

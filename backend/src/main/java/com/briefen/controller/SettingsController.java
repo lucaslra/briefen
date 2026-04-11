@@ -91,6 +91,9 @@ public class SettingsController {
                 }
             }
         }
+        if (dto.customPrompt() != null) {
+            settings.setCustomPrompt(dto.customPrompt().isBlank() ? null : dto.customPrompt());
+        }
 
         return UserSettingsDto.fromMasked(settingsPersistence.save(settings));
     }

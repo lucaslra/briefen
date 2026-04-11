@@ -10,7 +10,8 @@ public record UserSettingsDto(
         String anthropicApiKey,
         String readeckApiKey,
         String readeckUrl,
-        String webhookUrl
+        String webhookUrl,
+        String customPrompt
 ) {
     /**
      * Returns a response-safe DTO with API keys masked (e.g., "sk-...abc1").
@@ -25,7 +26,8 @@ public record UserSettingsDto(
                 maskKey(entity.getAnthropicApiKey()),
                 maskKey(entity.getReadeckApiKey()),
                 entity.getReadeckUrl(),
-                entity.getWebhookUrl()
+                entity.getWebhookUrl(),
+                entity.getCustomPrompt()
         );
     }
 

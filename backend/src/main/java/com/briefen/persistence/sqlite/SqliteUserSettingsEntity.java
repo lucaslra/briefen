@@ -25,6 +25,8 @@ public class SqliteUserSettingsEntity {
     private String readeckUrl;
     @Column(name = "webhook_url")
     private String webhookUrl;
+    @Column(name = "custom_prompt")
+    private String customPrompt;
     private Instant updatedAt;
 
     public SqliteUserSettingsEntity() {
@@ -42,6 +44,7 @@ public class SqliteUserSettingsEntity {
         entity.readeckApiKey = s.getReadeckApiKey();
         entity.readeckUrl = s.getReadeckUrl();
         entity.webhookUrl = s.getWebhookUrl();
+        entity.customPrompt = s.getCustomPrompt();
         entity.updatedAt = s.getUpdatedAt();
         return entity;
     }
@@ -58,6 +61,7 @@ public class SqliteUserSettingsEntity {
         s.setReadeckApiKey(readeckApiKey);
         s.setReadeckUrl(readeckUrl);
         s.setWebhookUrl(webhookUrl);
+        s.setCustomPrompt(customPrompt);
         s.setUpdatedAt(updatedAt); // Re-set to original value after setters updated it
         return s;
     }
@@ -88,6 +92,9 @@ public class SqliteUserSettingsEntity {
 
     public String getWebhookUrl() { return webhookUrl; }
     public void setWebhookUrl(String webhookUrl) { this.webhookUrl = webhookUrl; }
+
+    public String getCustomPrompt() { return customPrompt; }
+    public void setCustomPrompt(String customPrompt) { this.customPrompt = customPrompt; }
 
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }

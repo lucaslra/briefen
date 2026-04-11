@@ -49,6 +49,14 @@ export const STRINGS = {
   SETTINGS_LENGTH_LONG: 'Detailed',
   SETTINGS_LENGTH_LONG_DESC: '6-10 paragraphs with thorough coverage of all arguments and nuances.',
 
+  SETTINGS_PROMPT_HEADING: 'Custom Prompt',
+  SETTINGS_PROMPT_SUBHEADING: 'Customise the system prompt sent to the LLM. Leave blank to use the built-in default.',
+  SETTINGS_PROMPT_PLACEHOLDER: 'Enter your custom summarization instructions…',
+  SETTINGS_PROMPT_SAVE: 'Save',
+  SETTINGS_PROMPT_SAVED: 'Saved',
+  SETTINGS_PROMPT_RESET: 'Reset to default',
+  SETTINGS_PROMPT_CONFIRM_RESET: 'Reset the custom prompt to the built-in default?',
+
   SETTINGS_MODEL_HEADING: 'LLM Model',
   SETTINGS_MODEL_SUBHEADING: 'Choose which model generates your summaries.',
 

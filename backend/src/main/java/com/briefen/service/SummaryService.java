@@ -1,5 +1,6 @@
 package com.briefen.service;
 
+import com.briefen.config.BriefenProperties;
 import com.briefen.config.OllamaProperties;
 import com.briefen.exception.InvalidUrlException;
 import com.briefen.exception.SummarizationException;
@@ -43,6 +44,7 @@ public class SummaryService {
     private final SummaryPersistence summaryPersistence;
     private final SettingsPersistence settingsPersistence;
     private final OllamaProperties ollamaProperties;
+    private final BriefenProperties briefenProperties;
     private final WebhookService webhookService;
 
     public SummaryService(UrlValidator urlValidator,
@@ -53,6 +55,7 @@ public class SummaryService {
                           SummaryPersistence summaryPersistence,
                           SettingsPersistence settingsPersistence,
                           OllamaProperties ollamaProperties,
+                          BriefenProperties briefenProperties,
                           WebhookService webhookService) {
         this.urlValidator = urlValidator;
         this.articleFetcher = articleFetcher;
@@ -62,6 +65,7 @@ public class SummaryService {
         this.summaryPersistence = summaryPersistence;
         this.settingsPersistence = settingsPersistence;
         this.ollamaProperties = ollamaProperties;
+        this.briefenProperties = briefenProperties;
         this.webhookService = webhookService;
     }
 
@@ -242,17 +246,21 @@ public class SummaryService {
 
     /**
      * Routes to the correct summarizer based on the model name.
+     * Loads the user's custom prompt (or falls back to the deployment-wide default).
      */
     private String dispatchSummarize(String userId, String articleText, String lengthHint, String model) {
+        String customPrompt = loadCustomPrompt(userId);
+        String deploymentPrompt = briefenProperties.defaultPrompt();
+
         if (isOpenAiModel(model)) {
             String apiKey = loadOpenAiKey(userId);
-            return openAiSummarizer.summarize(articleText, lengthHint, model, apiKey);
+            return openAiSummarizer.summarize(articleText, lengthHint, model, apiKey, customPrompt, deploymentPrompt);
         }
         if (isAnthropicModel(model)) {
             String apiKey = loadAnthropicKey(userId);
-            return anthropicSummarizer.summarize(articleText, lengthHint, model, apiKey);
+            return anthropicSummarizer.summarize(articleText, lengthHint, model, apiKey, customPrompt, deploymentPrompt);
         }
-        return ollamaSummarizer.summarize(articleText, lengthHint, model);
+        return ollamaSummarizer.summarize(articleText, lengthHint, model, customPrompt, deploymentPrompt);
     }
 
     private boolean isOpenAiModel(String model) {
@@ -265,6 +273,13 @@ public class SummaryService {
     private boolean isAnthropicModel(String model) {
         return model != null && (ANTHROPIC_MODELS.contains(model)
                 || model.startsWith("claude-"));
+    }
+
+    private String loadCustomPrompt(String userId) {
+        return settingsPersistence.findByUserId(userId)
+                .map(UserSettings::getCustomPrompt)
+                .filter(p -> p != null && !p.isBlank())
+                .orElse(null);
     }
 
     private String loadOpenAiKey(String userId) {
