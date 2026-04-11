@@ -164,6 +164,63 @@ jobs:
           if-no-files-found: ignore
 
   # ---------------------------------------------------------------------------
+  # Dependency audit — OWASP + pnpm audit (non-blocking)
+  # ---------------------------------------------------------------------------
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    # Non-blocking: failures are visible but don't prevent merging.
+    # Promote to a required check after the first triage pass.
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      # ---- Backend: OWASP Dependency-Check ----
+      - name: Set up Java 25 (Temurin) with Maven cache
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  # v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+          cache-dependency-path: backend/pom.xml
+
+      - name: OWASP Dependency-Check (backend)
+        working-directory: backend
+        run: |
+          ./mvnw --batch-mode org.owasp:dependency-check-maven:check \
+            -DfailBuildOnCVSS=7 \
+            -DsuppressionFile=owasp-suppressions.xml \
+            -Dformats=HTML,JSON \
+            -DnvdApiDelay=6000
+        continue-on-error: true
+
+      - name: Upload OWASP report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        with:
+          name: owasp-dependency-check-report
+          path: backend/target/dependency-check-report.*
+          if-no-files-found: ignore
+
+      # ---- Frontend: pnpm audit ----
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a8198c4bff370c8506180b035930dea56dbd5288  # v5
+        with:
+          version: 9
+
+      - name: Set up Node.js (LTS)
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f  # v6
+        with:
+          node-version: 'lts/*'
+
+      - name: pnpm audit (frontend)
+        working-directory: frontend
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
   # Gate — single required status check for branch protection
   # ---------------------------------------------------------------------------
   ci-passed:

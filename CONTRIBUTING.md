@@ -2,6 +2,8 @@
 
 Thanks for your interest in contributing! This guide will help you get set up and understand how the project works.
 
+Please note that this project is released with a [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+
 ## Prerequisites
 
 - **Docker** (with Docker Compose)
@@ -31,6 +33,7 @@ This is a monorepo with three main areas:
 - **`backend/`** — Java 25, Spring Boot 4.0.x, Maven
 - **`frontend/`** — React 19, Vite, pnpm, plain JavaScript (no TypeScript)
 - **`extension/`** — Firefox browser extension (Manifest V2, vanilla JS)
+- **`extension-chrome/`** — Chrome/Chromium browser extension (Manifest V3, vanilla JS)
 - **`docs/`** — User-facing documentation (getting started, env vars, reverse proxy)
 - **`e2e/`** — Playwright end-to-end tests
 
