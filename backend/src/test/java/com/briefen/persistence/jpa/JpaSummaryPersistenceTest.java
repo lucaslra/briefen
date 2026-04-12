@@ -1,4 +1,4 @@
-package com.briefen.persistence.sqlite;
+package com.briefen.persistence.jpa;
 
 import com.briefen.model.Summary;
 import com.briefen.persistence.SummaryPersistence;
@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-class SqliteSummaryPersistenceTest {
+class JpaSummaryPersistenceTest {
 
     private static final String USER_ID = "persistence-test-user";
 
@@ -265,6 +265,23 @@ class SqliteSummaryPersistenceTest {
         assertThat(mine.get(0).getTitle()).isEqualTo("Mine");
         assertThat(theirs).hasSize(1);
         assertThat(theirs.get(0).getTitle()).isEqualTo("Theirs");
+    }
+
+    @Test
+    void shouldSearchByUrl() {
+        // Arrange
+        Summary matching = buildSummary("https://blog.example.com/spring-boot-tips", "Generic Title", "Generic content", false);
+        Summary nonMatching = buildSummary("https://other.example.com/unrelated", "Another Title", "Another content", false);
+
+        persistence.save(matching);
+        persistence.save(nonMatching);
+
+        // Act — search by a fragment that only appears in the URL
+        Page<Summary> page = persistence.findAll(USER_ID, 0, 10, "all", "spring-boot-tips");
+
+        // Assert
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().get(0).getUrl()).isEqualTo("https://blog.example.com/spring-boot-tips");
     }
 
     // ---- Helpers ----

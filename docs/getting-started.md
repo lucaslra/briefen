@@ -314,15 +314,27 @@ For continuous backups, consider [pgBackRest](https://pgbackrest.org/) or [WAL-G
 
 ---
 
-## Installing the Firefox extension
+## Installing the browser extensions
 
-The Briefen extension adds a toolbar button that sends the active tab to your instance with one click.
+Briefen provides extensions for Firefox and Chrome/Chromium. Each adds a toolbar button that sends the active tab to your instance with one click.
+
+### Firefox
 
 1. Open Firefox → `about:debugging#/runtime/this-firefox`
 2. Click **Load Temporary Add-on…**
 3. Select `extension/manifest.json` from the cloned repo
 
-After installing, right-click the extension icon → **Manage Extension → Options** and set:
+### Chrome / Chromium
+
+Works with Chrome, Edge, Brave, Vivaldi, Arc, and any Chromium-based browser.
+
+1. Open `chrome://extensions/` (or the equivalent in your browser)
+2. Enable **Developer mode** (top-right toggle)
+3. Click **Load unpacked** and select the `extension-chrome/` directory from the cloned repo
+
+### Configuration
+
+After installing either extension, open its options page and set:
 
 | Field | Value |
 |---|---|
@@ -333,7 +345,14 @@ After installing, right-click the extension icon → **Manage Extension → Opti
 If your Briefen instance is on a different origin than the extension (any remote deployment), add the following to the compose environment so CORS allows extension requests:
 
 ```yaml
+# Firefox only
 BRIEFEN_CORS_ALLOWED_ORIGINS: moz-extension://*
+
+# Chrome only
+BRIEFEN_CORS_ALLOWED_ORIGINS: chrome-extension://*
+
+# Both
+BRIEFEN_CORS_ALLOWED_ORIGINS: moz-extension://*,chrome-extension://*
 ```
 
 ---

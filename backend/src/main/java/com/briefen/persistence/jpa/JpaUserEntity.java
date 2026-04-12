@@ -1,4 +1,4 @@
-package com.briefen.persistence.sqlite;
+package com.briefen.persistence.jpa;
 
 import com.briefen.model.User;
 import jakarta.persistence.Column;
@@ -10,7 +10,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "users")
-public class SqliteUserEntity {
+public class JpaUserEntity {
 
     @Id
     private String id;
@@ -33,10 +33,10 @@ public class SqliteUserEntity {
     @Column(name = "main_admin", nullable = false)
     private boolean mainAdmin;
 
-    public SqliteUserEntity() {}
+    public JpaUserEntity() {}
 
-    public static SqliteUserEntity fromDomain(User u) {
-        var entity = new SqliteUserEntity();
+    public static JpaUserEntity fromDomain(User u) {
+        var entity = new JpaUserEntity();
         entity.id = u.getId();
         entity.username = u.getUsername();
         entity.passwordHash = u.getPasswordHash();

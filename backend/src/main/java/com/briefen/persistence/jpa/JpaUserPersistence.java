@@ -1,4 +1,4 @@
-package com.briefen.persistence.sqlite;
+package com.briefen.persistence.jpa;
 
 import com.briefen.model.User;
 import com.briefen.persistence.UserPersistence;
@@ -10,35 +10,35 @@ import java.util.Optional;
 
 @Component
 @Transactional
-public class SqliteUserPersistence implements UserPersistence {
+public class JpaUserPersistence implements UserPersistence {
 
-    private final SqliteUserRepository repository;
+    private final JpaUserRepository repository;
 
-    public SqliteUserPersistence(SqliteUserRepository repository) {
+    public JpaUserPersistence(JpaUserRepository repository) {
         this.repository = repository;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<User> findById(String id) {
-        return repository.findById(id).map(SqliteUserEntity::toDomain);
+        return repository.findById(id).map(JpaUserEntity::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<User> findByUsername(String username) {
-        return repository.findByUsername(username).map(SqliteUserEntity::toDomain);
+        return repository.findByUsername(username).map(JpaUserEntity::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<User> findAll() {
-        return repository.findAll().stream().map(SqliteUserEntity::toDomain).toList();
+        return repository.findAll().stream().map(JpaUserEntity::toDomain).toList();
     }
 
     @Override
     public User save(User user) {
-        return repository.save(SqliteUserEntity.fromDomain(user)).toDomain();
+        return repository.save(JpaUserEntity.fromDomain(user)).toDomain();
     }
 
     @Override
@@ -67,6 +67,6 @@ public class SqliteUserPersistence implements UserPersistence {
     @Override
     @Transactional(readOnly = true)
     public List<User> findByRole(String role) {
-        return repository.findByRole(role).stream().map(SqliteUserEntity::toDomain).toList();
+        return repository.findByRole(role).stream().map(JpaUserEntity::toDomain).toList();
     }
 }

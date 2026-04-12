@@ -1,4 +1,4 @@
-package com.briefen.persistence.sqlite;
+package com.briefen.persistence.jpa;
 
 import com.briefen.model.UserSettings;
 import com.briefen.persistence.SettingsPersistence;
@@ -9,11 +9,11 @@ import java.util.Optional;
 
 @Component
 @Transactional
-public class SqliteSettingsPersistence implements SettingsPersistence {
+public class JpaSettingsPersistence implements SettingsPersistence {
 
-    private final SqliteUserSettingsRepository repository;
+    private final JpaUserSettingsRepository repository;
 
-    public SqliteSettingsPersistence(SqliteUserSettingsRepository repository) {
+    public JpaSettingsPersistence(JpaUserSettingsRepository repository) {
         this.repository = repository;
     }
 
@@ -21,12 +21,12 @@ public class SqliteSettingsPersistence implements SettingsPersistence {
     @Transactional(readOnly = true)
     public Optional<UserSettings> findByUserId(String userId) {
         return repository.findById(userId)
-                .map(SqliteUserSettingsEntity::toDomain);
+                .map(JpaUserSettingsEntity::toDomain);
     }
 
     @Override
     public UserSettings save(UserSettings settings) {
-        var entity = SqliteUserSettingsEntity.fromDomain(settings);
+        var entity = JpaUserSettingsEntity.fromDomain(settings);
         return repository.save(entity).toDomain();
     }
 }

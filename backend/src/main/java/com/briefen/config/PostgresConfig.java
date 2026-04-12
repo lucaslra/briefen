@@ -11,7 +11,7 @@ import javax.sql.DataSource;
 
 @Configuration
 @ConditionalOnProperty(name = "briefen.db.type", havingValue = "postgres")
-@EnableJpaRepositories(basePackages = "com.briefen.persistence.sqlite")
+@EnableJpaRepositories(basePackages = "com.briefen.persistence.jpa")
 public class PostgresConfig {
 
     @Bean

@@ -1,4 +1,4 @@
-package com.briefen.persistence.sqlite;
+package com.briefen.persistence.jpa;
 
 import com.briefen.model.Summary;
 import com.briefen.persistence.SummaryPersistence;
@@ -15,18 +15,18 @@ import java.util.UUID;
 
 @Component
 @Transactional
-public class SqliteSummaryPersistence implements SummaryPersistence {
+public class JpaSummaryPersistence implements SummaryPersistence {
 
-    private final SqliteSummaryRepository repository;
+    private final JpaSummaryRepository repository;
 
-    public SqliteSummaryPersistence(SqliteSummaryRepository repository) {
+    public JpaSummaryPersistence(JpaSummaryRepository repository) {
         this.repository = repository;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<Summary> findByUrl(String userId, String url) {
-        return repository.findByUrlAndUserId(url, userId).map(SqliteSummaryEntity::toDomain);
+        return repository.findByUrlAndUserId(url, userId).map(JpaSummaryEntity::toDomain);
     }
 
     @Override
@@ -34,12 +34,12 @@ public class SqliteSummaryPersistence implements SummaryPersistence {
     public Optional<Summary> findById(String userId, String id) {
         return repository.findById(id)
                 .filter(e -> userId.equals(e.getUserId()))
-                .map(SqliteSummaryEntity::toDomain);
+                .map(JpaSummaryEntity::toDomain);
     }
 
     @Override
     public Summary save(Summary summary) {
-        var entity = SqliteSummaryEntity.fromDomain(summary);
+        var entity = JpaSummaryEntity.fromDomain(summary);
         if (entity.getId() == null) {
             entity.setId(UUID.randomUUID().toString());
         }
@@ -65,24 +65,24 @@ public class SqliteSummaryPersistence implements SummaryPersistence {
     @Transactional(readOnly = true)
     public Page<Summary> findAll(String userId, int page, int size) {
         return repository.findAllByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size))
-                .map(SqliteSummaryEntity::toDomain);
+                .map(JpaSummaryEntity::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<Summary> findAll(String userId, int page, int size, String filter, String search) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Specification<SqliteSummaryEntity> spec = buildSpec(userId, filter, search);
-        return repository.findAll(spec, pageable).map(SqliteSummaryEntity::toDomain);
+        Specification<JpaSummaryEntity> spec = buildSpec(userId, filter, search);
+        return repository.findAll(spec, pageable).map(JpaSummaryEntity::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Summary> findAll(String userId, String filter, String search) {
-        Specification<SqliteSummaryEntity> spec = buildSpec(userId, filter, search);
+        Specification<JpaSummaryEntity> spec = buildSpec(userId, filter, search);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
         return repository.findAll(spec, sort).stream()
-                .map(SqliteSummaryEntity::toDomain).toList();
+                .map(JpaSummaryEntity::toDomain).toList();
     }
 
     @Override
@@ -106,8 +106,8 @@ public class SqliteSummaryPersistence implements SummaryPersistence {
         return repository.assignOrphanedSummaries(userId);
     }
 
-    private Specification<SqliteSummaryEntity> buildSpec(String userId, String filter, String search) {
-        Specification<SqliteSummaryEntity> spec = (root, query, cb) ->
+    private Specification<JpaSummaryEntity> buildSpec(String userId, String filter, String search) {
+        Specification<JpaSummaryEntity> spec = (root, query, cb) ->
                 cb.equal(root.get("userId"), userId);
 
         if ("unread".equals(filter)) {
@@ -125,7 +125,8 @@ public class SqliteSummaryPersistence implements SummaryPersistence {
             spec = spec.and((root, query, cb) -> cb.or(
                     cb.like(cb.lower(root.get("title")), pattern, '\\'),
                     cb.like(cb.lower(root.get("summary")), pattern, '\\'),
-                    cb.like(cb.lower(root.get("notes")), pattern, '\\')
+                    cb.like(cb.lower(root.get("notes")), pattern, '\\'),
+                    cb.like(cb.lower(root.get("url")), pattern, '\\')
             ));
         }
 

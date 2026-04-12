@@ -164,6 +164,14 @@ All `/api` requests go through Vite's dev proxy to the Spring Boot backend. Fetc
 - Options page: Briefen instance URL, username, password
 - Requires `BRIEFEN_CORS_ALLOWED_ORIGINS: moz-extension://*` for remote instances
 
+### Chrome Extension (`extension-chrome/`)
+- Manifest V3, vanilla JS, `chrome.*` API (not `browser.*`)
+- Popup sends the active tab's URL to `POST /api/articles` (202 Accepted)
+- Options page opens in a new tab (not an in-popup panel like Firefox)
+- Uses `chrome.storage.local` for persisting settings
+- Requires `BRIEFEN_CORS_ALLOWED_ORIGINS: chrome-extension://*` for remote instances
+- Compatible with Chrome 116+, Edge, Brave, Vivaldi, Arc, and other Chromium browsers
+
 ### Infrastructure
 - **SQLite** (default) — file-based database at `./data/briefen.db`. Schema managed by Hibernate `ddl-auto: update` with a custom `SchemaInitializer` for SQLite-specific migrations. Three tables: `users`, `summaries`, `settings`.
 - **PostgreSQL** (optional) — for larger-scale or multi-instance deployments. Enabled via `BRIEFEN_DB_TYPE=postgres`. Schema also managed by `ddl-auto: update`.

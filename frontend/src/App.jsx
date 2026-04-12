@@ -28,7 +28,7 @@ function HomePage({ settings, refreshUnreadCount }) {
   const readeck = useReadeck()
   const { summarize, summarizeText, data, setData, loading, error, clear, cancel } = useSummarize()
   const batch = useBatchSummarize()
-  const { summaries, loading: loadingSummaries, hasMore, refresh, loadMore } = useSummaries()
+  const { summaries, loading: loadingSummaries, hasMore, refresh, loadMore, search: recentSearch, setSearch: setRecentSearch } = useSummaries()
   const elapsed = useElapsedTime(loading)
 
   const defaultLengthHint = settings.defaultLength === 'default' ? null : settings.defaultLength
@@ -135,6 +135,8 @@ function HomePage({ settings, refreshUnreadCount }) {
         hasMore={hasMore}
         onLoadMore={loadMore}
         onSelect={handleSelectRecent}
+        search={recentSearch}
+        onSearchChange={setRecentSearch}
       />
     </>
   )

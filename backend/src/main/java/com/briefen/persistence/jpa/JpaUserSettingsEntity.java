@@ -1,4 +1,4 @@
-package com.briefen.persistence.sqlite;
+package com.briefen.persistence.jpa;
 
 import com.briefen.model.UserSettings;
 import jakarta.persistence.Column;
@@ -10,7 +10,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "settings")
-public class SqliteUserSettingsEntity {
+public class JpaUserSettingsEntity {
 
     @Id
     private String id;
@@ -29,12 +29,12 @@ public class SqliteUserSettingsEntity {
     private String customPrompt;
     private Instant updatedAt;
 
-    public SqliteUserSettingsEntity() {
+    public JpaUserSettingsEntity() {
         this.updatedAt = Instant.now();
     }
 
-    public static SqliteUserSettingsEntity fromDomain(UserSettings s) {
-        var entity = new SqliteUserSettingsEntity();
+    public static JpaUserSettingsEntity fromDomain(UserSettings s) {
+        var entity = new JpaUserSettingsEntity();
         entity.id = s.getId();
         entity.defaultLength = s.getDefaultLength();
         entity.model = s.getModel();

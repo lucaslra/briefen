@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { STRINGS } from '../constants/strings'
 import styles from './Settings.module.css'
 import { useNotification } from '../hooks/useNotification'
@@ -136,19 +137,25 @@ function UsersTab({ currentUserId }) {
   )
 }
 
-const LENGTH_OPTIONS = [
-  { value: 'shorter', label: STRINGS.SETTINGS_LENGTH_SHORT, description: STRINGS.SETTINGS_LENGTH_SHORT_DESC },
-  { value: 'default', label: STRINGS.SETTINGS_LENGTH_DEFAULT, description: STRINGS.SETTINGS_LENGTH_DEFAULT_DESC },
-  { value: 'longer', label: STRINGS.SETTINGS_LENGTH_LONG, description: STRINGS.SETTINGS_LENGTH_LONG_DESC },
-]
-
-const BASE_TABS = [
-  { id: 'summarization', label: STRINGS.SETTINGS_TAB_SUMMARIZATION },
-  { id: 'integrations', label: STRINGS.SETTINGS_TAB_INTEGRATIONS },
-  { id: 'preferences', label: STRINGS.SETTINGS_TAB_PREFERENCES },
+const LANGUAGE_OPTIONS = [
+  { value: 'en', label: 'SETTINGS_LANGUAGE_EN' },
+  { value: 'pt-BR', label: 'SETTINGS_LANGUAGE_PT_BR' },
 ]
 
 export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin = false, currentUserId = null }) {
+  const { i18n } = useTranslation()
+
+  const LENGTH_OPTIONS = [
+    { value: 'shorter', label: STRINGS.SETTINGS_LENGTH_SHORT, description: STRINGS.SETTINGS_LENGTH_SHORT_DESC },
+    { value: 'default', label: STRINGS.SETTINGS_LENGTH_DEFAULT, description: STRINGS.SETTINGS_LENGTH_DEFAULT_DESC },
+    { value: 'longer', label: STRINGS.SETTINGS_LENGTH_LONG, description: STRINGS.SETTINGS_LENGTH_LONG_DESC },
+  ]
+
+  const BASE_TABS = [
+    { id: 'summarization', label: STRINGS.SETTINGS_TAB_SUMMARIZATION },
+    { id: 'integrations', label: STRINGS.SETTINGS_TAB_INTEGRATIONS },
+    { id: 'preferences', label: STRINGS.SETTINGS_TAB_PREFERENCES },
+  ]
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const TABS = isAdmin
@@ -607,38 +614,69 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin 
 
       {/* ── Preferences tab ── */}
       {tab === 'preferences' && (
-        <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_NOTIFICATIONS_HEADING}</h3>
-          <p className={styles.sectionDesc}>{STRINGS.SETTINGS_NOTIFICATIONS_SUBHEADING}</p>
+        <>
+          <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_LANGUAGE}</h3>
+            <p className={styles.sectionDesc}>{STRINGS.SETTINGS_LANGUAGE_SUBHEADING}</p>
 
-          {!supported ? (
-            <p className={styles.toggleDenied}>{STRINGS.SETTINGS_NOTIFICATIONS_UNSUPPORTED}</p>
-          ) : permission === 'denied' ? (
-            <p className={styles.toggleDenied}>{STRINGS.SETTINGS_NOTIFICATIONS_DENIED}</p>
-          ) : (
-            <label
-              className={`${styles.toggle} ${settings.notificationsEnabled && permission === 'granted' ? styles.toggleChecked : ''}`}
-            >
-              <input
-                type="checkbox"
-                className={styles.toggleInput}
-                checked={settings.notificationsEnabled && permission === 'granted'}
-                onChange={async (e) => {
-                  if (e.target.checked) {
-                    const result = await requestPermission()
-                    if (result === 'granted') {
-                      onUpdateSetting('notificationsEnabled', true)
+            <div className={styles.options}>
+              {LANGUAGE_OPTIONS.map(opt => (
+                <label
+                  key={opt.value}
+                  className={`${styles.option} ${i18n.language === opt.value ? styles.optionSelected : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="language"
+                    value={opt.value}
+                    checked={i18n.language === opt.value}
+                    onChange={() => {
+                      i18n.changeLanguage(opt.value)
+                      localStorage.setItem('briefen-language', opt.value)
+                    }}
+                    className={styles.radio}
+                  />
+                  <div className={styles.optionContent}>
+                    <span className={styles.optionLabel}>{STRINGS[opt.label]}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </section>
+
+          <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_NOTIFICATIONS_HEADING}</h3>
+            <p className={styles.sectionDesc}>{STRINGS.SETTINGS_NOTIFICATIONS_SUBHEADING}</p>
+
+            {!supported ? (
+              <p className={styles.toggleDenied}>{STRINGS.SETTINGS_NOTIFICATIONS_UNSUPPORTED}</p>
+            ) : permission === 'denied' ? (
+              <p className={styles.toggleDenied}>{STRINGS.SETTINGS_NOTIFICATIONS_DENIED}</p>
+            ) : (
+              <label
+                className={`${styles.toggle} ${settings.notificationsEnabled && permission === 'granted' ? styles.toggleChecked : ''}`}
+              >
+                <input
+                  type="checkbox"
+                  className={styles.toggleInput}
+                  checked={settings.notificationsEnabled && permission === 'granted'}
+                  onChange={async (e) => {
+                    if (e.target.checked) {
+                      const result = await requestPermission()
+                      if (result === 'granted') {
+                        onUpdateSetting('notificationsEnabled', true)
+                      }
+                    } else {
+                      onUpdateSetting('notificationsEnabled', false)
                     }
-                  } else {
-                    onUpdateSetting('notificationsEnabled', false)
-                  }
-                }}
-              />
-              <span className={styles.toggleSwitch} />
-              <span className={styles.toggleText}>{STRINGS.SETTINGS_NOTIFICATIONS_ENABLE}</span>
-            </label>
-          )}
-        </section>
+                  }}
+                />
+                <span className={styles.toggleSwitch} />
+                <span className={styles.toggleText}>{STRINGS.SETTINGS_NOTIFICATIONS_ENABLE}</span>
+              </label>
+            )}
+          </section>
+        </>
       )}
 
       {/* ── Users tab (admin only) ── */}

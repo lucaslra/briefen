@@ -2,6 +2,7 @@
   "name": "frontend",
   "private": true,
   "version": "0.0.0",
+  "homepage": "https://github.com/lucaslra/briefen",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,8 +14,10 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "i18next": "^26.0.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-i18next": "^17.0.2",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.2"
   },

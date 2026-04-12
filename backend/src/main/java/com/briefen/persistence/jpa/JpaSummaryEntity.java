@@ -1,4 +1,4 @@
-package com.briefen.persistence.sqlite;
+package com.briefen.persistence.jpa;
 
 import com.briefen.model.Summary;
 import jakarta.persistence.Column;
@@ -12,7 +12,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "summaries",
         uniqueConstraints = @UniqueConstraint(columnNames = {"url", "user_id"}))
-public class SqliteSummaryEntity {
+public class JpaSummaryEntity {
 
     @Id
     private String id;
@@ -38,10 +38,10 @@ public class SqliteSummaryEntity {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    public SqliteSummaryEntity() {}
+    public JpaSummaryEntity() {}
 
-    public static SqliteSummaryEntity fromDomain(Summary s) {
-        var entity = new SqliteSummaryEntity();
+    public static JpaSummaryEntity fromDomain(Summary s) {
+        var entity = new JpaSummaryEntity();
         entity.id = s.getId();
         entity.userId = s.getUserId();
         entity.url = s.getUrl();

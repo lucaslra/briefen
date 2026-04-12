@@ -15,7 +15,7 @@ import java.nio.file.Path;
 
 @Configuration
 @ConditionalOnProperty(name = "briefen.db.type", havingValue = "sqlite", matchIfMissing = true)
-@EnableJpaRepositories(basePackages = "com.briefen.persistence.sqlite")
+@EnableJpaRepositories(basePackages = "com.briefen.persistence.jpa")
 public class SqliteConfig {
 
     @Bean

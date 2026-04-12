@@ -10,6 +10,8 @@
 
 **Article summaries, instantly.** Paste a URL to any online article, and Briefen will fetch, read, and summarize it using a local LLM — no API keys, no cloud dependencies.
 
+![Briefen screenshot](docs/images/screenshot.png)
+
 ## Features
 
 - **Summarize any article** — paste a URL or raw text, get a concise summary
@@ -461,11 +463,11 @@ BRIEFEN_WEBHOOK_URL=https://gotify.example.com/message?token=YOUR_TOKEN
 
 ---
 
-## Firefox Extension
+## Browser Extensions
 
-The Briefen extension adds a toolbar button that sends the current tab's URL to your Briefen instance with one click.
+Briefen provides extensions for both Firefox and Chrome/Chromium browsers. Each adds a toolbar button that sends the current tab's URL to your Briefen instance with one click.
 
-### Installation
+### Firefox
 
 The extension is not yet published to AMO. Install it temporarily via `about:debugging`:
 
@@ -475,9 +477,18 @@ The extension is not yet published to AMO. Install it temporarily via `about:deb
 
 For persistent installation across Firefox restarts, sign the extension via the [AMO Developer Hub](https://addons.mozilla.org/developers/) or use Firefox Developer Edition which allows unsigned extensions.
 
+### Chrome / Chromium
+
+Works with Chrome, Edge, Brave, Vivaldi, Arc, and any Chromium-based browser.
+
+1. Open `chrome://extensions/` (or the equivalent in your browser)
+2. Enable **Developer mode** (top-right toggle)
+3. Click **Load unpacked** and select the `extension-chrome/` directory from the repo
+4. The Briefen icon appears in the toolbar
+
 ### Configuration
 
-After installing, click the extension icon → **Options** (or right-click → Manage Extension → Options):
+After installing either extension, open its options page and set:
 
 | Field | Value |
 |-------|-------|
@@ -487,10 +498,17 @@ After installing, click the extension icon → **Options** (or right-click → M
 
 ### CORS requirement for remote instances
 
-If your Briefen instance is on a different origin than the extension, add the extension origin to `BRIEFEN_CORS_ALLOWED_ORIGINS`:
+If your Briefen instance is on a different origin than the extension, add the extension origin(s) to `BRIEFEN_CORS_ALLOWED_ORIGINS`:
 
 ```yaml
+# Firefox only
 BRIEFEN_CORS_ALLOWED_ORIGINS: moz-extension://*
+
+# Chrome only
+BRIEFEN_CORS_ALLOWED_ORIGINS: chrome-extension://*
+
+# Both
+BRIEFEN_CORS_ALLOWED_ORIGINS: moz-extension://*,chrome-extension://*
 ```
 
 This is not required when Briefen is on `localhost`.
@@ -532,6 +550,8 @@ briefen/
 ├── Dockerfile              # Multi-stage: frontend build → backend build → runtime
 ├── playwright.config.js    # E2E test configuration
 ├── e2e/                    # Playwright E2E tests
+├── extension/              # Firefox extension (Manifest V2)
+├── extension-chrome/       # Chrome/Chromium extension (Manifest V3)
 ├── backend/
 │   ├── pom.xml
 │   └── src/main/java/com/briefen/
