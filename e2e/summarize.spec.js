@@ -143,6 +143,8 @@ test.describe('Summarization flow (managed)', () => {
     expect(res.status()).toBe(200);
 
     await page.goto('/');
+    // Recent summaries section starts collapsed — expand it first
+    await page.getByRole('button', { name: /show recent summaries/i }).click();
     await expect(page.getByText('Recent Summaries Visibility Check')).toBeVisible({ timeout: 10_000 });
   });
 

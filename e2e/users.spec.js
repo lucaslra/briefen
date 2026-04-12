@@ -88,12 +88,36 @@ test.describe('User management (managed)', () => {
     expect(users.find(u => u.id === id)).toBeUndefined();
   });
 
-  test('DELETE /api/users/:id on mainAdmin returns 403', async ({ request }) => {
-    const meRes = await request.get('/api/users/me');
-    const { id } = await meRes.json();
+  test('DELETE /api/users/:id on mainAdmin returns 403', async ({ request, playwright, baseURL }) => {
+    // Create a second admin so we can attempt to delete the mainAdmin
+    // without hitting the self-delete check (400) first
+    const createRes = await request.post('/api/users', {
+      data: { username: 'temp-admin-for-main-delete', password: 'Temp-pass-1!', role: 'ADMIN' },
+    });
+    expect(createRes.status()).toBe(201);
 
-    const res = await request.delete(`/api/users/${id}`);
+    // Get the mainAdmin's ID
+    const listRes = await request.get('/api/users');
+    const users = await listRes.json();
+    const mainAdmin = users.find(u => u.mainAdmin === true);
+
+    // Authenticate as the second admin and attempt to delete mainAdmin
+    const tempCtx = await playwright.request.newContext({
+      baseURL,
+      extraHTTPHeaders: {
+        Authorization: 'Basic ' + Buffer.from('temp-admin-for-main-delete:Temp-pass-1!').toString('base64'),
+      },
+    });
+    const res = await tempCtx.delete(`/api/users/${mainAdmin.id}`);
     expect(res.status()).toBe(403);
+    await tempCtx.dispose();
+
+    // Cleanup: delete the temp admin (as the original admin)
+    const tempAdmin = (await (await request.get('/api/users')).json())
+      .find(u => u.username === 'temp-admin-for-main-delete');
+    if (tempAdmin) {
+      await request.delete(`/api/users/${tempAdmin.id}`);
+    }
   });
 
   test('DELETE /api/users/:id on self returns 400', async ({ request }) => {

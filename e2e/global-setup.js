@@ -13,7 +13,7 @@ import { GenericContainer, Wait } from 'testcontainers';
 import { spawn, execSync } from 'child_process';
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'fs';
 import { homedir, tmpdir } from 'os';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
 const BACKEND_PORT = process.env.BACKEND_PORT || '8082';
 const BASE_URL = `http://localhost:${BACKEND_PORT}`;
@@ -114,7 +114,7 @@ async function configureOllamaStubs(adminUrl) {
 
 // ── Backend process management ────────────────────────────────────────────────
 
-function startBackend(javaHome, ollamaBaseUrl) {
+function startBackend(javaHome, ollamaBaseUrl, frontendDist) {
   const backendDir = join(process.cwd(), 'backend');
   mkdirSync(backendDir, { recursive: true });
 
@@ -127,7 +127,15 @@ function startBackend(javaHome, ollamaBaseUrl) {
     SERVER_PORT: BACKEND_PORT,
   };
 
-  const proc = spawn('./mvnw', ['spring-boot:run', '-q'], {
+  // Tell Spring Boot to serve the pre-built frontend assets
+  const staticLocations = `file:${frontendDist}/`;
+  const springArgs = [
+    'spring-boot:run',
+    '-q',
+    `-Dspring-boot.run.arguments=--spring.web.resources.static-locations=${staticLocations}`,
+  ];
+
+  const proc = spawn('./mvnw', springArgs, {
     cwd: backendDir,
     env,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -185,28 +193,35 @@ export default async function globalSetup() {
   await configureOllamaStubs(wiremockUrl);
   console.log('[e2e] Ollama stubs configured');
 
-  // 3. Find Java and start Spring Boot
+  // 3. Build frontend so Spring Boot can serve static assets
+  const frontendDir = join(process.cwd(), 'frontend');
+  console.log('[e2e] Building frontend…');
+  execSync('pnpm build', { cwd: frontendDir, stdio: 'pipe' });
+  const frontendDist = resolve(frontendDir, 'dist');
+  console.log(`[e2e] Frontend built at ${frontendDist}`);
+
+  // 4. Find Java and start Spring Boot
   const javaHome = findJavaHome();
   console.log(`[e2e] Java at: ${javaHome}`);
   console.log('[e2e] Starting Spring Boot (this may take ~60 s on first run)…');
 
-  const backendProc = startBackend(javaHome, wiremockUrl);
+  const backendProc = startBackend(javaHome, wiremockUrl, frontendDist);
 
-  // 4. Wait for Spring Boot health
+  // 5. Wait for Spring Boot health
   console.log(`[e2e] Waiting for health at ${BASE_URL}/actuator/health…`);
   await waitForHealth(`${BASE_URL}/actuator/health`);
   console.log('[e2e] Backend healthy');
 
-  // 5. Create the admin account via the first-run setup API
+  // 6. Create the admin account via the first-run setup API
   await createAdminViaSetupApi(BASE_URL, E2E_USERNAME, E2E_PASSWORD);
   console.log('[e2e] Setup complete — tests starting');
 
-  // 6. Persist state for globalTeardown (same Node.js process)
+  // 7. Persist state for globalTeardown (same Node.js process)
   global.__E2E_WIREMOCK__ = wiremock;
   global.__E2E_BACKEND__ = backendProc;
   global.__E2E_DB_PATH__ = DB_PATH;
 
-  // 7. Expose base URL and credentials for test files
+  // 8. Expose base URL and credentials for test files
   process.env.BASE_URL = BASE_URL;
   process.env.E2E_USERNAME = E2E_USERNAME;
   process.env.E2E_PASSWORD = E2E_PASSWORD;
