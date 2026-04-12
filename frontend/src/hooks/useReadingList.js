@@ -9,11 +9,12 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState(initialFilter)
   const [search, setSearch] = useState('')
+  const [tag, setTag] = useState('')
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [itemErrors, setItemErrors] = useState({})
 
-  const fetchPage = useCallback(async (pageNum, currentFilter, currentSearch, replace = false) => {
+  const fetchPage = useCallback(async (pageNum, currentFilter, currentSearch, currentTag, replace = false) => {
     setLoading(true)
     try {
       const params = new URLSearchParams({
@@ -22,6 +23,7 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
         filter: currentFilter,
       })
       if (currentSearch) params.set('search', currentSearch)
+      if (currentTag) params.set('tag', currentTag)
 
       const res = await apiFetch(`/api/summaries?${params}`)
       if (!res.ok) return
@@ -40,8 +42,8 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
   }, [])
 
   useEffect(() => {
-    fetchPage(0, filter, search, true)
-  }, [filter, search, fetchPage])
+    fetchPage(0, filter, search, tag, true)
+  }, [filter, search, tag, fetchPage])
 
   const changeFilter = useCallback((f) => {
     setFilter(f)
@@ -55,16 +57,22 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
     setItemErrors({})
   }, [])
 
+  const changeTag = useCallback((t) => {
+    setTag(t)
+    setPage(0)
+    setItemErrors({})
+  }, [])
+
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
-      fetchPage(page + 1, filter, search)
+      fetchPage(page + 1, filter, search, tag)
     }
-  }, [loading, hasMore, page, filter, search, fetchPage])
+  }, [loading, hasMore, page, filter, search, tag, fetchPage])
 
   const refresh = useCallback(() => {
-    fetchPage(0, filter, search, true)
+    fetchPage(0, filter, search, tag, true)
     refreshUnreadCount?.()
-  }, [filter, search, fetchPage, refreshUnreadCount])
+  }, [filter, search, tag, fetchPage, refreshUnreadCount])
 
   const clearItemError = useCallback((id) => {
     setItemErrors(prev => {
@@ -159,6 +167,33 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
     }
   }, [items])
 
+  const updateTags = useCallback(async (id, tags) => {
+    const previousTags = items.find(item => item.id === id)?.tags ?? []
+
+    // Optimistic update
+    setItems(prev => prev.map(item =>
+      item.id === id ? { ...item, tags } : item
+    ))
+    setItemErrors(prev => { const next = { ...prev }; delete next[id]; return next })
+
+    try {
+      const res = await apiFetch(`/api/summaries/${id}/tags`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags }),
+      })
+      if (!res.ok) throw new Error()
+      return true
+    } catch {
+      // Revert
+      setItems(prev => prev.map(item =>
+        item.id === id ? { ...item, tags: previousTags } : item
+      ))
+      setItemErrors(prev => ({ ...prev, [id]: STRINGS.READING_LIST_UPDATE_FAILED }))
+      return false
+    }
+  }, [items])
+
   const markAllAsRead = useCallback(async () => {
     const previousItems = items
 
@@ -194,9 +229,9 @@ export function useReadingList(refreshUnreadCount, initialFilter = 'unread') {
   }, [items, refreshUnreadCount])
 
   return {
-    items, loading, filter, search, hasMore, itemErrors,
-    changeFilter, changeSearch, toggleReadStatus, deleteSummary,
+    items, loading, filter, search, tag, hasMore, itemErrors,
+    changeFilter, changeSearch, changeTag, toggleReadStatus, deleteSummary,
     markAllAsRead, markAllAsUnread, loadMore, refresh, clearItemError,
-    updateNotes,
+    updateNotes, updateTags,
   }
 }

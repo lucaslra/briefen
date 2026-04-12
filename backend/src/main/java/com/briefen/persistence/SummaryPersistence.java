@@ -22,7 +22,11 @@ public interface SummaryPersistence {
 
     Page<Summary> findAll(String userId, int page, int size, String filter, String search);
 
+    Page<Summary> findAll(String userId, int page, int size, String filter, String search, String tag);
+
     List<Summary> findAll(String userId, String filter, String search);
+
+    List<Summary> findAll(String userId, String filter, String search, String tag);
 
     long markAllAsRead(String userId);
 

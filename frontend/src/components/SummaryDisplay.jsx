@@ -66,6 +66,14 @@ export function SummaryDisplay({ data, onMakeShorter, onMakeLonger, onRegenerate
         <Markdown>{data.summary}</Markdown>
       </div>
 
+      {data.tags && data.tags.length > 0 && (
+        <div className={styles.tags}>
+          {data.tags.map(t => (
+            <span key={t} className={styles.tagPill}>{t}</span>
+          ))}
+        </div>
+      )}
+
       {data.url && (
         <div className={styles.adjustButtons}>
           <button

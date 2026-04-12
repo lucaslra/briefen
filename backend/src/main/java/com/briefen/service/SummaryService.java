@@ -207,8 +207,16 @@ public class SummaryService {
         return summaryPersistence.findAll(userId, page, size, filter, search);
     }
 
+    public Page<Summary> getSummaries(String userId, int page, int size, String filter, String search, String tag) {
+        return summaryPersistence.findAll(userId, page, size, filter, search, tag);
+    }
+
     public List<Summary> getAllSummaries(String userId, String filter, String search) {
         return summaryPersistence.findAll(userId, filter, search);
+    }
+
+    public List<Summary> getAllSummaries(String userId, String filter, String search, String tag) {
+        return summaryPersistence.findAll(userId, filter, search, tag);
     }
 
     public Summary updateReadStatus(String userId, String id, boolean isRead) {
@@ -222,6 +230,18 @@ public class SummaryService {
         Summary summary = summaryPersistence.findById(userId, id)
                 .orElseThrow(() -> new SummaryNotFoundException(id));
         summary.setNotes((notes != null && !notes.isEmpty()) ? notes : null);
+        return summaryPersistence.save(summary);
+    }
+
+    public Summary updateTags(String userId, String id, java.util.List<String> tags) {
+        Summary summary = summaryPersistence.findById(userId, id)
+                .orElseThrow(() -> new SummaryNotFoundException(id));
+        summary.setTags(tags != null ? tags.stream()
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .filter(t -> !t.isEmpty())
+                .distinct()
+                .toList() : List.of());
         return summaryPersistence.save(summary);
     }
 

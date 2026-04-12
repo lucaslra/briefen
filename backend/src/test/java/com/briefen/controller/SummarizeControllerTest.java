@@ -156,7 +156,7 @@ class SummarizeControllerTest {
         // Arrange
         List<Summary> items = List.of(buildSummary("id-1", "https://example.com/1"));
         Page<Summary> page = new PageImpl<>(items, PageRequest.of(0, 10), 1);
-        when(summaryService.getSummaries(eq(TEST_USER_ID), eq(0), eq(10), eq("all"), isNull()))
+        when(summaryService.getSummaries(eq(TEST_USER_ID), eq(0), eq(10), eq("all"), isNull(), isNull()))
                 .thenReturn(page);
 
         // Act & Assert

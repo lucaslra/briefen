@@ -160,6 +160,12 @@
   "NOTES_PLACEHOLDER": "Adicione seus pensamentos...",
   "NOTES_SAVED": "Salvo",
 
+  "TAGS_LABEL": "Tags",
+  "TAGS_PLACEHOLDER": "Adicionar tag...",
+  "TAGS_SAVED": "Salvo",
+  "TAGS_FILTER_ALL": "Todas as tags",
+  "TAGS_REMOVE": "Remover tag",
+
   "BATCH_ADD_URL": "+ Adicionar outra URL",
   "BATCH_COUNTER": "{n} de {max} URLs",
   "BATCH_SUMMARIZE": "Resumir {n} artigos",

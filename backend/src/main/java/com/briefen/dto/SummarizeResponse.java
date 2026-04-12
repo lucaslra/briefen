@@ -3,6 +3,7 @@ package com.briefen.dto;
 import com.briefen.model.Summary;
 
 import java.time.Instant;
+import java.util.List;
 
 public record SummarizeResponse(
         String id,
@@ -13,7 +14,8 @@ public record SummarizeResponse(
         Instant createdAt,
         Boolean isRead,
         Instant savedAt,
-        String notes
+        String notes,
+        List<String> tags
 ) {
     public static SummarizeResponse from(Summary summary) {
         return new SummarizeResponse(
@@ -25,7 +27,8 @@ public record SummarizeResponse(
                 summary.getCreatedAt(),
                 summary.isEffectivelyRead(),
                 summary.getEffectiveSavedAt(),
-                summary.getNotes()
+                summary.getNotes(),
+                summary.getTags() != null ? summary.getTags() : List.of()
         );
     }
 }

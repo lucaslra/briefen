@@ -8,6 +8,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 
 @Entity
 @Table(name = "summaries",
@@ -38,6 +40,9 @@ public class JpaSummaryEntity {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(columnDefinition = "TEXT")
+    private String tags;
+
     public JpaSummaryEntity() {}
 
     public static JpaSummaryEntity fromDomain(Summary s) {
@@ -52,6 +57,7 @@ public class JpaSummaryEntity {
         entity.isRead = s.getIsRead() != null && s.getIsRead();
         entity.savedAt = s.getSavedAt();
         entity.notes = s.getNotes();
+        entity.tags = tagsToString(s.getTags());
         return entity;
     }
 
@@ -67,6 +73,7 @@ public class JpaSummaryEntity {
         s.setIsRead(isRead);
         s.setSavedAt(savedAt);
         s.setNotes(notes);
+        s.setTags(tagsFromString(tags));
         return s;
     }
 
@@ -99,4 +106,20 @@ public class JpaSummaryEntity {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public String getTags() { return tags; }
+    public void setTags(String tags) { this.tags = tags; }
+
+    private static String tagsToString(List<String> tags) {
+        if (tags == null || tags.isEmpty()) return null;
+        return String.join(",", tags);
+    }
+
+    private static List<String> tagsFromString(String tags) {
+        if (tags == null || tags.isBlank()) return List.of();
+        return Arrays.stream(tags.split(","))
+                .map(String::trim)
+                .filter(t -> !t.isEmpty())
+                .toList();
+    }
 }

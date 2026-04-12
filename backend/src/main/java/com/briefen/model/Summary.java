@@ -1,6 +1,7 @@
 package com.briefen.model;
 
 import java.time.Instant;
+import java.util.List;
 
 public class Summary {
 
@@ -24,6 +25,9 @@ public class Summary {
 
     // User-supplied annotation; null means no note has been added yet.
     private String notes;
+
+    // User-assigned tags for categorization; null or empty means untagged.
+    private List<String> tags;
 
     public Summary() {}
 
@@ -70,4 +74,7 @@ public class Summary {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags; }
 }

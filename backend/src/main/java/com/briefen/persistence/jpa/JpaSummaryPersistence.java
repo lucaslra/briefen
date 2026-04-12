@@ -71,15 +71,27 @@ public class JpaSummaryPersistence implements SummaryPersistence {
     @Override
     @Transactional(readOnly = true)
     public Page<Summary> findAll(String userId, int page, int size, String filter, String search) {
+        return findAll(userId, page, size, filter, search, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Summary> findAll(String userId, int page, int size, String filter, String search, String tag) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Specification<JpaSummaryEntity> spec = buildSpec(userId, filter, search);
+        Specification<JpaSummaryEntity> spec = buildSpec(userId, filter, search, tag);
         return repository.findAll(spec, pageable).map(JpaSummaryEntity::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Summary> findAll(String userId, String filter, String search) {
-        Specification<JpaSummaryEntity> spec = buildSpec(userId, filter, search);
+        return findAll(userId, filter, search, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Summary> findAll(String userId, String filter, String search, String tag) {
+        Specification<JpaSummaryEntity> spec = buildSpec(userId, filter, search, tag);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
         return repository.findAll(spec, sort).stream()
                 .map(JpaSummaryEntity::toDomain).toList();
@@ -107,6 +119,10 @@ public class JpaSummaryPersistence implements SummaryPersistence {
     }
 
     private Specification<JpaSummaryEntity> buildSpec(String userId, String filter, String search) {
+        return buildSpec(userId, filter, search, null);
+    }
+
+    private Specification<JpaSummaryEntity> buildSpec(String userId, String filter, String search, String tag) {
         Specification<JpaSummaryEntity> spec = (root, query, cb) ->
                 cb.equal(root.get("userId"), userId);
 
@@ -128,6 +144,23 @@ public class JpaSummaryPersistence implements SummaryPersistence {
                     cb.like(cb.lower(root.get("notes")), pattern, '\\'),
                     cb.like(cb.lower(root.get("url")), pattern, '\\')
             ));
+        }
+
+        if (tag != null && !tag.isBlank()) {
+            String escapedTag = tag.toLowerCase().trim()
+                    .replace("\\", "\\\\")
+                    .replace("%", "\\%")
+                    .replace("_", "\\_");
+            // Match tag in comma-separated list: exact, start, middle, or end position
+            spec = spec.and((root, query, cb) -> {
+                var tagsField = cb.lower(root.get("tags"));
+                return cb.or(
+                        cb.equal(tagsField, escapedTag),
+                        cb.like(tagsField, escapedTag + ",%", '\\'),
+                        cb.like(tagsField, "%," + escapedTag, '\\'),
+                        cb.like(tagsField, "%," + escapedTag + ",%", '\\')
+                );
+            });
         }
 
         return spec;

@@ -4,6 +4,7 @@ import com.briefen.dto.ReadStatusRequest;
 import com.briefen.dto.SummarizeRequest;
 import com.briefen.dto.SummarizeResponse;
 import com.briefen.dto.UpdateNotesRequest;
+import com.briefen.dto.UpdateTagsRequest;
 import com.briefen.exception.InvalidUrlException;
 import com.briefen.model.Summary;
 import com.briefen.security.BriefenUserDetails;
@@ -68,8 +69,9 @@ public class SummarizeController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(200) int size,
             @RequestParam(defaultValue = "all") String filter,
-            @RequestParam(required = false) String search) {
-        return summaryService.getSummaries(userDetails.userId(), page, size, filter, search)
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String tag) {
+        return summaryService.getSummaries(userDetails.userId(), page, size, filter, search, tag)
                 .map(SummarizeResponse::from);
     }
 
@@ -78,13 +80,14 @@ public class SummarizeController {
             @AuthenticationPrincipal BriefenUserDetails userDetails,
             @RequestParam(defaultValue = "md") String format,
             @RequestParam(defaultValue = "all") String filter,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String tag) {
 
         if (!"md".equals(format)) {
             return ResponseEntity.badRequest().build();
         }
 
-        List<Summary> summaries = summaryService.getAllSummaries(userDetails.userId(), filter, search);
+        List<Summary> summaries = summaryService.getAllSummaries(userDetails.userId(), filter, search, tag);
 
         StreamingResponseBody body = outputStream -> {
             Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
@@ -144,6 +147,14 @@ public class SummarizeController {
             @PathVariable String id,
             @RequestBody UpdateNotesRequest request) {
         return SummarizeResponse.from(summaryService.updateNotes(userDetails.userId(), id, request.notes()));
+    }
+
+    @PatchMapping("/summaries/{id}/tags")
+    public SummarizeResponse updateTags(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
+            @PathVariable String id,
+            @RequestBody UpdateTagsRequest request) {
+        return SummarizeResponse.from(summaryService.updateTags(userDetails.userId(), id, request.tags()));
     }
 
     @DeleteMapping("/summaries/{id}")

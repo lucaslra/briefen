@@ -96,7 +96,59 @@ function ActionMenu({ url, isRead, onToggleRead, onDelete, onCopyMarkdown }) {
 
 const AUTO_READ_DELAY_MS = 3000
 
-function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMarkRead, onDelete, error, onClearError, onUpdateNotes }) {
+function TagInput({ tags, onUpdateTags }) {
+  const [inputValue, setInputValue] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      const value = inputValue.trim().toLowerCase()
+      if (value && !tags.includes(value)) {
+        const updated = [...tags, value]
+        onUpdateTags(updated)
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      }
+      setInputValue('')
+    }
+  }
+
+  function handleRemove(tagToRemove) {
+    onUpdateTags(tags.filter(t => t !== tagToRemove))
+  }
+
+  return (
+    <div className={styles.tagsSection}>
+      <div className={styles.tagsHeader}>
+        <label className={styles.tagsLabel}>{STRINGS.TAGS_LABEL}</label>
+        {saved && <span className={styles.tagsSaved}>{STRINGS.TAGS_SAVED}</span>}
+      </div>
+      <div className={styles.tagsRow}>
+        {tags.map(t => (
+          <span key={t} className={styles.tagPill}>
+            {t}
+            <button
+              className={styles.tagRemove}
+              onClick={() => handleRemove(t)}
+              aria-label={`${STRINGS.TAGS_REMOVE}: ${t}`}
+            >&times;</button>
+          </span>
+        ))}
+        <input
+          className={styles.tagInput}
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={STRINGS.TAGS_PLACEHOLDER}
+          size={12}
+        />
+      </div>
+    </div>
+  )
+}
+
+function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMarkRead, onDelete, error, onClearError, onUpdateNotes, onUpdateTags, onTagClick }) {
   const domain = extractDomain(item.url)
   const autoReadTimer = useRef(null)
   const itemRef = useRef(null)
@@ -179,6 +231,15 @@ function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMar
             )}
           </div>
           {domain && <span className={styles.itemDomain}>{domain}</span>}
+          {item.tags && item.tags.length > 0 && (
+            <div className={styles.itemTags}>
+              {item.tags.map(t => (
+                <button key={t} className={styles.tagPillSmall} onClick={(e) => { e.stopPropagation(); onTagClick(t) }}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
           {error && <span className={styles.itemError}>{error}</span>}
         </div>
         <span className={styles.itemDate}>{formatRelativeDate(item.savedAt || item.createdAt)}</span>
@@ -203,6 +264,10 @@ function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMar
               rows={3}
             />
           </div>
+          <TagInput
+            tags={item.tags || []}
+            onUpdateTags={(tags) => onUpdateTags(item.id, tags)}
+          />
           <div className={styles.readerFooter}>
             {item.url && (
               <a href={item.url} target="_blank" rel="noopener noreferrer" className={styles.readerSource}>
@@ -255,9 +320,9 @@ export function ReadingList({ refreshUnreadCount }) {
   const initialFilter = FILTERS.includes(searchParams.get('filter')) ? searchParams.get('filter') : 'unread'
 
   const {
-    items, loading, filter, search, hasMore, itemErrors,
-    changeFilter: rawChangeFilter, changeSearch, toggleReadStatus, deleteSummary,
-    markAllAsRead, markAllAsUnread, loadMore, clearItemError, updateNotes,
+    items, loading, filter, search, tag, hasMore, itemErrors,
+    changeFilter: rawChangeFilter, changeSearch, changeTag, toggleReadStatus, deleteSummary,
+    markAllAsRead, markAllAsUnread, loadMore, clearItemError, updateNotes, updateTags,
   } = useReadingList(refreshUnreadCount, initialFilter)
 
   const changeFilter = useCallback((f) => {
@@ -385,7 +450,7 @@ export function ReadingList({ refreshUnreadCount }) {
         {items.length > 0 && (
           <a
             className={styles.exportBtn}
-            href={`/api/summaries/export?format=md&filter=${filter}${search ? `&search=${encodeURIComponent(search)}` : ''}`}
+            href={`/api/summaries/export?format=md&filter=${filter}${search ? `&search=${encodeURIComponent(search)}` : ''}${tag ? `&tag=${encodeURIComponent(tag)}` : ''}`}
             download="briefen-export.md"
           >
             {STRINGS.READING_LIST_EXPORT}
@@ -411,6 +476,17 @@ export function ReadingList({ refreshUnreadCount }) {
           </button>
         )}
       </div>
+
+      {tag && (
+        <div className={styles.activeTag}>
+          <span className={styles.activeTagLabel}>
+            {STRINGS.TAGS_LABEL}: <strong>{tag}</strong>
+          </span>
+          <button className={styles.activeTagClear} onClick={() => changeTag('')}>
+            &times;
+          </button>
+        </div>
+      )}
 
       {expandedId && (
         <div className={styles.navHint}>
@@ -440,6 +516,8 @@ export function ReadingList({ refreshUnreadCount }) {
               error={itemErrors[item.id]}
               onClearError={clearItemError}
               onUpdateNotes={updateNotes}
+              onUpdateTags={updateTags}
+              onTagClick={changeTag}
             />
           ))}
         </div>
