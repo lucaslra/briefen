@@ -51,6 +51,7 @@ networks:
 volumes:
   ollama_data:   # Ollama model weights — can be several GB; survives container restarts
   briefen_data:  # SQLite database at /data/briefen.db
+  # postgres_data: # PostgreSQL data directory (uncomment when using PostgreSQL)
 
 # ---------------------------------------------------------------------------
 # Services
@@ -106,6 +107,35 @@ services:
     logging: *default-logging
     <<: *default-restart
 
+  # ── PostgreSQL (optional — uncomment to use instead of SQLite) ────────
+  #
+  # To switch from SQLite to PostgreSQL:
+  #   1. Uncomment this service and the postgres_data volume above
+  #   2. Set BRIEFEN_DB_TYPE, BRIEFEN_DATASOURCE_URL, BRIEFEN_DATASOURCE_USERNAME,
+  #      and BRIEFEN_DATASOURCE_PASSWORD on the app service (see comments below)
+  #   3. Add depends_on: postgres: condition: service_healthy to the app service
+  #   4. Remove or comment out the briefen_data volume mount on the app service
+  # ──────────────────────────────────────────────────────────────────────────
+  # postgres:
+  #   image: postgres:17-alpine
+  #   container_name: briefen-postgres
+  #   environment:
+  #     POSTGRES_DB: briefen
+  #     POSTGRES_USER: briefen
+  #     POSTGRES_PASSWORD: changeme     # Change this!
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - briefen
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U briefen"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 10
+  #     start_period: 10s
+  #   logging: *default-logging
+  #   <<: *default-restart
+
   # ── Briefen app ─────────────────────────────────────────────────────────
   #
   # Spring Boot backend + React frontend served as a single container.
@@ -126,7 +156,14 @@ services:
       - briefen
     environment:
       # ── Database ───────────────────────────────────────────────────────
+      # Database engine: "sqlite" (default) or "postgres".
+      # BRIEFEN_DB_TYPE: sqlite
       BRIEFEN_DB_PATH: /data/briefen.db
+
+      # PostgreSQL settings (required when BRIEFEN_DB_TYPE=postgres):
+      # BRIEFEN_DATASOURCE_URL: jdbc:postgresql://briefen-postgres:5432/briefen
+      # BRIEFEN_DATASOURCE_USERNAME: briefen
+      # BRIEFEN_DATASOURCE_PASSWORD: changeme
 
       # ── Server ─────────────────────────────────────────────────────────
       SERVER_PORT: 8080

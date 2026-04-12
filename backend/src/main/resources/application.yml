@@ -8,11 +8,7 @@ spring:
   config:
     # Loads .env file if present (KEY=VALUE format). No-op when missing (CI/Docker use real env vars).
     import: optional:file:.env[.properties]
-  datasource:
-    url: jdbc:sqlite:${BRIEFEN_DB_PATH:./data/briefen.db}
-    driver-class-name: org.sqlite.JDBC
   jpa:
-    database-platform: org.hibernate.community.dialect.SQLiteDialect
     hibernate:
       ddl-auto: update
     show-sql: false

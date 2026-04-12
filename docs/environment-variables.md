@@ -35,7 +35,11 @@ java -jar app.jar
 
 | Variable | Default | Required |
 |---|---|---|
+| [`BRIEFEN_DB_TYPE`](#briefen_db_type) | `sqlite` | No |
 | [`BRIEFEN_DB_PATH`](#briefen_db_path) | `./data/briefen.db` | No |
+| [`BRIEFEN_DATASOURCE_URL`](#briefen_datasource_url) | *(none)* | When `postgres` |
+| [`BRIEFEN_DATASOURCE_USERNAME`](#briefen_datasource_username) | *(none)* | When `postgres` |
+| [`BRIEFEN_DATASOURCE_PASSWORD`](#briefen_datasource_password) | *(none)* | When `postgres` |
 | [`SERVER_PORT`](#server_port) | `8080` | No |
 | [`SERVER_BIND_ADDRESS`](#server_bind_address) | `0.0.0.0` | No |
 | [`SERVER_CONTEXT_PATH`](#server_context_path) | `/` | No |
@@ -59,6 +63,76 @@ java -jar app.jar
 ---
 
 ## Database
+
+### `BRIEFEN_DB_TYPE`
+
+Selects the database engine. SQLite is the default and requires zero configuration. PostgreSQL is available for larger-scale or multi-instance deployments.
+
+| | |
+|---|---|
+| **Type** | Enum |
+| **Default** | `sqlite` |
+
+| Value | Description |
+|---|---|
+| `sqlite` | File-based SQLite database (default). Zero setup, single-file storage. |
+| `postgres` | PostgreSQL. Requires `BRIEFEN_DATASOURCE_URL`, `BRIEFEN_DATASOURCE_USERNAME`, and `BRIEFEN_DATASOURCE_PASSWORD` to be set. |
+
+```yaml
+BRIEFEN_DB_TYPE: postgres
+```
+
+> The app fails fast on startup with a clear error if an invalid value is provided, or if `postgres` is selected but the required connection variables are missing.
+
+---
+
+### `BRIEFEN_DATASOURCE_URL`
+
+PostgreSQL JDBC connection string. **Required** when `BRIEFEN_DB_TYPE=postgres`; ignored when using SQLite.
+
+| | |
+|---|---|
+| **Type** | JDBC URL string |
+| **Default** | *(none)* |
+| **Required** | When `BRIEFEN_DB_TYPE=postgres` |
+
+```yaml
+BRIEFEN_DATASOURCE_URL: jdbc:postgresql://localhost:5432/briefen
+```
+
+---
+
+### `BRIEFEN_DATASOURCE_USERNAME`
+
+PostgreSQL username. **Required** when `BRIEFEN_DB_TYPE=postgres`; ignored when using SQLite.
+
+| | |
+|---|---|
+| **Type** | String |
+| **Default** | *(none)* |
+| **Required** | When `BRIEFEN_DB_TYPE=postgres` |
+
+```yaml
+BRIEFEN_DATASOURCE_USERNAME: briefen
+```
+
+---
+
+### `BRIEFEN_DATASOURCE_PASSWORD`
+
+PostgreSQL password. **Required** when `BRIEFEN_DB_TYPE=postgres`; ignored when using SQLite.
+
+| | |
+|---|---|
+| **Type** | String |
+| **Default** | *(none)* |
+| **Required** | When `BRIEFEN_DB_TYPE=postgres` |
+
+```yaml
+BRIEFEN_DATASOURCE_PASSWORD: changeme
+```
+
+---
 
 ### `BRIEFEN_DB_PATH`
 
@@ -508,6 +582,7 @@ Some variables interact with each other in non-obvious ways:
 
 | If you set… | You must also… |
 |---|---|
+| `BRIEFEN_DB_TYPE=postgres` | Set `BRIEFEN_DATASOURCE_URL`, `BRIEFEN_DATASOURCE_USERNAME`, and `BRIEFEN_DATASOURCE_PASSWORD` |
 | `SERVER_CONTEXT_PATH=/briefen/` | Build the image locally with `--build-arg APP_BASE_PATH=/briefen/` |
 | `SERVER_BIND_ADDRESS=127.0.0.1` | Ensure the reverse proxy connects to `127.0.0.1:8080`, not via a Docker network alias |
 | `SERVER_FORWARD_HEADERS_STRATEGY=FRAMEWORK` | Ensure your reverse proxy sends `X-Forwarded-Proto` and `X-Forwarded-Host` headers |

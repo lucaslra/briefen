@@ -30,7 +30,7 @@ public class SqliteUserEntity {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    @Column(name = "main_admin", nullable = false, columnDefinition = "BOOLEAN NOT NULL DEFAULT 0")
+    @Column(name = "main_admin", nullable = false)
     private boolean mainAdmin;
 
     public SqliteUserEntity() {}

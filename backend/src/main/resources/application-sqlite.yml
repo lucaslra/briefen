@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:${BRIEFEN_DB_PATH:./data/briefen.db}
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect

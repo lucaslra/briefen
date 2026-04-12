@@ -22,17 +22,22 @@ public class ApplicationReadinessValidator implements ApplicationListener<Applic
 
     private final OllamaProperties ollamaProperties;
     private final String dbUrl;
+    private final String dbType;
 
     public ApplicationReadinessValidator(
             OllamaProperties ollamaProperties,
-            @Value("${spring.datasource.url}") String dbUrl) {
+            @Value("${spring.datasource.url}") String dbUrl,
+            @Value("${briefen.db.type:sqlite}") String dbType) {
         this.ollamaProperties = ollamaProperties;
         this.dbUrl = dbUrl;
+        this.dbType = dbType;
     }
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
-        checkDatabaseDirectoryWritability();
+        if ("sqlite".equals(dbType)) {
+            checkDatabaseDirectoryWritability();
+        }
         checkOllamaConnectivity();
     }
 

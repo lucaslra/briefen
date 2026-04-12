@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: ${BRIEFEN_DATASOURCE_URL}
+    username: ${BRIEFEN_DATASOURCE_USERNAME}
+    password: ${BRIEFEN_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect

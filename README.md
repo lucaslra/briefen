@@ -30,7 +30,7 @@ Browser (React) → Spring Boot API → Jsoup (fetch article) → Ollama or Open
 | Frontend       | React 19 (Vite, pnpm, plain JS)           |
 | Backend        | Java 25, Spring Boot 4.0.5, Maven         |
 | LLM            | Ollama (local), OpenAI, or Anthropic Claude (cloud) |
-| Database       | SQLite (file-based, zero setup)            |
+| Database       | SQLite (default) or PostgreSQL (optional)  |
 | Orchestration  | Docker Compose                             |
 
 ## Prerequisites
@@ -126,7 +126,38 @@ GET /api/summaries?page=0&size=10
 
 ## Database
 
-Briefen uses **SQLite** — a file-based database that requires zero setup. The database file is created automatically at `./data/briefen.db` on first startup. To customize the path, set the `BRIEFEN_DB_PATH` environment variable.
+Briefen supports two database engines: **SQLite** (default) and **PostgreSQL** (optional).
+
+### SQLite (default)
+
+SQLite is a file-based database that requires zero setup. The database file is created automatically at `./data/briefen.db` on first startup. To customize the path, set the `BRIEFEN_DB_PATH` environment variable.
+
+No additional configuration is needed — SQLite is the default when `BRIEFEN_DB_TYPE` is unset or set to `sqlite`.
+
+### PostgreSQL (optional)
+
+PostgreSQL is available for larger-scale deployments, multi-instance setups, or environments where a dedicated database server is preferred.
+
+**Environment variable setup:**
+
+```yaml
+BRIEFEN_DB_TYPE: postgres
+BRIEFEN_DATASOURCE_URL: jdbc:postgresql://localhost:5432/briefen
+BRIEFEN_DATASOURCE_USERNAME: briefen
+BRIEFEN_DATASOURCE_PASSWORD: changeme
+```
+
+All three `BRIEFEN_DATASOURCE_*` variables are required when `BRIEFEN_DB_TYPE=postgres`. The app fails fast with a clear error if any are missing.
+
+**Docker Compose (development):**
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml up -d
+```
+
+**Docker Compose (self-hosting):** Uncomment the `postgres` service and related environment variables in `docker-compose.sample.yml`. See the comments in the file for step-by-step instructions.
+
+The database schema is created automatically on first startup via Hibernate's auto-DDL. No manual migration step is required.
 
 ### Backup & Restore
 
@@ -347,7 +378,11 @@ All runtime behaviour is controlled through environment variables. In local deve
 
 | Variable | Default | Description |
 |---|---|---|
+| `BRIEFEN_DB_TYPE` | `sqlite` | Database engine: `sqlite` (default) or `postgres`. |
 | `BRIEFEN_DB_PATH` | `./data/briefen.db` | Path to the SQLite database file. In Docker, point this at a named-volume mount path (e.g. `/data/briefen.db`). |
+| `BRIEFEN_DATASOURCE_URL` | *(none)* | PostgreSQL JDBC URL. Required when `BRIEFEN_DB_TYPE=postgres`. |
+| `BRIEFEN_DATASOURCE_USERNAME` | *(none)* | PostgreSQL username. Required when `BRIEFEN_DB_TYPE=postgres`. |
+| `BRIEFEN_DATASOURCE_PASSWORD` | *(none)* | PostgreSQL password. Required when `BRIEFEN_DB_TYPE=postgres`. |
 | `SERVER_PORT` | `8080` | HTTP port the server listens on. |
 | `SERVER_CONTEXT_PATH` | `/` | URL sub-path prefix (e.g. `/briefen/` for `myserver.com/briefen/`). Requires a local image build with `--build-arg APP_BASE_PATH=<path>` to bake the matching asset paths into the frontend. The pre-built GHCR image always uses `/`. |
 | `SERVER_FORWARD_HEADERS_STRATEGY` | `NONE` | Set to `FRAMEWORK` when running behind a reverse proxy (Nginx, Traefik, Caddy) to trust `X-Forwarded-For` / `X-Forwarded-Proto` headers. |

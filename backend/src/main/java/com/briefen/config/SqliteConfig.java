@@ -3,6 +3,7 @@ package com.briefen.config;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -13,13 +14,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Configuration
+@ConditionalOnProperty(name = "briefen.db.type", havingValue = "sqlite", matchIfMissing = true)
 @EnableJpaRepositories(basePackages = "com.briefen.persistence.sqlite")
 public class SqliteConfig {
 
     @Bean
     public DataSource dataSource(
-            @Value("${spring.datasource.url}") String url,
-            @Value("${spring.datasource.driver-class-name}") String driverClassName) throws IOException {
+            @Value("${spring.datasource.url}") String url) throws IOException {
         // Extract file path from jdbc:sqlite:/path/to/file and ensure directory exists
         String filePath = url.replace("jdbc:sqlite:", "");
         int queryIndex = filePath.indexOf('?');
@@ -33,7 +34,7 @@ public class SqliteConfig {
 
         var dataSource = new HikariDataSource();
         dataSource.setJdbcUrl(url);
-        dataSource.setDriverClassName(driverClassName);
+        dataSource.setDriverClassName("org.sqlite.JDBC");
         dataSource.setMaximumPoolSize(1);
         return dataSource;
     }
