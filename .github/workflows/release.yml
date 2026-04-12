@@ -1,5 +1,5 @@
 # Release — auto-publish a GitHub Release when a version tag is pushed.
-# Uses GitHub's auto-generated release notes (based on commits since the previous tag).
+# Uses git-cliff to generate structured release notes from conventional commits.
 # The Docker workflow (docker.yml) also triggers on the same tags to build/push images.
 
 name: Release
@@ -17,9 +17,23 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          fetch-depth: 0  # full history needed for git-cliff
+
+      - name: Generate release notes
+        id: cliff
+        uses: orhun/git-cliff-action@4a4a951bc43fdb41ab4a57586489e3acef673510  # v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: CHANGES.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631  # v2
         with:
-          generate_release_notes: true
+          body_path: CHANGES.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
