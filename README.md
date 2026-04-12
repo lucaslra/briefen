@@ -22,7 +22,7 @@
 ## Architecture
 
 ```
-Browser (React) → Spring Boot API → Jsoup (fetch article) → Ollama or OpenAI (summarize) → SQLite (persist)
+Browser (React) → Spring Boot API → Jsoup (fetch article) → Ollama or OpenAI (summarize) → SQLite or PostgreSQL (persist)
 ```
 
 | Layer          | Technology                                 |
@@ -161,6 +161,8 @@ The database schema is created automatically on first startup via Hibernate's au
 
 ### Backup & Restore
 
+#### SQLite
+
 **Your entire Briefen state** (summaries, notes, API keys, settings) lives in a single SQLite file.
 
 > ⚠️ A plain `cp` or `tar` of a **running** SQLite database can produce a corrupt backup if a write occurs mid-copy. Use one of the safe methods below.
@@ -230,6 +232,18 @@ cp ./briefen-backup-YYYYMMDD.db ./data/briefen.db
 #### Automated backups (optional)
 
 For continuous replication to S3-compatible storage (Cloudflare R2, Backblaze B2, MinIO), add a [Litestream](https://litestream.io) sidecar alongside Briefen. Litestream streams SQLite's WAL to object storage in real time with no application changes required.
+
+#### PostgreSQL
+
+If you're using PostgreSQL (`BRIEFEN_DB_TYPE=postgres`), use standard PostgreSQL backup tools:
+
+```bash
+# Backup
+docker exec briefen-postgres pg_dump -U briefen briefen > briefen-backup-$(date +%Y%m%d).sql
+
+# Restore
+docker exec -i briefen-postgres psql -U briefen briefen < briefen-backup-YYYYMMDD.sql
+```
 
 > ⚠️ **`make clean-all` destroys all data** including the database volume and Ollama model weights. Run it only when you want a completely fresh state.
 
@@ -314,7 +328,7 @@ The Readeck API key never reaches the browser — all requests are proxied throu
 
 ### Authentication
 
-Briefen uses **HTTP Basic Auth** on every route except `/actuator/health`. Authentication is always active — on first launch, the browser-based setup screen prompts you to create an admin account with a strong password.
+Briefen uses **HTTP Basic Auth** on every route except `/actuator/health` and `/api/setup/**` (first-run account creation). Authentication is always active — on first launch, the browser-based setup screen prompts you to create an admin account with a strong password.
 
 **Using the API with auth:**
 
@@ -341,9 +355,9 @@ If you expose Briefen or Ollama through a reverse proxy (e.g. **Nginx Proxy Mana
 Open each affected proxy host → **Edit → Advanced** and paste:
 
 ```nginx
-proxy_read_timeout 310s;
-proxy_send_timeout 310s;
-proxy_connect_timeout 310s;
+proxy_read_timeout    310s;
+proxy_send_timeout    310s;
+proxy_connect_timeout 10s;
 ```
 
 Apply this to **both** proxy hosts if both are behind NPM:
@@ -359,10 +373,10 @@ Add the same directives inside the relevant `location` block:
 
 ```nginx
 location / {
-    proxy_pass         http://briefen:8080;
-    proxy_read_timeout 310s;
-    proxy_send_timeout 310s;
-    proxy_connect_timeout 310s;
+    proxy_pass            http://briefen:8080;
+    proxy_read_timeout    310s;
+    proxy_send_timeout    310s;
+    proxy_connect_timeout 10s;
 }
 ```
 
@@ -392,6 +406,10 @@ All runtime behaviour is controlled through environment variables. In local deve
 | `BRIEFEN_ANTHROPIC_API_KEY` | *(empty — Anthropic disabled)* | Anthropic API key. Same first-startup seeding behaviour as `BRIEFEN_OPENAI_API_KEY`. |
 | `BRIEFEN_CORS_ALLOWED_ORIGINS` | *(empty — CORS disabled)* | Comma-separated list of allowed CORS origins. Required when the Firefox extension or a custom frontend runs on a different origin than the backend (e.g. `moz-extension://*`). |
 | `BRIEFEN_WEBHOOK_URL` | *(empty — webhooks disabled)* | HTTP/S URL to POST a JSON notification to whenever a summary is saved. Compatible with Home Assistant, ntfy, Gotify, and any HTTP endpoint. |
+| `SERVER_BIND_ADDRESS` | `0.0.0.0` | Network interface the app binds to. Set to `127.0.0.1` when a reverse proxy runs on the same host. |
+| `BRIEFEN_LOG_LEVEL` | `INFO` | Log verbosity for Briefen's own code. Values: `ERROR`, `WARN`, `INFO`, `DEBUG`, `TRACE`. |
+| `BRIEFEN_LOG_FORMAT` | *(unset — human-readable)* | Set to `json` for structured JSON logs (useful for Loki, Grafana). |
+| `BRIEFEN_DEFAULT_PROMPT` | *(unset — built-in prompt)* | Custom default system prompt for summarization. Overrides the built-in prompt for all users. |
 
 ---
 
@@ -459,7 +477,7 @@ After installing, click the extension icon → **Options** (or right-click → M
 | Field | Value |
 |-------|-------|
 | **Briefen URL** | Your instance URL, e.g. `http://localhost:8080` or `https://briefen.example.com` |
-| **Username** | Your Briefen username (default: `admin`) |
+| **Username** | Your Briefen username (created during first-run setup) |
 | **Password** | Your Briefen password |
 
 ### CORS requirement for remote instances
@@ -513,13 +531,13 @@ briefen/
 │   ├── pom.xml
 │   └── src/main/java/com/briefen/
 │       ├── BriefenApplication.java
-│       ├── config/          # Ollama/OpenAI properties, RestClient beans, health indicator
-│       ├── controller/      # SummarizeController, SettingsController, ModelsController, ReadeckController
+│       ├── config/          # DB profile activation, datasource config, security, RestClient beans
+│       ├── controller/      # REST endpoints (Summarize, Settings, Models, Users, Setup, Readeck, etc.)
 │       ├── dto/             # Request/response records
 │       ├── exception/       # Custom exceptions
-│       ├── model/           # Domain models (Summary, UserSettings)
-│       ├── persistence/     # SQLite persistence layer (JPA)
-│       ├── service/         # Article fetcher, Ollama/OpenAI summarizer, orchestrator
+│       ├── model/           # Domain models (Summary, UserSettings, User)
+│       ├── persistence/     # Database persistence layer — JPA (supports SQLite and PostgreSQL)
+│       ├── service/         # Article fetcher, Ollama/OpenAI/Anthropic summarizer, orchestrator
 │       └── validation/      # URL validator
 └── frontend/
     ├── vite.config.js

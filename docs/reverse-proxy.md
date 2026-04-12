@@ -153,13 +153,9 @@ services:
       - "traefik.http.routers.briefen.entrypoints=websecure"
       - "traefik.http.routers.briefen.tls.certresolver=letsencrypt"
       - "traefik.http.services.briefen.loadbalancer.server.port=8080"
-
-      # ── Required: raise the response timeout ──────────────────────────────
-      - "traefik.http.middlewares.briefen-timeout.forwardAuth.tls.insecureSkipVerify=false"
-      - "traefik.http.routers.briefen.middlewares=briefen-timeout"
-
-      # Traefik sets timeout via the transport config — see static config below
 ```
+
+> **Note:** Traefik does not support per-service response timeouts via labels. Timeout configuration is set globally in the static config — see below.
 
 Add to your **Traefik static configuration** (`traefik.yml` or `traefik.toml`):
 

@@ -223,15 +223,15 @@ Always put Briefen behind a TLS-terminating proxy before exposing it to the inte
 
 ### Required: raise proxy timeouts
 
-Summarization can take 2–3 minutes for long articles on local models. The default 60s proxy timeout will kill the connection mid-request. Set all three timeouts to **310s** (5 seconds more than Briefen's own Ollama timeout):
+Summarization can take 2–3 minutes for long articles on local models. The default 60s proxy timeout will kill the connection mid-request. Set read and send timeouts to **310s** (10 seconds more than Briefen's own Ollama timeout):
 
 **Nginx:**
 ```nginx
 location / {
-    proxy_pass          http://localhost:8080;
-    proxy_read_timeout  310s;
-    proxy_send_timeout  310s;
-    proxy_connect_timeout 310s;
+    proxy_pass            http://localhost:8080;
+    proxy_read_timeout    310s;
+    proxy_send_timeout    310s;
+    proxy_connect_timeout 10s;
 }
 ```
 
@@ -242,11 +242,12 @@ briefen.example.com {
 }
 ```
 
-**Traefik** (Docker label):
+**Traefik** (static configuration — `traefik.yml`):
 ```yaml
-labels:
-  - "traefik.http.routers.briefen.rule=Host(`briefen.example.com`)"
-  - "traefik.http.middlewares.briefen-timeout.plugin.timeout.responseTimeout=310s"
+serversTransport:
+  respondingTimeouts:
+    readTimeout: 310s
+    writeTimeout: 310s
 ```
 
 ### Required: enable forwarded-header trust
@@ -261,9 +262,11 @@ SERVER_FORWARD_HEADERS_STRATEGY: FRAMEWORK
 
 ## Backing up your data
 
+### SQLite (default)
+
 Your entire Briefen state — summaries, notes, API keys, settings — lives in a single SQLite file.
 
-### Docker volume backup
+#### Docker volume backup
 
 ```bash
 # Create a compressed archive on the host
@@ -273,7 +276,7 @@ docker run --rm \
   alpine tar czf /backup/briefen-backup-$(date +%Y%m%d).tar.gz -C /data .
 ```
 
-### Docker volume restore
+#### Docker volume restore
 
 ```bash
 # Stop the app first to avoid write conflicts
@@ -287,13 +290,27 @@ docker run --rm \
 docker compose -f docker-compose.sample.yml up -d
 ```
 
-### Bare-metal backup
+#### Bare-metal backup
 
 ```bash
 cp ./data/briefen.db ./briefen-backup-$(date +%Y%m%d).db
 ```
 
 > **Tip:** For continuous replication to S3-compatible storage, add a [Litestream](https://litestream.io) sidecar to your compose file. Litestream streams SQLite's WAL to object storage in real time with no application changes required.
+
+### PostgreSQL
+
+If you're using PostgreSQL (`BRIEFEN_DB_TYPE=postgres`), use standard PostgreSQL backup tools:
+
+```bash
+# Backup
+docker exec briefen-postgres pg_dump -U briefen briefen > briefen-backup-$(date +%Y%m%d).sql
+
+# Restore
+docker exec -i briefen-postgres psql -U briefen briefen < briefen-backup-YYYYMMDD.sql
+```
+
+For continuous backups, consider [pgBackRest](https://pgbackrest.org/) or [WAL-G](https://github.com/wal-g/wal-g).
 
 ---
 
@@ -310,7 +327,7 @@ After installing, right-click the extension icon → **Manage Extension → Opti
 | Field | Value |
 |---|---|
 | **Briefen URL** | e.g. `http://localhost:8080` or `https://briefen.example.com` |
-| **Username** | Your Briefen username (default: `admin`) |
+| **Username** | Your Briefen username (created during first-run setup) |
 | **Password** | Your Briefen password |
 
 If your Briefen instance is on a different origin than the extension (any remote deployment), add the following to the compose environment so CORS allows extension requests:

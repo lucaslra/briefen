@@ -16,8 +16,8 @@
 #
 # THREE LLM SCENARIOS:
 #   1. Ollama only (default)  — fully local, no API keys needed
-#   2. OpenAI                 — set OPENAI_API_KEY, pick a GPT/o-series model
-#   3. Anthropic              — set ANTHROPIC_API_KEY, pick a Claude model
+#   2. OpenAI                 — set BRIEFEN_OPENAI_API_KEY, pick a GPT/o-series model
+#   3. Anthropic              — set BRIEFEN_ANTHROPIC_API_KEY, pick a Claude model
 #
 # API keys for cloud providers are stored in the SQLite database and managed
 # through the in-app Settings page. The env vars below pre-seed the server
@@ -167,6 +167,8 @@ services:
 
       # ── Server ─────────────────────────────────────────────────────────
       SERVER_PORT: 8080
+      # SERVER_BIND_ADDRESS: 0.0.0.0
+      # SERVER_FORWARD_HEADERS_STRATEGY: NONE
 
       # ── Ollama (local LLM) ─────────────────────────────────────────────
       # Uses the internal Docker network name — do not change to localhost.
@@ -189,9 +191,15 @@ services:
       # BRIEFEN_ANTHROPIC_API_KEY: ${BRIEFEN_ANTHROPIC_API_KEY:-}
 
       # ── Logging ──────────────────────────────────────────────────────
+      # BRIEFEN_LOG_LEVEL: INFO
       # Set to "json" for structured JSON logs (one JSON object per line).
       # Useful for log aggregation with Loki, Grafana, or jq filtering.
       # BRIEFEN_LOG_FORMAT: json
+
+      # ── CORS ───────────────────────────────────────────────────────
+      # Required when the Firefox extension or a custom frontend runs on
+      # a different origin. Example: moz-extension://*
+      # BRIEFEN_CORS_ALLOWED_ORIGINS:
 
       # ── Custom summarization prompt (optional) ────────────────────────
       # Override the built-in summarization system prompt instance-wide.

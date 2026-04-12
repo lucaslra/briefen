@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Briefen** — a local-first article summarizer. Paste a URL → Jsoup fetches the article → Ollama (local LLM), OpenAI, or Anthropic Claude summarizes it → result is cached in SQLite. No cloud dependencies by default; everything runs locally.
+**Briefen** — a local-first article summarizer. Paste a URL → Jsoup fetches the article → Ollama (local LLM), OpenAI, or Anthropic Claude summarizes it → result is cached in SQLite (default) or PostgreSQL. No cloud dependencies by default; everything runs locally.
 
 ## Commands
 
@@ -77,12 +77,12 @@ Browser (React/Vite :5173)
   → /api/* proxied to Spring Boot (:8080)
     → Jsoup (fetch article HTML) or PDFBox (PDF)
     → Ollama (:11434, local LLM) or OpenAI or Anthropic (cloud, optional)
-    → SQLite (file-based, ./data/briefen.db)
+    → SQLite (file-based, ./data/briefen.db) or PostgreSQL (optional)
 
 # Docker (single image, self-hosting)
 Browser → Spring Boot (:8080, serves React static + API)
     → Ollama (Docker service or external) or OpenAI/Anthropic (external)
-    → SQLite (named Docker volume)
+    → SQLite (named Docker volume) or PostgreSQL (optional)
 ```
 
 ### Backend (`backend/src/main/java/com/briefen/`)
@@ -105,16 +105,15 @@ Browser → Spring Boot (:8080, serves React static + API)
   - `UserBootstrapService` — migrates pre-multi-user data and seeds cloud LLM API keys from env vars on startup
   - `SetupService` — handles browser-based first-run admin account creation
 - **model/** — plain domain POJOs (no persistence annotations): `Summary`, `UserSettings`, `User`
-- **persistence/** — SQLite persistence layer:
+- **persistence/** — database persistence layer (supports SQLite and PostgreSQL):
   - `SummaryPersistence` / `SettingsPersistence` / `UserPersistence` — interfaces
-  - `persistence/sqlite/` — JPA implementations using JpaRepository + JpaSpecificationExecutor
+  - `persistence/sqlite/` — JPA implementations using JpaRepository + JpaSpecificationExecutor (shared by both databases despite the package name)
 - **dto/** — request/response records
 - **security/** — `BriefenUserDetails`, `BriefenUserDetailsService`
-- **config/** — `SecurityConfig` (HTTP Basic Auth, always on; `/api/setup/**` unauthenticated for first-run flow), `SecurityHeadersFilter` (CSP, X-Frame-Options, etc.), `CorsConfig`, `OllamaProperties`, `OpenAiProperties`, `AnthropicProperties`, RestClient beans, `OllamaHealthIndicator`, `ApplicationReadinessValidator`, `WebConfig` (SPA routing), `SqliteConfig`
+- **config/** — `SecurityConfig` (HTTP Basic Auth, always on; `/api/setup/**` unauthenticated for first-run flow), `SecurityHeadersFilter` (CSP, X-Frame-Options, etc.), `CorsConfig`, `OllamaProperties`, `OpenAiProperties`, `AnthropicProperties`, RestClient beans, `OllamaHealthIndicator`, `ApplicationReadinessValidator`, `WebConfig` (SPA routing), `SqliteConfig`, `PostgresConfig`, `DatabaseProfileActivator` (EnvironmentPostProcessor for DB profile/datasource selection), `DatabaseTypeValidator` (fail-fast validation of DB config at startup)
 
 Key `application.yml` settings (all configurable via env vars):
 ```yaml
-spring.datasource.url:          jdbc:sqlite:${BRIEFEN_DB_PATH:./data/briefen.db}
 server.port:                    ${SERVER_PORT:8080}
 server.address:                 ${SERVER_BIND_ADDRESS:0.0.0.0}
 server.servlet.context-path:    ${SERVER_CONTEXT_PATH:/}
@@ -128,6 +127,11 @@ briefen.anthropic.api-key:      ${BRIEFEN_ANTHROPIC_API_KEY:}
 briefen.webhook.url:            ${BRIEFEN_WEBHOOK_URL:}
 logging.level.com.briefen:      ${BRIEFEN_LOG_LEVEL:INFO}
 ```
+
+Database configuration is handled by `DatabaseProfileActivator` (an `EnvironmentPostProcessor`) and profile-specific YAML files (`application-sqlite.yml`, `application-postgres.yml`). Key database env vars:
+- `BRIEFEN_DB_TYPE` — `sqlite` (default) or `postgres`
+- `BRIEFEN_DB_PATH` — SQLite file path (default: `./data/briefen.db`)
+- `BRIEFEN_DATASOURCE_URL` / `BRIEFEN_DATASOURCE_USERNAME` / `BRIEFEN_DATASOURCE_PASSWORD` — required when `postgres`
 
 Full variable reference: `docs/environment-variables.md`
 
@@ -161,7 +165,8 @@ All `/api` requests go through Vite's dev proxy to the Spring Boot backend. Fetc
 - Requires `BRIEFEN_CORS_ALLOWED_ORIGINS: moz-extension://*` for remote instances
 
 ### Infrastructure
-- **SQLite** — file-based database at `./data/briefen.db`. Schema managed by **Flyway** (versioned migrations in `backend/src/main/resources/db/migration/`). Three tables: `users`, `summaries`, `settings`.
+- **SQLite** (default) — file-based database at `./data/briefen.db`. Schema managed by Hibernate `ddl-auto: update` with a custom `SchemaInitializer` for SQLite-specific migrations. Three tables: `users`, `summaries`, `settings`.
+- **PostgreSQL** (optional) — for larger-scale or multi-instance deployments. Enabled via `BRIEFEN_DB_TYPE=postgres`. Schema also managed by `ddl-auto: update`.
 - **Ollama** — local LLM; Docker Compose pulls `gemma2:2b`, `gemma3:4b`, `llama3.2:3b` on first start
 - **OpenAI** — optional cloud provider; API key seeded from `BRIEFEN_OPENAI_API_KEY` on first startup or configured via browser settings, stored server-side
 - **Anthropic** — optional cloud provider; same pattern as OpenAI, key from `BRIEFEN_ANTHROPIC_API_KEY`
@@ -184,4 +189,4 @@ All `/api` requests go through Vite's dev proxy to the Spring Boot backend. Fetc
 - **pnpm** is the frontend package manager (not npm/yarn)
 - **New env vars** — when adding one, update all of: `application.yml`, `.env.example`, `docs/environment-variables.md`, and `docker-compose.sample.yml` (as a commented entry)
 - **Auth is always on** — `SecurityConfig` requires authentication on all routes except `/actuator/health` and `/api/setup/**`; the admin account is created through the browser-based first-run setup flow (`SetupService`)
-- **Flyway not ddl-auto** — schema changes go in a new versioned migration file (`V{n}__description.sql`), never by editing existing migrations or relying on `ddl-auto: update`
+- **Hibernate ddl-auto** — schema is managed by `ddl-auto: update` (in `application.yml`) with a custom `SchemaInitializer` for SQLite-specific column migrations. No Flyway dependency exists in the project
