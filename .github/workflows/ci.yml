@@ -188,12 +188,21 @@ jobs:
 
       - name: OWASP Dependency-Check (backend)
         working-directory: backend
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
+          NVD_ARGS=""
+          if [ -n "$NVD_API_KEY" ]; then
+            NVD_ARGS="-DnvdApiKey=$NVD_API_KEY"
+          else
+            echo "::warning::No NVD_API_KEY secret configured — NVD update will be slow. Get a free key at https://nvd.nist.gov/developers/request-an-api-key"
+            NVD_ARGS="-DnvdApiDelay=6000"
+          fi
           ./mvnw --batch-mode org.owasp:dependency-check-maven:check \
             -DfailBuildOnCVSS=7 \
             -DsuppressionFile=owasp-suppressions.xml \
             -Dformats=HTML,JSON \
-            -DnvdApiDelay=6000
+            $NVD_ARGS
         continue-on-error: true
 
       - name: Upload OWASP report
