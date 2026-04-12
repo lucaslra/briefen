@@ -24,7 +24,7 @@ jobs:
 
       - name: Generate release notes
         id: cliff
-        uses: orhun/git-cliff-action@4a4a951bc43fdb41ab4a57586489e3acef673510  # v4
+        uses: orhun/git-cliff-action@c93ef52f3d0ddcdcc9bd5447d98d458a11cd4f72  # v4
         with:
           config: cliff.toml
           args: --latest --strip header
