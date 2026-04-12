@@ -1,1 +1,3 @@
-org.springframework.boot.env.EnvironmentPostProcessor=com.briefen.config.DatabaseProfileActivator
+org.springframework.boot.env.EnvironmentPostProcessor=\
+  com.briefen.config.FileSecretsEnvironmentPostProcessor,\
+  com.briefen.config.DatabaseProfileActivator

@@ -41,9 +41,9 @@ The following are **out of scope**:
 
 ## Security Considerations
 
-Briefen is designed as a **local-first, single-user application**. By default:
+Briefen is designed as a **local-first, self-hosted application** with multi-user support. By default:
 
-- All data stays on your machine (SQLite, Ollama)
+- All data stays on your machine (SQLite or PostgreSQL, Ollama)
 - No external API calls unless you explicitly configure OpenAI or Readeck
 - Readeck API keys are stored server-side and never sent to the browser
 - OpenAI and Anthropic API keys are stored server-side with masked display in the UI
@@ -55,8 +55,9 @@ If you expose Briefen to the internet, ensure it is behind a TLS-terminating rev
 Briefen's security posture assumes:
 
 - The server runs on `localhost` or a trusted private network, or is behind a TLS-terminating reverse proxy when internet-facing
-- A single trusted user (the admin account) operates all endpoints
+- The admin account creates and manages user accounts; admin-only endpoints are restricted by role
 - **HTTP Basic Auth is always active** — the admin account is created through the browser-based first-run setup flow, which enforces a strong password policy (8+ characters, uppercase, lowercase, digit, special character)
+- Additional users can be created via the admin panel (`/api/admin/users`)
 
 **Consequences for network-exposed deployments without TLS:** Basic Auth credentials are transmitted as base64 on every request, which is trivially decoded on unencrypted connections. Always terminate TLS at a reverse proxy (Nginx, Traefik, Caddy) before exposing Briefen to the internet.
 
@@ -64,13 +65,14 @@ Briefen's security posture assumes:
 
 | Data | Storage | Notes |
 |------|---------|-------|
-| OpenAI API key | SQLite, plaintext | Acceptable for local single-user use |
-| Anthropic API key | SQLite, plaintext | Same |
-| Readeck API key | SQLite, plaintext | Never forwarded to the browser |
-| Readeck instance URL | SQLite | User-controlled; may point to private network services |
-| Article content & summaries | SQLite | May include private or paywalled material |
+| OpenAI API key | SQLite/PostgreSQL, plaintext | Acceptable for self-hosted use; use Docker secrets or `_FILE` env var suffix for container deployments |
+| Anthropic API key | SQLite/PostgreSQL, plaintext | Same |
+| Readeck API key | SQLite/PostgreSQL, plaintext | Never forwarded to the browser |
+| Readeck instance URL | SQLite/PostgreSQL | User-controlled; may point to private network services |
+| User credentials | SQLite/PostgreSQL, hashed | Passwords are never stored or logged in plaintext |
+| Article content & summaries | SQLite/PostgreSQL | May include private or paywalled material |
 
-Ensure `./data/briefen.db` has appropriate filesystem permissions, especially in shared-host environments.
+For SQLite deployments, ensure `./data/briefen.db` has appropriate filesystem permissions (`chmod 600`), especially in shared-host environments. For PostgreSQL, use strong database credentials and restrict network access to the database port.
 
 ### Known Accepted Risks
 
@@ -78,7 +80,7 @@ The following are intentional design trade-offs, not vulnerabilities:
 
 | Risk | Rationale |
 |------|-----------|
-| HTTP Basic Auth (not bearer tokens or sessions) | Stateless, simple, and sufficient for single-user self-hosted use; avoids session storage complexity |
-| API keys stored in SQLite plaintext | Local file; filesystem-level protection (`chmod 600`) is sufficient for the target deployment model |
+| HTTP Basic Auth (not bearer tokens or sessions) | Stateless, simple, and sufficient for self-hosted use; avoids session storage complexity |
+| API keys stored in database plaintext | Local file (SQLite) or database server (PostgreSQL); filesystem-level protection (`chmod 600`) or database access controls are sufficient for the target deployment model |
 | Plaintext HTTP to Ollama | Same Docker network / localhost only; Ollama has no authentication to protect |
 | Readeck proxy does not block private IPs | Readeck is self-hosted; blocking private IPs would break the integration |

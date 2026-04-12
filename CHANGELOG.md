@@ -30,10 +30,10 @@ Briefen uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Dark/light theme** — toggleable, persisted in `localStorage`
 - **Web notifications** — opt-in browser notification when a long-running summary completes
 - **SQLite persistence** — single-file database at `./data/briefen.db`; zero setup, trivially portable
-- **Flyway schema migrations** — version-controlled schema with safe baseline migration for existing databases
+- **Hibernate auto-DDL schema management** — schema managed by `ddl-auto: update` with a custom `SchemaInitializer` for SQLite-specific column migrations; no separate migration tool required
 - **Docker single-image build** — multi-stage Dockerfile (Node → JDK → JRE); serves both the React SPA and the Spring Boot API from one container
 - **Dockerfile `HEALTHCHECK`** — polls `/actuator/health` so orchestrators (Docker Compose, Kubernetes) know when the app is ready
-- **Security response headers** — `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` applied via a servlet filter; no Spring Security dependency required
+- **Security response headers** — `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` applied via `SecurityHeadersFilter`
 - **Startup validation** — logs warnings at startup when the database directory is not writable or Ollama is unreachable; does not fail startup so cloud-only deployments work without Ollama
 - **Reverse proxy support** — `SERVER_FORWARD_HEADERS_STRATEGY` environment variable; set to `FRAMEWORK` to trust `X-Forwarded-*` headers from Nginx, Traefik, or Caddy
 - **Browser bookmarklet** — one-click article sending from any page without copy-pasting
@@ -45,7 +45,7 @@ Briefen uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Spring Boot 4.0.5 / Java 25 backend
 - React 19 + Vite 8 frontend (plain JavaScript, no TypeScript)
 - SQLite via `sqlite-jdbc` + Hibernate Community Dialects
-- Flyway 11 for schema management
+- Hibernate `ddl-auto: update` + custom `SchemaInitializer` for schema management
 - Ollama default model: `gemma3:4b` (128K context, strong summarization quality)
 - Docker Compose for local development (Ollama service); separate single-image compose file for self-hosting
 

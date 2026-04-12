@@ -29,6 +29,27 @@ export OLLAMA_MODEL=gemma2:2b
 java -jar app.jar
 ```
 
+**Docker secrets / file-based secrets:** for any variable that may contain a secret, you can append `_FILE` to the variable name and point it at a file containing the value. Briefen reads the file, trims whitespace, and uses the contents as the variable value. This follows the same convention used by official Docker images (PostgreSQL, MySQL, etc.).
+
+```yaml
+environment:
+  BRIEFEN_DATASOURCE_PASSWORD_FILE: /run/secrets/db_password
+  BRIEFEN_OPENAI_API_KEY_FILE: /run/secrets/openai_key
+```
+
+Supported `_FILE` variables:
+
+| Variable | File variant |
+|---|---|
+| `BRIEFEN_DATASOURCE_URL` | `BRIEFEN_DATASOURCE_URL_FILE` |
+| `BRIEFEN_DATASOURCE_USERNAME` | `BRIEFEN_DATASOURCE_USERNAME_FILE` |
+| `BRIEFEN_DATASOURCE_PASSWORD` | `BRIEFEN_DATASOURCE_PASSWORD_FILE` |
+| `BRIEFEN_OPENAI_API_KEY` | `BRIEFEN_OPENAI_API_KEY_FILE` |
+| `BRIEFEN_ANTHROPIC_API_KEY` | `BRIEFEN_ANTHROPIC_API_KEY_FILE` |
+| `BRIEFEN_WEBHOOK_URL` | `BRIEFEN_WEBHOOK_URL_FILE` |
+
+> Setting both `VAR` and `VAR_FILE` for the same variable is an error — the app fails fast with a clear message. The file must exist, be readable, and contain a non-empty value (after trimming whitespace).
+
 ---
 
 ## Quick reference

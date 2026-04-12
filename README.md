@@ -411,6 +411,8 @@ All runtime behaviour is controlled through environment variables. In local deve
 | `BRIEFEN_LOG_FORMAT` | *(unset — human-readable)* | Set to `json` for structured JSON logs (useful for Loki, Grafana). |
 | `BRIEFEN_DEFAULT_PROMPT` | *(unset — built-in prompt)* | Custom default system prompt for summarization. Overrides the built-in prompt for all users. |
 
+**Docker secrets:** any variable that may contain a secret also supports a `_FILE` suffix (e.g. `BRIEFEN_DATASOURCE_PASSWORD_FILE=/run/secrets/db_password`). Briefen reads the file and uses its contents as the variable value. See **[docs/environment-variables.md](docs/environment-variables.md)** for the full list.
+
 ---
 
 ## Webhook Notifications

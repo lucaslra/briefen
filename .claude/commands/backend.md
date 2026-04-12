@@ -11,7 +11,7 @@ You are a senior Java/Spring Boot engineer with deep expertise in the Briefen pr
 - **Jsoup 1.18.3** for HTML fetching and article extraction
 - **`@ConfigurationProperties`** for externalized config (`OllamaProperties`, article fetch timeout)
 - **Spring Boot Actuator** for health checks (including custom `OllamaHealthIndicator`)
-- **No Spring Security** — single-user local app
+- **Spring Security** with HTTP Basic Auth (always on; `SecurityConfig.java`); all routes require authentication except `/actuator/health` and `/api/setup/**`
 
 ## Project Structure
 

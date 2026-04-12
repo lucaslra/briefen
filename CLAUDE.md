@@ -110,7 +110,7 @@ Browser → Spring Boot (:8080, serves React static + API)
   - `persistence/sqlite/` — JPA implementations using JpaRepository + JpaSpecificationExecutor (shared by both databases despite the package name)
 - **dto/** — request/response records
 - **security/** — `BriefenUserDetails`, `BriefenUserDetailsService`
-- **config/** — `SecurityConfig` (HTTP Basic Auth, always on; `/api/setup/**` unauthenticated for first-run flow), `SecurityHeadersFilter` (CSP, X-Frame-Options, etc.), `CorsConfig`, `OllamaProperties`, `OpenAiProperties`, `AnthropicProperties`, RestClient beans, `OllamaHealthIndicator`, `ApplicationReadinessValidator`, `WebConfig` (SPA routing), `SqliteConfig`, `PostgresConfig`, `DatabaseProfileActivator` (EnvironmentPostProcessor for DB profile/datasource selection), `DatabaseTypeValidator` (fail-fast validation of DB config at startup)
+- **config/** — `SecurityConfig` (HTTP Basic Auth, always on; `/api/setup/**` unauthenticated for first-run flow), `SecurityHeadersFilter` (CSP, X-Frame-Options, etc.), `CorsConfig`, `OllamaProperties`, `OpenAiProperties`, `AnthropicProperties`, RestClient beans, `OllamaHealthIndicator`, `ApplicationReadinessValidator`, `WebConfig` (SPA routing), `SqliteConfig`, `PostgresConfig`, `DatabaseProfileActivator` (EnvironmentPostProcessor for DB profile/datasource selection), `DatabaseTypeValidator` (fail-fast validation of DB config at startup), `FileSecretsEnvironmentPostProcessor` (reads `_FILE` suffix env vars for Docker secrets support)
 
 Key `application.yml` settings (all configurable via env vars):
 ```yaml

@@ -79,7 +79,7 @@ Self-hosters who manage Briefen through the browser UI had no way to
 change the URL without restarting the container.
 
 - Add webhookUrl field to UserSettings domain model and SQLite entity
-- Flyway V2 migration adds the webhook_url column
+- SchemaInitializer handles the webhook_url column migration for SQLite
 - SettingsController validates the URL before saving
 - WebhookService resolves URL from settings first, env var as fallback
 ```
