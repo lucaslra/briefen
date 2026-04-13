@@ -15,7 +15,8 @@ public record SummarizeResponse(
         Boolean isRead,
         Instant savedAt,
         String notes,
-        List<String> tags
+        List<String> tags,
+        boolean hasArticleText
 ) {
     public static SummarizeResponse from(Summary summary) {
         return new SummarizeResponse(
@@ -28,7 +29,8 @@ public record SummarizeResponse(
                 summary.isEffectivelyRead(),
                 summary.getEffectiveSavedAt(),
                 summary.getNotes(),
-                summary.getTags() != null ? summary.getTags() : List.of()
+                summary.getTags() != null ? summary.getTags() : List.of(),
+                summary.getArticleText() != null && !summary.getArticleText().isEmpty()
         );
     }
 }

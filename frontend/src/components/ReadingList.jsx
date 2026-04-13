@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import Markdown from 'react-markdown'
 import { STRINGS } from '../constants/strings'
 import { useReadingList } from '../hooks/useReadingList'
+import { apiFetch } from '../apiFetch.js'
 import { formatRelativeDate } from '../utils/relativeDate'
 import styles from './ReadingList.module.css'
 
@@ -148,6 +149,41 @@ function TagInput({ tags, onUpdateTags }) {
   )
 }
 
+function ArticleTextViewer({ summaryId }) {
+  const [text, setText] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(false)
+
+  async function handleToggle() {
+    if (!open && text === null) {
+      setLoading(true)
+      try {
+        const res = await apiFetch(`/api/summaries/${summaryId}/article-text`)
+        if (res.ok) {
+          const data = await res.json()
+          setText(data.articleText || '')
+        }
+      } catch {
+        // silent
+      } finally {
+        setLoading(false)
+      }
+    }
+    setOpen(prev => !prev)
+  }
+
+  return (
+    <div className={styles.articleTextSection}>
+      <button className={styles.articleTextToggle} onClick={handleToggle} disabled={loading}>
+        {loading ? STRINGS.ARTICLE_TEXT_LOADING : open ? STRINGS.ARTICLE_TEXT_HIDE : STRINGS.ARTICLE_TEXT_SHOW}
+      </button>
+      {open && text !== null && (
+        <pre className={styles.articleTextContent}>{text || STRINGS.ARTICLE_TEXT_EMPTY}</pre>
+      )}
+    </div>
+  )
+}
+
 function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMarkRead, onDelete, error, onClearError, onUpdateNotes, onUpdateTags, onTagClick }) {
   const domain = extractDomain(item.url)
   const autoReadTimer = useRef(null)
@@ -268,6 +304,9 @@ function ReadingListItem({ item, isExpanded, onToggleExpand, onToggleRead, onMar
             tags={item.tags || []}
             onUpdateTags={(tags) => onUpdateTags(item.id, tags)}
           />
+          {item.hasArticleText && (
+            <ArticleTextViewer summaryId={item.id} />
+          )}
           <div className={styles.readerFooter}>
             {item.url && (
               <a href={item.url} target="_blank" rel="noopener noreferrer" className={styles.readerSource}>

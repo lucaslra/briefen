@@ -29,6 +29,9 @@ public class Summary {
     // User-assigned tags for categorization; null or empty means untagged.
     private List<String> tags;
 
+    // Original article text preserved at summarization time; null for older summaries.
+    private String articleText;
+
     public Summary() {}
 
     public Summary(String url, String title, String summary, String modelUsed) {
@@ -77,4 +80,7 @@ public class Summary {
 
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
+
+    public String getArticleText() { return articleText; }
+    public void setArticleText(String articleText) { this.articleText = articleText; }
 }

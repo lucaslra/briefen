@@ -88,12 +88,18 @@ public class SummaryService {
 
         ArticleFetcherService.ArticleContent article = articleFetcher.fetch(normalizedUrl);
         String effectiveModel = (model != null && !model.isBlank()) ? model : ollamaProperties.model();
-        String summaryText = dispatchSummarize(userId, article.text(), lengthHint, effectiveModel);
+        String rawSummaryText = dispatchSummarize(userId, article.text(), lengthHint, effectiveModel);
+        TagExtractor.Result extracted = TagExtractor.extract(rawSummaryText);
+        String summaryText = extracted.summary();
 
         // Length-adjusted summaries are transient — don't persist them
         if (isLengthAdjustment) {
             Summary transient_ = new Summary(normalizedUrl, article.title(), summaryText, effectiveModel);
             transient_.setUserId(userId);
+            transient_.setArticleText(article.text());
+            if (!extracted.tags().isEmpty()) {
+                transient_.setTags(extracted.tags());
+            }
             log.info("Generated {} summary for {} (not persisted)", lengthHint, normalizedUrl);
             return transient_;
         }
@@ -107,10 +113,15 @@ public class SummaryService {
         summary.setTitle(article.title());
         summary.setSummary(summaryText);
         summary.setModelUsed(effectiveModel);
+        summary.setArticleText(article.text());
         summary.setCreatedAt(Instant.now());
         if (isNew) {
             summary.setIsRead(false);
             summary.setSavedAt(summary.getCreatedAt());
+        }
+        // Auto-tag new summaries; preserve user-edited tags on refresh
+        if (isNew && !extracted.tags().isEmpty()) {
+            summary.setTags(extracted.tags());
         }
 
         Summary saved = summaryPersistence.save(summary);
@@ -139,7 +150,9 @@ public class SummaryService {
         }
 
         String effectiveModel = (model != null && !model.isBlank()) ? model : ollamaProperties.model();
-        String summaryText = dispatchSummarize(userId, text, lengthHint, effectiveModel);
+        String rawSummaryText = dispatchSummarize(userId, text, lengthHint, effectiveModel);
+        TagExtractor.Result extracted = TagExtractor.extract(rawSummaryText);
+        String summaryText = extracted.summary();
 
         // Extract title from LLM response if not provided
         String effectiveTitle = (title != null && !title.isBlank()) ? title.trim() : null;
@@ -165,10 +178,15 @@ public class SummaryService {
         result.setTitle(effectiveTitle);
         result.setSummary(summaryText);
         result.setModelUsed(effectiveModel);
+        result.setArticleText(text);
         result.setCreatedAt(java.time.Instant.now());
         if (isNew) {
             result.setIsRead(false);
             result.setSavedAt(result.getCreatedAt());
+        }
+        // Auto-tag new summaries; preserve user-edited tags on refresh
+        if (isNew && !extracted.tags().isEmpty()) {
+            result.setTags(extracted.tags());
         }
         result = summaryPersistence.save(result);
         webhookService.send(result, userId);
@@ -217,6 +235,12 @@ public class SummaryService {
 
     public List<Summary> getAllSummaries(String userId, String filter, String search, String tag) {
         return summaryPersistence.findAll(userId, filter, search, tag);
+    }
+
+    public String getArticleText(String userId, String id) {
+        Summary summary = summaryPersistence.findById(userId, id)
+                .orElseThrow(() -> new SummaryNotFoundException(id));
+        return summary.getArticleText();
     }
 
     public Summary updateReadStatus(String userId, String id, boolean isRead) {

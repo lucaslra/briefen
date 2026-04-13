@@ -33,7 +33,8 @@ public final class PromptBuilder {
             - At the end, include a "Key Quotes" section with 2-4 direct, verbatim short quotes from the article that support the most important claims.
             - Each quote must be in quotation marks, attributed with brief context such as the section or speaker if known.
             - Do NOT invent dates, URLs, or any metadata not present in the article.
-            - Begin the response with a single markdown H1 heading (# Title) that captures the article's topic. Use the article's own title if available, or create a concise, descriptive one.""";
+            - Begin the response with a single markdown H1 heading (# Title) that captures the article's topic. Use the article's own title if available, or create a concise, descriptive one.
+            - As the very last line of your response, include exactly one line starting with "Tags:" followed by 2 to 4 short, lowercase topic tags separated by commas. These should capture the article's main themes (e.g., "Tags: artificial intelligence, healthcare, regulation"). Do not use hashtags.""";
 
     static final String LENGTH_DEFAULT = "Write 3 to 6 concise paragraphs depending on the article's length and complexity.";
     static final String LENGTH_SHORTER = "Write 1 to 2 short, concise paragraphs capturing only the most essential points.";

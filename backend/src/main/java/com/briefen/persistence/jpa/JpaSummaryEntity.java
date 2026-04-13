@@ -43,6 +43,9 @@ public class JpaSummaryEntity {
     @Column(columnDefinition = "TEXT")
     private String tags;
 
+    @Column(columnDefinition = "TEXT")
+    private String articleText;
+
     public JpaSummaryEntity() {}
 
     public static JpaSummaryEntity fromDomain(Summary s) {
@@ -58,6 +61,7 @@ public class JpaSummaryEntity {
         entity.savedAt = s.getSavedAt();
         entity.notes = s.getNotes();
         entity.tags = tagsToString(s.getTags());
+        entity.articleText = s.getArticleText();
         return entity;
     }
 
@@ -74,6 +78,7 @@ public class JpaSummaryEntity {
         s.setSavedAt(savedAt);
         s.setNotes(notes);
         s.setTags(tagsFromString(tags));
+        s.setArticleText(articleText);
         return s;
     }
 
@@ -109,6 +114,9 @@ public class JpaSummaryEntity {
 
     public String getTags() { return tags; }
     public void setTags(String tags) { this.tags = tags; }
+
+    public String getArticleText() { return articleText; }
+    public void setArticleText(String articleText) { this.articleText = articleText; }
 
     private static String tagsToString(List<String> tags) {
         if (tags == null || tags.isEmpty()) return null;

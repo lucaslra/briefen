@@ -231,6 +231,11 @@
   "USERS_LOADING": "Carregando usu\u00e1rios\u2026",
   "USERS_EMPTY": "Nenhum usu\u00e1rio encontrado.",
 
+  "ARTICLE_TEXT_SHOW": "Ver artigo original",
+  "ARTICLE_TEXT_HIDE": "Ocultar artigo original",
+  "ARTICLE_TEXT_LOADING": "Carregando\u2026",
+  "ARTICLE_TEXT_EMPTY": "O texto do artigo original n\u00e3o est\u00e1 dispon\u00edvel.",
+
   "SETTINGS_LANGUAGE": "Idioma",
   "SETTINGS_LANGUAGE_SUBHEADING": "Escolha o idioma de exibi\u00e7\u00e3o da interface.",
   "SETTINGS_LANGUAGE_EN": "English",

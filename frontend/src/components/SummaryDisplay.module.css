@@ -139,6 +139,49 @@
   border-radius: 10px;
 }
 
+/* --- Original article text --- */
+
+.articleTextSection {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.articleTextToggle {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--transition);
+}
+
+.articleTextToggle:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.articleTextToggle:disabled {
+  color: var(--text-muted);
+  cursor: wait;
+}
+
+.articleTextContent {
+  margin-top: 10px;
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
 .adjustButtons {
   display: flex;
   gap: 8px;

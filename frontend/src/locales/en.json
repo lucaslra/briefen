@@ -231,6 +231,11 @@
   "USERS_LOADING": "Loading users\u2026",
   "USERS_EMPTY": "No users found.",
 
+  "ARTICLE_TEXT_SHOW": "View original article",
+  "ARTICLE_TEXT_HIDE": "Hide original article",
+  "ARTICLE_TEXT_LOADING": "Loading\u2026",
+  "ARTICLE_TEXT_EMPTY": "Original article text is not available.",
+
   "SETTINGS_LANGUAGE": "Language",
   "SETTINGS_LANGUAGE_SUBHEADING": "Choose the display language for the interface.",
   "SETTINGS_LANGUAGE_EN": "English",
