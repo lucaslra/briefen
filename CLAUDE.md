@@ -190,7 +190,7 @@ All `/api` requests go through Vite's dev proxy to the Spring Boot backend. Fetc
 
 ### Mobile App (`mobile/`)
 
-Flutter 3.x cross-platform client for Android and iOS. **Phase 1 + Phase 2 complete.**
+Flutter 3.x cross-platform client for Android and iOS. **Phases 1–3 complete.**
 
 **Running:**
 ```bash
@@ -219,7 +219,7 @@ flutter analyze --no-fatal-infos  # Lint
 **Implemented features:**
 - Login, first-run setup, auth persistence across reinstalls (`hasFragileUserData`)
 - URL summarization with background foreground service + push notification on complete
-- Text paste summarization (tab on summarize screen)
+- Text paste summarization (tab on summarize screen; no title field — title inferred by backend)
 - Batch URL summarization (Batch tab) with sequential processing, progress indicator, and foreground service for background safety
 - Reading list: paginated, filter (all/unread/read), search, swipe to delete/mark read
 - Summary detail: markdown rendering, auto-mark-read after 3 s, notes editing (dialog), tags editing (chip dialog with add/remove)
