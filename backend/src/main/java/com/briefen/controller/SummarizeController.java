@@ -120,6 +120,13 @@ public class SummarizeController {
         return Map.of("count", summaryService.getUnreadCount(userDetails.userId()));
     }
 
+    @GetMapping("/summaries/{id}")
+    public SummarizeResponse getSummary(
+            @AuthenticationPrincipal BriefenUserDetails userDetails,
+            @PathVariable String id) {
+        return SummarizeResponse.from(summaryService.getSummary(userDetails.userId(), id));
+    }
+
     @GetMapping("/summaries/{id}/article-text")
     public Map<String, String> getArticleText(
             @AuthenticationPrincipal BriefenUserDetails userDetails,

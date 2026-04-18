@@ -104,13 +104,17 @@ Browser → Spring Boot (:8080, serves React static + API)
   - `WebhookService` — fire-and-forget POST on summary save (virtual thread)
   - `UserBootstrapService` — migrates pre-multi-user data and seeds cloud LLM API keys from env vars on startup
   - `SetupService` — handles browser-based first-run admin account creation
+  - `PromptBuilder` — assembles LLM prompts from user settings and article content
+  - `TagExtractor` — extracts/normalizes tags from LLM responses
 - **model/** — plain domain POJOs (no persistence annotations): `Summary`, `UserSettings`, `User`
 - **persistence/** — database persistence layer (supports SQLite and PostgreSQL):
   - `SummaryPersistence` / `SettingsPersistence` / `UserPersistence` — interfaces
-  - `persistence/sqlite/` — JPA implementations using JpaRepository + JpaSpecificationExecutor (shared by both databases despite the package name)
+  - `persistence/jpa/` — JPA implementations using JpaRepository + JpaSpecificationExecutor (shared by both SQLite and PostgreSQL)
 - **dto/** — request/response records
+- **exception/** — custom exceptions: `ArticleExtractionException`, `ArticleFetchException`, `InvalidUrlException`, `SummarizationException`, `SummaryNotFoundException`
+- **validation/** — `PasswordValidator`, `UrlValidator`
 - **security/** — `BriefenUserDetails`, `BriefenUserDetailsService`
-- **config/** — `SecurityConfig` (HTTP Basic Auth, always on; `/api/setup/**` unauthenticated for first-run flow), `SecurityHeadersFilter` (CSP, X-Frame-Options, etc.), `CorsConfig`, `OllamaProperties`, `OpenAiProperties`, `AnthropicProperties`, RestClient beans, `OllamaHealthIndicator`, `ApplicationReadinessValidator`, `WebConfig` (SPA routing), `SqliteConfig`, `PostgresConfig`, `DatabaseProfileActivator` (EnvironmentPostProcessor for DB profile/datasource selection), `DatabaseTypeValidator` (fail-fast validation of DB config at startup), `FileSecretsEnvironmentPostProcessor` (reads `_FILE` suffix env vars for Docker secrets support)
+- **config/** — `SecurityConfig` (HTTP Basic Auth, always on; `/api/setup/**` unauthenticated for first-run flow), `SecurityHeadersFilter` (CSP, X-Frame-Options, etc.), `CorsConfig`, `BriefenProperties`, `OllamaProperties`, `OpenAiProperties`, `AnthropicProperties`, `RestClientConfig`, `OpenAiRestClientConfig`, `AnthropicRestClientConfig`, `OllamaHealthIndicator`, `ApplicationReadinessValidator`, `WebConfig` (SPA routing), `SqliteConfig`, `PostgresConfig`, `DatabaseProfileActivator` (EnvironmentPostProcessor for DB profile/datasource selection), `DatabaseTypeValidator` (fail-fast validation of DB config at startup), `FileSecretsEnvironmentPostProcessor` (reads `_FILE` suffix env vars for Docker secrets support)
 
 Key `application.yml` settings (all configurable via env vars):
 ```yaml
@@ -150,8 +154,12 @@ Full variable reference: `docs/environment-variables.md`
   - `useTheme` — dark/light theme toggle with localStorage persistence
   - `useNotification` — web notification permission and dispatch
   - `useAuth` — HTTP Basic Auth state (login/logout, credential storage)
+  - `useSetup` — first-run setup flow state
+  - `useUsers` — user management (admin)
 - **components/** — UI components; no component library, plain CSS + CSS modules
-- **constants/strings.js** — all user-facing strings centralized here (i18n-ready)
+- **constants/strings.js** — all user-facing strings accessed here via an i18next proxy; actual strings live in `locales/en.json` (and other locale files)
+- **i18n.js** — i18next initialization
+- **locales/** — JSON translation files (`en.json`, `pt-BR.json`)
 - **utils/** — shared utilities (relative date formatting)
 
 Vite config injects `__APP_COMMIT__` (git short hash) and `__BUILD_DATE__` as compile-time constants, displayed in the app footer. The `base` option reads `VITE_APP_BASE_PATH` (set by the Dockerfile `APP_BASE_PATH` build arg) for sub-path support.
@@ -180,17 +188,105 @@ All `/api` requests go through Vite's dev proxy to the Spring Boot backend. Fetc
 - **Anthropic** — optional cloud provider; same pattern as OpenAI, key from `BRIEFEN_ANTHROPIC_API_KEY`
 - **Readeck** — optional bookmark integration; URL and API key configured in browser settings
 
+### Mobile App (`mobile/`)
+
+Flutter 3.x cross-platform client for Android and iOS. **Phase 1 + Phase 2 complete.**
+
+**Running:**
+```bash
+cd mobile
+flutter run -d emulator-5554      # Android emulator
+flutter run -d <ios-device-id>    # iOS device/simulator
+flutter run --no-resident          # Run without hot-reload (one-shot)
+flutter gen-l10n                   # Regenerate localizations after editing .arb files
+flutter analyze --no-fatal-infos  # Lint
+```
+
+**App namespace:** `dev.azurecoder.briefen`
+
+**Key dependencies:**
+- `flutter_riverpod: ^2.6.1` — state management
+- `go_router: ^17.2.1` — declarative routing with auth redirect guards
+- `dio: ^5.8.0` — HTTP client with Basic Auth interceptor
+- `flutter_secure_storage: ^9.2.4` — credentials (Keychain / EncryptedSharedPreferences)
+- `shared_preferences: ^2.5.3` — theme mode persistence
+- `flutter_markdown: ^0.7.7` — renders summary markdown
+- `flutter_local_notifications: ^18.0.1` — background summarization complete alert
+- `flutter_foreground_task: ^8.17.0` — keeps network alive while app is backgrounded
+- `share_plus: ^11.0.0` — native share sheet
+- `url_launcher: ^6.3.1` — open original articles in browser
+
+**Implemented features:**
+- Login, first-run setup, auth persistence across reinstalls (`hasFragileUserData`)
+- URL summarization with background foreground service + push notification on complete
+- Text paste summarization (tab on summarize screen)
+- Batch URL summarization (Batch tab) with sequential processing, progress indicator, and foreground service for background safety
+- Reading list: paginated, filter (all/unread/read), search, swipe to delete/mark read
+- Summary detail: markdown rendering, auto-mark-read after 3 s, notes editing (dialog), tags editing (chip dialog with add/remove)
+- Bulk actions: mark all read / mark all unread (scoped to current filter)
+- Export: reading list → markdown → native share sheet
+- Recent summaries: collapsible panel on summarize screen
+- Unread badge on Reading List tab
+- Light/dark theme toggle (persisted)
+- Settings: summarization defaults (length, model, custom prompt), integrations (OpenAI/Anthropic/Readeck/webhook keys), language selector (EN/PT, persisted)
+- Batch notifications: local push when batch completes in background ("N/M articles ready")
+
+**Structure (`mobile/lib/`):**
+- `main.dart` — entry point; initializes notifications, `ProviderScope`
+- `app.dart` — `MaterialApp.router` with localization delegates, GoRouter, and `localeProvider` for runtime locale switching
+- `core/api/` — `ApiClient` (Dio + Basic Auth interceptor; per-request `Options(receiveTimeout:)` — 310 s for single-URL/text summarize, 10 min for batch), `api_exceptions.dart` (sealed: `AuthException`, `NetworkException`, `ApiTimeoutException`, etc.)
+- `core/auth/` — `AuthNotifier` (4 states: `unknown` → `unauthenticated` / `needsSetup` / `authenticated`), `AuthStorage` (secure storage wrapper)
+- `core/locale/` — `LocaleNotifier` (`NotifierProvider<Locale>`), persists language code in `SharedPreferences`
+- `core/router.dart` — GoRouter using `refreshListenable` (NOT `ref.watch`) to avoid remounting screens on auth state changes; `ScaffoldWithNavBar` reads `unreadCountProvider` for badge
+- `core/notifications/` — `NotificationService` wrapping `FlutterLocalNotificationsPlugin`
+- `core/theme/` — Material 3 seed color `#1a73e8`, `ThemeMode` stored in `SharedPreferences`
+- `features/summarize/` — `DefaultTabController` with URL, Text, and Batch tabs; `SummarizeActionNotifier._run()` shared path for URL/Text; `BatchSummarizeNotifier` for sequential multi-URL with foreground service + 10-min per-article timeout + background notification on complete; `RecentSummaries` collapsible; `SummaryDisplay` tappable card
+- `features/reading_list/` — paginated list, filter chips, swipe gestures, overflow menu (bulk + export); `SummaryDetailScreen` (cache-first → `GET /api/summaries/{id}` fallback, auto-marks read with `_disposed` guard, inline notes/tags editing, Make shorter/longer/Regenerate buttons for URL-based summaries, tag chips navigate to filtered reading list); `ReadingListActions` (all methods rethrow on failure — callers must handle errors)
+- `features/setup/` — first-run setup + login screens
+- `features/settings/` — `domain/user_settings.dart` + `domain/llm_models.dart`; `SettingsNotifier` (`AsyncNotifierProvider<UserSettings>`) with `save(patch)` for partial updates; `modelsProvider` fetches `GET /api/models`; screen has 6 sections: Account, Summarization (length/model/custom prompt), Integrations (API keys + URLs via edit dialogs), Appearance (theme + language), About, Logout
+- `l10n/` — ARB-based i18n: `app_en.arb` (source), `app_pt.arb`; generated output in `l10n/generated/`
+
+**State management patterns & known gotchas:**
+- `summaryDetailProvider` uses `ref.read(readingListProvider)` (sync cache hit) then falls back to `GET /api/summaries/{id}` — never `ref.watch` the filtered list, or auto-mark-read will cause "No results found" when the summary leaves the `unread` filter
+- `TextEditingController` disposal in dialogs must use `Future.delayed(400ms, controller.dispose)` — `addPostFrameCallback` fires before the dialog exit animation finishes, causing `_dependents.isEmpty` assertion crash
+- Auto-mark-read timer guard: `_disposed = true` set in `dispose()` before `super.dispose()`; always check `if (_disposed) return` inside the timer callback
+- `ReadingListActions` methods all rethrow — call sites must wrap in try/catch and show snackbars on failure
+- After summarize (single or batch): invalidate both `unreadCountProvider` and `readingListProvider`
+- Network errors at app startup do NOT force-logout — `AuthNotifier` only clears credentials on `AuthException`; other errors keep the user authenticated with stored credentials
+- `import 'package:flutter/foundation.dart' hide Summary` in `summary_detail_screen.dart` — Flutter's `foundation` exports a `Summary` annotation that conflicts with the domain model
+
+**Platform notes:**
+- Android: core library desugaring enabled (`isCoreLibraryDesugaringEnabled = true`); permissions: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`; `android:hasFragileUserData="true"` prompts user to keep data on uninstall
+- iOS: standard Flutter defaults; bundle identifier set via `PRODUCT_BUNDLE_IDENTIFIER` at build time
+- Localization: `l10n.yaml` uses `output-dir: lib/l10n/generated` (no `synthetic-package`, removed in Flutter 3.41)
+- Hooks: `.claude/settings.local.json` auto-runs `dart format` on `.dart` edits, `flutter gen-l10n` on `.arb` edits, `eslint --fix` on `.js`/`.jsx` edits
+
 ### Documentation (`docs/`)
 - `docs/getting-started.md` — step-by-step self-hosting guide
 - `docs/environment-variables.md` — complete env var reference (single source of truth)
 - `docs/reverse-proxy.md` — Nginx, Caddy, Traefik configuration examples
+
+## Custom Slash Commands (`.claude/commands/`)
+
+Project-specific agents invoked via `/command-name`:
+
+| Command | Purpose |
+|---|---|
+| `/backend` | Spring Boot specialist — Java, REST endpoints, services, persistence, security |
+| `/frontend` | React specialist — hooks, components, CSS modules, i18next, Vitest |
+| `/mobile` | Flutter specialist — full mobile context (state, routing, auth, notifications) |
+| `/mobile-api` | Mobile API layer — Dio client, repositories, data models, error handling |
+| `/mobile-ui` | Mobile presentation — screens, widgets, Material 3 theming, navigation |
+| `/mobile-test` | Mobile testing — unit, widget, and integration tests |
+| `/security` | Security audit specialist — SSRF, auth, CSP, input validation, secrets |
+| `/uiux` | UX/design review — layout, accessibility, mobile UX patterns |
 
 ## Key Conventions
 
 - **No TypeScript** — frontend is plain JavaScript; backend is Java 25
 - **Spring Boot 4.0.x** — uses Jackson 3 (`tools.jackson.*` packages, not `com.fasterxml.jackson`)
 - **CSS approach** — plain CSS + CSS custom properties for dark/light theming; CSS modules for component scoping
-- **All UI strings** go in `frontend/src/constants/strings.js`, never hardcoded in components
+- **All UI strings** go in `frontend/src/locales/en.json` (i18next); accessed via the `STRINGS` proxy in `constants/strings.js`, never hardcoded in components
 - **Frontend tests** — Vitest + Testing Library + MSW (configured in `frontend/src/test/`)
 - **Backend tests** — JUnit 5 via Spring Boot Test; WireMock for HTTP integration tests
 - **E2E tests** — Playwright in `e2e/`

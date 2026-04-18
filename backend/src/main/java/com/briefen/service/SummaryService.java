@@ -237,6 +237,11 @@ public class SummaryService {
         return summaryPersistence.findAll(userId, filter, search, tag);
     }
 
+    public Summary getSummary(String userId, String id) {
+        return summaryPersistence.findById(userId, id)
+                .orElseThrow(() -> new SummaryNotFoundException(id));
+    }
+
     public String getArticleText(String userId, String id) {
         Summary summary = summaryPersistence.findById(userId, id)
                 .orElseThrow(() -> new SummaryNotFoundException(id));
