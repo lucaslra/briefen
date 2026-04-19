@@ -1,0 +1,11 @@
+[extend]
+# Extend the default gitleaks config
+useDefault = true
+
+[allowlist]
+description = "Known false positives"
+paths = [
+  # CocoaPods lockfiles contain hex checksums that trigger generic-api-key
+  '''mobile/ios/Podfile\.lock''',
+  '''mobile/macos/Podfile\.lock''',
+]
