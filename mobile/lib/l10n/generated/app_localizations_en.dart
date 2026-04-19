@@ -359,6 +359,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get administration => 'Administration';
 
   @override
+  String get offlineCached => 'You\'re offline — showing cached content';
+
+  @override
   String get readeckTab => 'Readeck';
 
   @override

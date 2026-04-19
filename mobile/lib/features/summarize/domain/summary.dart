@@ -38,19 +38,28 @@ class Summary {
         (json['savedAt'] as String?) ?? json['createdAt'] as String,
       ),
       notes: json['notes'] as String?,
-      tags: (json['tags'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
+      tags:
+          (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
           const [],
       hasArticleText: json['hasArticleText'] as bool? ?? false,
     );
   }
 
-  Summary copyWith({
-    bool? isRead,
-    String? notes,
-    List<String>? tags,
-  }) {
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'url': url,
+    'title': title,
+    'summary': summary,
+    'modelUsed': modelUsed,
+    'createdAt': createdAt.toIso8601String(),
+    'isRead': isRead,
+    'savedAt': savedAt.toIso8601String(),
+    'notes': notes,
+    'tags': tags,
+    'hasArticleText': hasArticleText,
+  };
+
+  Summary copyWith({bool? isRead, String? notes, List<String>? tags}) {
     return Summary(
       id: id,
       url: url,
@@ -80,15 +89,22 @@ class PaginatedSummaries {
   final bool first;
   final bool last;
 
+  /// Whether this data was served from local cache (no network).
+  final bool isOffline;
+
   const PaginatedSummaries({
     required this.content,
     required this.totalElements,
     required this.totalPages,
     required this.first,
     required this.last,
+    this.isOffline = false,
   });
 
-  factory PaginatedSummaries.fromJson(Map<String, dynamic> json) {
+  factory PaginatedSummaries.fromJson(
+    Map<String, dynamic> json, {
+    bool isOffline = false,
+  }) {
     return PaginatedSummaries(
       content: (json['content'] as List<dynamic>)
           .map((e) => Summary.fromJson(e as Map<String, dynamic>))
@@ -97,6 +113,15 @@ class PaginatedSummaries {
       totalPages: json['totalPages'] as int? ?? 0,
       first: json['first'] as bool? ?? true,
       last: json['last'] as bool? ?? true,
+      isOffline: isOffline,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'content': content.map((s) => s.toJson()).toList(),
+    'totalElements': totalElements,
+    'totalPages': totalPages,
+    'first': first,
+    'last': last,
+  };
 }

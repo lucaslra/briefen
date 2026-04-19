@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../summarize/domain/summary.dart';
 import '../summarize/providers.dart';
+import 'data/reading_list_cache.dart';
 import 'data/reading_list_repository.dart';
 
 // Filter state
@@ -14,22 +15,36 @@ final readingListFilterProvider = StateProvider<ReadingListFilter>(
 final readingListSearchProvider = StateProvider<String>((ref) => '');
 final readingListTagProvider = StateProvider<String?>((ref) => null);
 
-// Reading list data
+// Reading list data — with offline cache fallback
 final readingListProvider = FutureProvider.autoDispose<PaginatedSummaries>((
   ref,
 ) async {
   final repo = ref.read(readingListRepositoryProvider);
+  final cache = ref.read(readingListCacheProvider);
   final filter = ref.watch(readingListFilterProvider);
   final search = ref.watch(readingListSearchProvider);
   final tag = ref.watch(readingListTagProvider);
 
-  return repo.getSummaries(
-    page: 0,
-    size: 20,
-    filter: filter.name,
-    search: search.isNotEmpty ? search : null,
-    tag: tag,
-  );
+  // Only cache unfiltered, unsearched results (keeps cache keys bounded).
+  final cacheable = search.isEmpty && tag == null;
+
+  try {
+    final result = await repo.getSummaries(
+      page: 0,
+      size: 20,
+      filter: filter.name,
+      search: search.isNotEmpty ? search : null,
+      tag: tag,
+    );
+    if (cacheable) await cache.save(filter.name, result);
+    return result;
+  } catch (_) {
+    if (cacheable) {
+      final cached = await cache.load(filter.name);
+      if (cached != null) return cached;
+    }
+    rethrow;
+  }
 });
 
 // Actions

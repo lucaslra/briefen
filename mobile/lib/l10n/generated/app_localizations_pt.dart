@@ -359,6 +359,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get administration => 'Administração';
 
   @override
+  String get offlineCached => 'Você está offline — exibindo conteúdo em cache';
+
+  @override
   String get readeckTab => 'Readeck';
 
   @override

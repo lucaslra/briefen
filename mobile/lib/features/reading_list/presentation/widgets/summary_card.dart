@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../summarize/domain/summary.dart';
 
@@ -40,9 +41,11 @@ class SummaryCard extends StatelessWidget {
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
+          HapticFeedback.mediumImpact();
           onToggleRead();
           return false;
         }
+        HapticFeedback.heavyImpact();
         return true;
       },
       onDismissed: (direction) {
@@ -85,8 +88,9 @@ class SummaryCard extends StatelessWidget {
                                     : summary.summary.length,
                               ),
                         style: textTheme.titleSmall?.copyWith(
-                          fontWeight:
-                              summary.isRead ? FontWeight.normal : FontWeight.w600,
+                          fontWeight: summary.isRead
+                              ? FontWeight.normal
+                              : FontWeight.w600,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,

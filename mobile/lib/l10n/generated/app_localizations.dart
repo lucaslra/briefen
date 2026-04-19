@@ -771,6 +771,12 @@ abstract class AppLocalizations {
   /// **'Administration'**
   String get administration;
 
+  /// No description provided for @offlineCached.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline — showing cached content'**
+  String get offlineCached;
+
   /// No description provided for @readeckTab.
   ///
   /// In en, this message translates to:
