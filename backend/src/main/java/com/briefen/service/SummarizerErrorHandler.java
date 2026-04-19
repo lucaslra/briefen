@@ -28,7 +28,7 @@ final class SummarizerErrorHandler {
             return new SummarizationException(provider + " request timed out. The article may be too long.", e, true);
         }
         log.error("Failed to reach {}", provider, e);
-        return new SummarizationException("Could not connect to " + provider + ": " + e.getMessage(), e, false);
+        return new SummarizationException("Could not connect to " + provider + ". Check your network settings and server logs.", e, false);
     }
 
     /**

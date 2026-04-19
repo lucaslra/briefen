@@ -101,7 +101,7 @@ public class ArticleFetcherService {
             throw e;
         } catch (IOException e) {
             log.error("Failed to fetch PDF from {}: {}", url, e.getMessage());
-            throw new ArticleFetchException("Failed to fetch PDF: " + e.getMessage(), e);
+            throw new ArticleFetchException("Failed to fetch PDF. Check server logs for details.", e);
         }
 
         try (PDDocument doc = Loader.loadPDF(pdfBytes)) {

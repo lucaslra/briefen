@@ -43,12 +43,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ArticleFetchException.class)
     public ResponseEntity<ErrorResponse> handleFetchError(ArticleFetchException e) {
+        log.warn("Article fetch failed: {}", e.getMessage(), e.getCause());
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(ErrorResponse.of(e.getMessage(), 502));
     }
 
     @ExceptionHandler(SummarizationException.class)
     public ResponseEntity<ErrorResponse> handleSummarizationError(SummarizationException e) {
+        log.warn("Summarization failed (timeout={}): {}", e.isTimeout(), e.getMessage(), e.getCause());
         HttpStatus status = e.isTimeout() ? HttpStatus.GATEWAY_TIMEOUT : HttpStatus.BAD_GATEWAY;
         return ResponseEntity.status(status)
                 .body(ErrorResponse.of(e.getMessage(), status.value()));
