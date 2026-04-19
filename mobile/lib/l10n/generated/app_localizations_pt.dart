@@ -322,6 +322,41 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get about => 'Sobre';
+
+  @override
+  String get manageUsers => 'Gerenciar Usuários';
+
+  @override
+  String get createUser => 'Criar Usuário';
+
+  @override
+  String get deleteUser => 'Excluir Usuário';
+
+  @override
+  String deleteUserConfirm(String username) {
+    return 'Excluir usuário \"$username\"? Esta ação não pode ser desfeita.';
+  }
+
+  @override
+  String get roleLabel => 'Função';
+
+  @override
+  String get adminRole => 'Administrador';
+
+  @override
+  String get userRole => 'Usuário';
+
+  @override
+  String get userCreated => 'Usuário criado';
+
+  @override
+  String get userDeleted => 'Usuário excluído';
+
+  @override
+  String get userCreateError => 'Falha ao criar usuário';
+
+  @override
+  String get administration => 'Administração';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).

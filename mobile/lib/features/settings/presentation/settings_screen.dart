@@ -9,6 +9,7 @@ import 'package:briefen/features/settings/domain/llm_models.dart';
 import 'package:briefen/features/settings/domain/user_settings.dart';
 import 'package:briefen/features/settings/providers.dart';
 import 'package:briefen/l10n/generated/app_localizations.dart';
+import 'package:go_router/go_router.dart';
 
 final _versionProvider = FutureProvider.autoDispose<String>((ref) async {
   final repo = ref.read(settingsRepositoryProvider);
@@ -56,6 +57,15 @@ class SettingsScreen extends ConsumerWidget {
               title: Text(l10n.server),
               subtitle: Text(authState.serverUrl ?? ''),
             ),
+
+            if (authState.isAdmin) ...[
+              ListTile(
+                leading: const Icon(Icons.manage_accounts_outlined),
+                title: Text(l10n.manageUsers),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/settings/users'),
+              ),
+            ],
 
             const Divider(),
 

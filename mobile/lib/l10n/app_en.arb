@@ -111,5 +111,21 @@
   "selectModel": "Select Model",
   "appearance": "Appearance",
   "notificationsEnabled": "Notifications",
-  "about": "About"
+  "about": "About",
+  "manageUsers": "Manage Users",
+  "createUser": "Create User",
+  "deleteUser": "Delete User",
+  "deleteUserConfirm": "Delete user \"{username}\"? This cannot be undone.",
+  "@deleteUserConfirm": {
+    "placeholders": {
+      "username": {"type": "String"}
+    }
+  },
+  "roleLabel": "Role",
+  "adminRole": "Admin",
+  "userRole": "User",
+  "userCreated": "User created",
+  "userDeleted": "User deleted",
+  "userCreateError": "Failed to create user",
+  "administration": "Administration"
 }

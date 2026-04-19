@@ -322,4 +322,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get about => 'About';
+
+  @override
+  String get manageUsers => 'Manage Users';
+
+  @override
+  String get createUser => 'Create User';
+
+  @override
+  String get deleteUser => 'Delete User';
+
+  @override
+  String deleteUserConfirm(String username) {
+    return 'Delete user \"$username\"? This cannot be undone.';
+  }
+
+  @override
+  String get roleLabel => 'Role';
+
+  @override
+  String get adminRole => 'Admin';
+
+  @override
+  String get userRole => 'User';
+
+  @override
+  String get userCreated => 'User created';
+
+  @override
+  String get userDeleted => 'User deleted';
+
+  @override
+  String get userCreateError => 'Failed to create user';
+
+  @override
+  String get administration => 'Administration';
 }
