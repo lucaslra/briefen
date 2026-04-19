@@ -127,5 +127,8 @@
   "userCreated": "Usu\u00e1rio criado",
   "userDeleted": "Usu\u00e1rio exclu\u00eddo",
   "userCreateError": "Falha ao criar usu\u00e1rio",
-  "administration": "Administra\u00e7\u00e3o"
+  "administration": "Administra\u00e7\u00e3o",
+  "readeckTab": "Readeck",
+  "readeckNotConfigured": "Readeck n\u00e3o est\u00e1 configurado.\nDefina a URL e a chave API nas Configura\u00e7\u00f5es.",
+  "loadMore": "Carregar mais"
 }

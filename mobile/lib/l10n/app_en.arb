@@ -127,5 +127,8 @@
   "userCreated": "User created",
   "userDeleted": "User deleted",
   "userCreateError": "Failed to create user",
-  "administration": "Administration"
+  "administration": "Administration",
+  "readeckTab": "Readeck",
+  "readeckNotConfigured": "Readeck is not configured.\nSet the URL and API key in Settings.",
+  "loadMore": "Load more"
 }

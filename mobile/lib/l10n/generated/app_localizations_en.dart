@@ -357,4 +357,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get administration => 'Administration';
+
+  @override
+  String get readeckTab => 'Readeck';
+
+  @override
+  String get readeckNotConfigured =>
+      'Readeck is not configured.\nSet the URL and API key in Settings.';
+
+  @override
+  String get loadMore => 'Load more';
 }

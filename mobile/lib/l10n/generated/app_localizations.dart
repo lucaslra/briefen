@@ -770,6 +770,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Administration'**
   String get administration;
+
+  /// No description provided for @readeckTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Readeck'**
+  String get readeckTab;
+
+  /// No description provided for @readeckNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Readeck is not configured.\nSet the URL and API key in Settings.'**
+  String get readeckNotConfigured;
+
+  /// No description provided for @loadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get loadMore;
 }
 
 class _AppLocalizationsDelegate

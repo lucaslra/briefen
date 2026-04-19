@@ -357,6 +357,16 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get administration => 'Administração';
+
+  @override
+  String get readeckTab => 'Readeck';
+
+  @override
+  String get readeckNotConfigured =>
+      'Readeck não está configurado.\nDefina a URL e a chave API nas Configurações.';
+
+  @override
+  String get loadMore => 'Carregar mais';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).

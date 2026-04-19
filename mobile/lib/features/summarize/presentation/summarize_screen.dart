@@ -8,6 +8,7 @@ import '../providers.dart';
 import 'widgets/url_input.dart';
 import 'widgets/text_input.dart';
 import 'widgets/batch_input.dart';
+import 'widgets/readeck_input.dart';
 import 'widgets/summary_display.dart';
 import 'widgets/summary_loading.dart';
 import 'widgets/recent_summaries.dart';
@@ -27,7 +28,7 @@ class _SummarizeScreenState extends ConsumerState<SummarizeScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
 
     // Consume any URL that was shared into the app (cold start or warm start).
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -79,6 +80,7 @@ class _SummarizeScreenState extends ConsumerState<SummarizeScreen>
             Tab(text: l10n.urlTab),
             Tab(text: l10n.textTab),
             Tab(text: l10n.batchTab),
+            Tab(text: l10n.readeckTab),
           ],
         ),
       ),
@@ -116,6 +118,11 @@ class _SummarizeScreenState extends ConsumerState<SummarizeScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: const [BatchInput()],
             ),
+          ),
+          // Readeck tab
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: const ReadeckInput(),
           ),
         ],
       ),
