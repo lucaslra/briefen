@@ -45,7 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/setup/**", "/api/setup").permitAll()
                         .requestMatchers("/", "/index.html", "/assets/**", "/favicon.svg", "/favicon.ico").permitAll()
                         .requestMatchers("/api/**").authenticated()
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 )
                 // Use HTTP Basic for credential transport, but suppress the WWW-Authenticate
                 // response header so the browser does not show its native login dialog.
