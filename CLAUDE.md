@@ -161,7 +161,7 @@ Full variable reference: `docs/environment-variables.md`
 - **constants/strings.js** — all user-facing strings accessed here via an i18next proxy; actual strings live in `locales/en.json` (and other locale files)
 - **i18n.js** — i18next initialization
 - **locales/** — JSON translation files (`en.json`, `pt-BR.json`)
-- **utils/** — shared utilities (relative date formatting)
+- **utils/** — shared utilities: `relativeDate.js` (locale-aware relative date formatting using `i18n.language`), `extractDomain.js` (URL hostname extraction — import from here, not inline)
 
 Vite config injects `__APP_COMMIT__` (git short hash) and `__BUILD_DATE__` as compile-time constants, displayed in the app footer. The `base` option reads `VITE_APP_BASE_PATH` (set by the Dockerfile `APP_BASE_PATH` build arg) for sub-path support.
 
@@ -335,8 +335,8 @@ Project-specific agents invoked via `/command-name`:
 
 - **No TypeScript** — frontend is plain JavaScript; backend is Java 25
 - **Spring Boot 4.0.x** — uses Jackson 3 (`tools.jackson.*` packages, not `com.fasterxml.jackson`)
-- **CSS approach** — plain CSS + CSS custom properties for dark/light theming; CSS modules for component scoping
-- **All UI strings** go in `frontend/src/locales/en.json` (i18next); accessed via the `STRINGS` proxy in `constants/strings.js`, never hardcoded in components
+- **CSS approach** — plain CSS + CSS custom properties for dark/light theming; CSS modules for component scoping; `--color-on-accent` is the variable for text on accent-colored surfaces (buttons, badges) — never hardcode `#fff` in component CSS
+- **All UI strings** go in `frontend/src/locales/en.json` (i18next); accessed via the `STRINGS` proxy in `constants/strings.js`, never hardcoded in components or hooks
 - **Frontend tests** — Vitest + Testing Library + MSW (configured in `frontend/src/test/`)
 - **Backend tests** — JUnit 5 via Spring Boot Test; WireMock for HTTP integration tests
 - **E2E tests** — Playwright in `e2e/`
@@ -345,6 +345,21 @@ Project-specific agents invoked via `/command-name`:
 - **Auth is always on** — `SecurityConfig` requires authentication on all routes except `/actuator/health` and `/api/setup/**`; the admin account is created through the browser-based first-run setup flow (`SetupService`)
 - **CSRF disabled intentionally** — `SecurityConfig` disables Spring CSRF protection; this is correct for a stateless REST API using HTTP Basic Auth (no session cookies, so cross-site requests cannot be authenticated by a third-party page); the `// codeql[java/spring-disabled-csrf-protection]` suppression comment documents this intent
 - **Hibernate ddl-auto** — schema is managed by `ddl-auto: update` (in `application.yml`) with a custom `SchemaInitializer` for SQLite-specific column migrations. No Flyway dependency exists in the project
+
+## Frontend Audit (completed 2026-04-19)
+
+Audit conducted 2026-04-19. All identified issues resolved:
+
+- Hardcoded alert strings in `Settings.jsx` → moved to `STRINGS` (`SETTINGS_READECK_SAVE_ERROR`, `SETTINGS_WEBHOOK_SAVE_ERROR`)
+- Hardcoded confirm dialog in `ReadeckBrowser.jsx` → moved to `STRINGS` (`READECK_CONTENT_ERROR_CONFIRM`)
+- Hardcoded error strings in `useUsers.js` → moved to `STRINGS` (`USERS_LOAD_ERROR`, `USERS_NETWORK_ERROR`)
+- Inline styles in `Settings.jsx` (margins, error color) → extracted to `Settings.module.css` (`.apiKeyGroupSpaced`, `.createError`, `.createSubmit`)
+- `#fff` hardcoded in `Settings.module.css` → replaced with `var(--color-on-accent)` (new variable added to `variables.css`)
+- Duplicate `extractDomain()` in `BatchProgress.jsx` + `ReadingList.jsx` → moved to `src/utils/extractDomain.js`
+- `relativeDate.js` hardcoded `'en-US'` → now reads `i18n.language` for locale-aware formatting
+- Silent `/api/models` failure in `Settings.jsx` → `modelsError` state added; shows `SETTINGS_MODELS_ERROR` string
+- Missing ARIA on URL input error → added `id="url-input-error"` + `role="alert"` on error div; `aria-invalid` + `aria-describedby` on first URL input
+- State-during-render (adjust-state pattern) in `SummaryDisplay.jsx`, `Settings.jsx`, `ReadingList.jsx` — **intentional, not a bug**; React docs endorse this for resetting derived state when props change
 
 ## Security Audit (completed 2026-04-19)
 

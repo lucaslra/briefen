@@ -1,15 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { STRINGS } from '../constants/strings'
 import { useElapsedTime, formatElapsed } from '../hooks/useElapsedTime'
+import { extractDomain } from '../utils/extractDomain'
 import styles from './BatchProgress.module.css'
-
-function extractDomain(url) {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '')
-  } catch {
-    return url
-  }
-}
 
 const STATUS_ICONS = {
   queued: '○',

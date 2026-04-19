@@ -239,5 +239,12 @@
   "SETTINGS_LANGUAGE": "Language",
   "SETTINGS_LANGUAGE_SUBHEADING": "Choose the display language for the interface.",
   "SETTINGS_LANGUAGE_EN": "English",
-  "SETTINGS_LANGUAGE_PT_BR": "Portugu\u00eas (Brasil)"
+  "SETTINGS_LANGUAGE_PT_BR": "Portugu\u00eas (Brasil)",
+
+  "SETTINGS_READECK_SAVE_ERROR": "Failed to save Readeck settings. Please check the URL and try again.",
+  "SETTINGS_WEBHOOK_SAVE_ERROR": "Failed to save webhook URL. Please check the URL and try again.",
+  "SETTINGS_MODELS_ERROR": "Could not load models. Check your connection and reload.",
+  "READECK_CONTENT_ERROR_CONFIRM": "Could not fetch article content. Summarize from URL instead?",
+  "USERS_LOAD_ERROR": "Failed to load users.",
+  "USERS_NETWORK_ERROR": "Network error. Please try again."
 }

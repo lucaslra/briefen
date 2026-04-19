@@ -32,9 +32,7 @@ export function ReadeckBrowser({ readeck, onSummarize, loading }) {
 
       if (content?.error) {
         // Content fetch failed — offer URL fallback if available
-        if (article.url && window.confirm(
-          `Could not fetch article content: ${content.error}\n\nSummarize from URL instead?`
-        )) {
+        if (article.url && window.confirm(STRINGS.READECK_CONTENT_ERROR_CONFIRM)) {
           onSummarize(null, null, article.url)
         }
       } else if (content?.text) {

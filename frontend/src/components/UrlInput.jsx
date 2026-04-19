@@ -209,6 +209,8 @@ export function UrlInput({ onSubmitUrl, onSubmitBatch, onSubmitText, loading, er
                 placeholder={index === 0 ? STRINGS.INPUT_PLACEHOLDER : `URL ${index + 1}`}
                 disabled={loading}
                 autoFocus={index === 0}
+                aria-invalid={index === 0 && !!validationError}
+                aria-describedby={index === 0 && validationError ? 'url-input-error' : undefined}
               />
               {isBatch && (
                 <button
@@ -313,7 +315,7 @@ export function UrlInput({ onSubmitUrl, onSubmitBatch, onSubmitText, loading, er
       )}
 
       {(validationError || error) && (
-        <div className={styles.errorBox}>
+        <div id="url-input-error" role="alert" className={styles.errorBox}>
           {validationError || error}
         </div>
       )}

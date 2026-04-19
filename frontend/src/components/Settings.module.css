@@ -179,6 +179,26 @@
   gap: 8px;
 }
 
+.apiKeyGroupSpaced {
+  margin-top: 12px;
+}
+
+.createError {
+  color: var(--error);
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+.createSubmit {
+  margin-top: 16px;
+}
+
+.modelsError {
+  font-size: 0.85rem;
+  color: var(--error);
+  margin-top: 8px;
+}
+
 .apiKeyLabel {
   font-size: 0.875rem;
   font-weight: 500;
@@ -240,7 +260,7 @@
   padding: 10px 20px;
   font-size: 0.825rem;
   font-weight: 500;
-  color: #fff;
+  color: var(--color-on-accent);
   background-color: var(--accent);
   border: none;
   border-radius: var(--radius-sm);
@@ -273,7 +293,7 @@
 
 .apiKeyRemoveBtn:hover {
   background-color: var(--error);
-  color: #fff;
+  color: var(--color-on-accent);
 }
 
 .toggle {
@@ -316,7 +336,7 @@
   left: 3px;
   width: 16px;
   height: 16px;
-  background: #fff;
+  background: var(--color-on-accent);
   border-radius: 50%;
   transition: transform var(--transition);
 }

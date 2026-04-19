@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../apiFetch.js'
+import { STRINGS } from '../constants/strings'
 
 export function useUsers() {
   const [users, setUsers] = useState([])
@@ -14,10 +15,10 @@ export function useUsers() {
       if (res.ok) {
         setUsers(await res.json())
       } else {
-        setError('Failed to load users')
+        setError(STRINGS.USERS_LOAD_ERROR)
       }
     } catch {
-      setError('Network error')
+      setError(STRINGS.USERS_NETWORK_ERROR)
     } finally {
       setLoading(false)
     }

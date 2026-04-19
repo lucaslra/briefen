@@ -5,16 +5,8 @@ import { STRINGS } from '../constants/strings'
 import { useReadingList } from '../hooks/useReadingList'
 import { apiFetch } from '../apiFetch.js'
 import { formatRelativeDate } from '../utils/relativeDate'
+import { extractDomain } from '../utils/extractDomain'
 import styles from './ReadingList.module.css'
-
-function extractDomain(url) {
-  if (!url) return null
-  try {
-    return new URL(url).hostname.replace(/^www\./, '')
-  } catch {
-    return null
-  }
-}
 
 function Toast({ message, onDone }) {
   useEffect(() => {

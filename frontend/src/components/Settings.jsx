@@ -93,7 +93,7 @@ function UsersTab({ currentUserId }) {
               />
             </div>
           </div>
-          <div className={styles.apiKeyGroup} style={{ marginTop: '12px' }}>
+          <div className={`${styles.apiKeyGroup} ${styles.apiKeyGroupSpaced}`}>
             <label className={styles.apiKeyLabel}>{STRINGS.USERS_PASSWORD_LABEL}</label>
             <div className={styles.apiKeyRow}>
               <input
@@ -106,7 +106,7 @@ function UsersTab({ currentUserId }) {
               />
             </div>
           </div>
-          <div className={styles.apiKeyGroup} style={{ marginTop: '12px' }}>
+          <div className={`${styles.apiKeyGroup} ${styles.apiKeyGroupSpaced}`}>
             <label className={styles.apiKeyLabel}>{STRINGS.USERS_ROLE_LABEL}</label>
             <div className={styles.apiKeyRow}>
               <select
@@ -120,9 +120,9 @@ function UsersTab({ currentUserId }) {
             </div>
           </div>
           {createError && (
-            <p style={{ color: 'var(--error)', fontSize: '0.85rem', marginTop: '8px' }}>{createError}</p>
+            <p className={styles.createError}>{createError}</p>
           )}
-          <div style={{ marginTop: '16px' }}>
+          <div className={styles.createSubmit}>
             <button
               type="submit"
               className={styles.apiKeySaveBtn}
@@ -183,6 +183,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin 
   const [promptDraft, setPromptDraft] = useState('')
   const [promptSaved, setPromptSaved] = useState(false)
   const [modelsLoading, setModelsLoading] = useState(true)
+  const [modelsError, setModelsError] = useState(false)
   const [appVersion, setAppVersion] = useState(null)
   const { supported, permission, requestPermission } = useNotification()
 
@@ -203,7 +204,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin 
           setDefaultModel(data.defaultModel)
         }
       })
-      .catch(() => {})
+      .catch(() => { setModelsError(true) })
       .finally(() => setModelsLoading(false))
   }, [])
 
@@ -309,7 +310,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin 
       setReadeckSaved(true)
       setTimeout(() => setReadeckSaved(false), 2000)
     } catch {
-      alert('Failed to save Readeck settings. Please check the URL and try again.')
+      alert(STRINGS.SETTINGS_READECK_SAVE_ERROR)
     }
   }
 
@@ -329,7 +330,7 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin 
       setWebhookSaved(true)
       setTimeout(() => setWebhookSaved(false), 2000)
     } catch {
-      alert('Failed to save webhook URL. Please check the URL and try again.')
+      alert(STRINGS.SETTINGS_WEBHOOK_SAVE_ERROR)
     }
   }
 
@@ -390,13 +391,16 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin 
             </div>
           </section>
 
-          {(visibleProviders.length > 0 || modelsLoading) && (
+          {(visibleProviders.length > 0 || modelsLoading || modelsError) && (
             <section className={styles.section}>
               <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_MODEL_HEADING}</h3>
               <p className={styles.sectionDesc}>{STRINGS.SETTINGS_MODEL_SUBHEADING}</p>
 
               {modelsLoading && visibleProviders.length === 0 && (
                 <p className={styles.providerHint}>{STRINGS.SETTINGS_MODELS_LOADING}</p>
+              )}
+              {modelsError && !modelsLoading && (
+                <p className={styles.modelsError}>{STRINGS.SETTINGS_MODELS_ERROR}</p>
               )}
 
               {visibleProviders.map(provider => (
