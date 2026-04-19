@@ -554,4 +554,212 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get unknownError => 'Algo deu errado';
+
+  @override
+  String get urlTab => 'URL';
+
+  @override
+  String get textTab => 'Texto';
+
+  @override
+  String get textInputHint => 'Cole ou digite o texto do artigo...';
+
+  @override
+  String get titleHint => 'Título (opcional)';
+
+  @override
+  String get summarizeText => 'Resumir Texto';
+
+  @override
+  String get saveNotes => 'Salvar';
+
+  @override
+  String get notesUpdated => 'Notas salvas';
+
+  @override
+  String get removeTag => 'Remover tag';
+
+  @override
+  String get tagHint => 'Nova tag';
+
+  @override
+  String get tagsUpdated => 'Tags atualizadas';
+
+  @override
+  String get export => 'Exportar';
+
+  @override
+  String get exportReadingList => 'Exportar lista de leitura';
+
+  @override
+  String get markAllRead => 'Marcar todos como lidos';
+
+  @override
+  String get markAllUnread => 'Marcar todos como não lidos';
+
+  @override
+  String get bulkUpdated => 'Lista de leitura atualizada';
+
+  @override
+  String get batchTab => 'Lote';
+
+  @override
+  String get batchInputHint => 'Cole URLs, uma por linha...';
+
+  @override
+  String get batchSummarize => 'Resumir Tudo';
+
+  @override
+  String batchProgress(int current, int total) {
+    return 'Resumindo $current de $total…';
+  }
+
+  @override
+  String batchComplete(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count resumos prontos',
+      one: '$count resumo pronto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get makeShorter => 'Resumir mais';
+
+  @override
+  String get makeLonger => 'Ampliar';
+
+  @override
+  String get regenerate => 'Regenerar';
+
+  @override
+  String get adjustingSummary => 'Ajustando…';
+
+  @override
+  String get filterByTag => 'Filtrar por tag';
+
+  @override
+  String get summarizationSettings => 'Resumo';
+
+  @override
+  String get defaultLength => 'Comprimento Padrão';
+
+  @override
+  String get lengthDefault => 'Padrão';
+
+  @override
+  String get lengthShort => 'Curto';
+
+  @override
+  String get lengthMedium => 'Médio';
+
+  @override
+  String get lengthLong => 'Longo';
+
+  @override
+  String get customPrompt => 'Prompt Personalizado';
+
+  @override
+  String get customPromptHint => 'Substituir o prompt de resumo padrão...';
+
+  @override
+  String get integrations => 'Integrações';
+
+  @override
+  String get openaiApiKey => 'Chave API OpenAI';
+
+  @override
+  String get anthropicApiKey => 'Chave API Anthropic';
+
+  @override
+  String get readeckApiKey => 'Chave API Readeck';
+
+  @override
+  String get readeckUrl => 'URL do Readeck';
+
+  @override
+  String get webhookUrl => 'URL do Webhook';
+
+  @override
+  String get keyNotSet => 'Não configurado';
+
+  @override
+  String get settingsSaved => 'Configurações salvas';
+
+  @override
+  String get language => 'Idioma';
+
+  @override
+  String get selectModel => 'Selecionar Modelo';
+
+  @override
+  String get appearance => 'Aparência';
+
+  @override
+  String get notificationsEnabled => 'Notificações';
+
+  @override
+  String get about => 'Sobre';
+
+  @override
+  String get manageUsers => 'Gerenciar Usuários';
+
+  @override
+  String get createUser => 'Criar Usuário';
+
+  @override
+  String get deleteUser => 'Excluir Usuário';
+
+  @override
+  String deleteUserConfirm(String username) {
+    return 'Excluir usuário \"$username\"? Esta ação não pode ser desfeita.';
+  }
+
+  @override
+  String get roleLabel => 'Função';
+
+  @override
+  String get adminRole => 'Administrador';
+
+  @override
+  String get userRole => 'Usuário';
+
+  @override
+  String get userCreated => 'Usuário criado';
+
+  @override
+  String get userDeleted => 'Usuário excluído';
+
+  @override
+  String get userCreateError => 'Falha ao criar usuário';
+
+  @override
+  String get administration => 'Administração';
+
+  @override
+  String get offlineCached => 'Você está offline — exibindo conteúdo em cache';
+
+  @override
+  String get readeckTab => 'Readeck';
+
+  @override
+  String get readeckNotConfigured =>
+      'Readeck não está configurado.\nDefina a URL e a chave API nas Configurações.';
+
+  @override
+  String get loadMore => 'Carregar mais';
+
+  @override
+  String get biometricAuth => 'Autenticação Biométrica';
+
+  @override
+  String get biometricAuthSubtitle => 'Bloquear ao sair do app';
+
+  @override
+  String get biometricUnlock => 'Desbloquear';
+
+  @override
+  String get biometricNotAvailable => 'Não disponível neste dispositivo';
 }
