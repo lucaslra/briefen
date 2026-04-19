@@ -216,6 +216,7 @@ flutter analyze --no-fatal-infos  # Lint
 - `share_plus: ^11.0.0` — native share sheet
 - `url_launcher: ^6.3.1` — open original articles in browser
 - `local_auth: ^2.3.0` — biometric / device PIN authentication
+- `flutter_svg: ^2.1.0` — renders the Briefen logo SVG asset
 
 **Implemented features:**
 - Login, first-run setup, auth persistence across reinstalls (`hasFragileUserData`)
@@ -249,13 +250,14 @@ flutter analyze --no-fatal-infos  # Lint
 - `core/locale/` — `LocaleNotifier` (`NotifierProvider<Locale>`), persists language code in `SharedPreferences`
 - `core/router.dart` — GoRouter using `refreshListenable` (NOT `ref.watch`) to avoid remounting screens on auth state changes; `ScaffoldWithNavBar` reads `unreadCountProvider` for badge
 - `core/notifications/` — `NotificationService` wrapping `FlutterLocalNotificationsPlugin`
-- `core/theme/` — Material 3 seed color `#1a73e8`, `ThemeMode` stored in `SharedPreferences`
+- `core/theme/` — Material 3 seed color `#5b50e8` (matches web app primary purple), `ThemeMode` stored in `SharedPreferences`
 - `features/summarize/` — `SummarizeScreen` is a `ConsumerStatefulWidget` with a manual `TabController` (URL/Text/Batch/Readeck); `sharedUrlProvider` (`StateProvider<String?>`) holds incoming share-intent URLs and triggers tab switch + `UrlInput` pre-fill via `ref.listen`; `SummarizeActionNotifier._run()` shared path for URL/Text; `BatchSummarizeNotifier` for sequential multi-URL with foreground service + 10-min per-article timeout + background notification on complete; `RecentSummaries` collapsible; `SummaryDisplay` tappable card
 - `features/reading_list/` — paginated list with load-more (`ReadingListNotifier` is an `AutoDisposeAsyncNotifier` that accumulates pages; `loadMore()` appends next page, rolls back page counter on failure; filter/search/tag change resets to page 0); filter chips, swipe gestures (with haptics), staggered item animations, skeleton loading, offline banner; `ReadingListCache` (`SharedPreferences`-backed, per-filter, falls back on network error); `SummaryDetailScreen` (cache-first → `GET /api/summaries/{id}` fallback, auto-marks read with `_disposed` guard, inline notes/tags editing, Make shorter/longer/Regenerate buttons for URL-based summaries, tag chips navigate to filtered reading list); all error paths (toggle-read, delete, bulk actions, load-more) catch and show snackbars
-- `features/setup/` — first-run setup + login screens
+- `features/setup/` — first-run setup + login screens; both show the Briefen SVG logo (`assets/images/logo.svg`) via `flutter_svg`, colored with `colorScheme.primary`
 - `features/settings/` — `domain/user_settings.dart` + `domain/llm_models.dart`; `SettingsNotifier` (`AsyncNotifierProvider<UserSettings>`) with `save(patch)` for partial updates; `modelsProvider` fetches `GET /api/models`; screen has 6 sections: Account (+ "Manage Users" tile for admins), Summarization (length/model/custom prompt), Integrations (API keys + URLs via edit dialogs; Readeck URL + API key combined into one `_ReadeckTile` dialog), Appearance (theme + language + biometric toggle, hidden if unavailable), About, Logout
 - `features/users/` — `AppUser` domain model; `UsersRepository` (`GET/POST/DELETE /api/users`); `usersProvider` (`FutureProvider.autoDispose`); `UsersScreen` with FAB to create, delete button hidden for self/mainAdmin; `/settings/users` route pushed over root navigator (admin-only)
 - `l10n/` — ARB-based i18n: `app_en.arb` (source), `app_pt.arb`; generated output in `l10n/generated/`
+- `assets/images/logo.svg` — Briefen lightning bolt mark; uses `currentColor` so `ColorFilter.mode(colorScheme.primary, BlendMode.srcIn)` recolors it for light/dark
 
 **State management patterns & known gotchas:**
 - `summaryDetailProvider` uses `ref.read(readingListProvider)` (sync cache hit) then falls back to `GET /api/summaries/{id}` — never `ref.watch` the filtered list, or auto-mark-read will cause "No results found" when the summary leaves the `unread` filter
