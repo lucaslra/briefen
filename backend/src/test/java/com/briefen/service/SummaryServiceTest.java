@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -293,6 +294,56 @@ class SummaryServiceTest {
         assertThatThrownBy(() -> summaryService.summarizeText(USER_ID, "  ", null, null, null, null))
                 .isInstanceOf(InvalidUrlException.class)
                 .hasMessageContaining("text must not be blank");
+    }
+
+    // ---- updateTags ----
+
+    @Test
+    void updateTags_shouldNormalizeAndSaveTags() {
+        Summary summary = buildSummary("id1", NORMALIZED_URL, ARTICLE_TITLE, SUMMARY_TEXT);
+        when(summaryPersistence.findById(USER_ID, "id1")).thenReturn(Optional.of(summary));
+        when(summaryPersistence.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Summary result = summaryService.updateTags(USER_ID, "id1", List.of("  Java  ", "SPRING", "java"));
+
+        assertThat(result.getTags()).containsExactlyInAnyOrder("java", "spring");
+    }
+
+    @Test
+    void updateTags_shouldDropTagsExceedingMaxLength() {
+        Summary summary = buildSummary("id1", NORMALIZED_URL, ARTICLE_TITLE, SUMMARY_TEXT);
+        when(summaryPersistence.findById(USER_ID, "id1")).thenReturn(Optional.of(summary));
+        when(summaryPersistence.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        String tooLong = "a".repeat(SummaryService.MAX_TAG_LENGTH + 1);
+        Summary result = summaryService.updateTags(USER_ID, "id1", List.of("valid", tooLong));
+
+        assertThat(result.getTags()).containsExactly("valid");
+    }
+
+    @Test
+    void updateTags_shouldEnforceMaxTagCount() {
+        Summary summary = buildSummary("id1", NORMALIZED_URL, ARTICLE_TITLE, SUMMARY_TEXT);
+        when(summaryPersistence.findById(USER_ID, "id1")).thenReturn(Optional.of(summary));
+        when(summaryPersistence.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        List<String> manyTags = java.util.stream.IntStream.rangeClosed(1, SummaryService.MAX_TAG_COUNT + 5)
+                .mapToObj(i -> "tag" + i)
+                .toList();
+        Summary result = summaryService.updateTags(USER_ID, "id1", manyTags);
+
+        assertThat(result.getTags()).hasSize(SummaryService.MAX_TAG_COUNT);
+    }
+
+    @Test
+    void updateTags_shouldAcceptNullAndReturnEmptyList() {
+        Summary summary = buildSummary("id1", NORMALIZED_URL, ARTICLE_TITLE, SUMMARY_TEXT);
+        when(summaryPersistence.findById(USER_ID, "id1")).thenReturn(Optional.of(summary));
+        when(summaryPersistence.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Summary result = summaryService.updateTags(USER_ID, "id1", null);
+
+        assertThat(result.getTags()).isEmpty();
     }
 
     // ---- Helpers ----

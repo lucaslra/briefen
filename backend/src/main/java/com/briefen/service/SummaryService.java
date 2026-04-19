@@ -262,14 +262,18 @@ public class SummaryService {
         return summaryPersistence.save(summary);
     }
 
+    static final int MAX_TAG_LENGTH = 50;
+    static final int MAX_TAG_COUNT = 20;
+
     public Summary updateTags(String userId, String id, java.util.List<String> tags) {
         Summary summary = summaryPersistence.findById(userId, id)
                 .orElseThrow(() -> new SummaryNotFoundException(id));
         summary.setTags(tags != null ? tags.stream()
                 .map(String::trim)
                 .map(String::toLowerCase)
-                .filter(t -> !t.isEmpty())
+                .filter(t -> !t.isEmpty() && t.length() <= MAX_TAG_LENGTH)
                 .distinct()
+                .limit(MAX_TAG_COUNT)
                 .toList() : List.of());
         return summaryPersistence.save(summary);
     }
