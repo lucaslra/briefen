@@ -365,7 +365,7 @@ Audit conducted 2026-04-19. All identified issues resolved:
 - Missing ARIA on URL input error → added `id="url-input-error"` + `role="alert"` on error div; `aria-invalid` + `aria-describedby` on first URL input
 - State-during-render (adjust-state pattern) in `SummaryDisplay.jsx`, `Settings.jsx`, `ReadingList.jsx` — **intentional, not a bug**; React docs endorse this for resetting derived state when props change
 
-## Backend Audit (completed 2026-04-19)
+## Backend Audit (completed 2026-04-19, released as v0.0.22)
 
 Audit conducted 2026-04-19. All identified issues resolved:
 
