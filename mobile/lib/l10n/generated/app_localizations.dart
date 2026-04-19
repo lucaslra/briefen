@@ -818,6 +818,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not available on this device'**
   String get biometricNotAvailable;
+
+  /// No description provided for @recentSummaries.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get recentSummaries;
+
+  /// No description provided for @summarizeTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarize'**
+  String get summarizeTab;
+
+  /// No description provided for @readingListTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading List'**
+  String get readingListTab;
+
+  /// No description provided for @settingsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTab;
+
+  /// No description provided for @urlInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid URL starting with http:// or https://'**
+  String get urlInvalid;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @languagePortuguese.
+  ///
+  /// In en, this message translates to:
+  /// **'Português'**
+  String get languagePortuguese;
 }
 
 class _AppLocalizationsDelegate

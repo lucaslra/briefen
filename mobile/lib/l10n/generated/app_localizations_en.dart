@@ -382,4 +382,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get biometricNotAvailable => 'Not available on this device';
+
+  @override
+  String get recentSummaries => 'Recent';
+
+  @override
+  String get summarizeTab => 'Summarize';
+
+  @override
+  String get readingListTab => 'Reading List';
+
+  @override
+  String get settingsTab => 'Settings';
+
+  @override
+  String get urlInvalid =>
+      'Enter a valid URL starting with http:// or https://';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languagePortuguese => 'Português';
 }

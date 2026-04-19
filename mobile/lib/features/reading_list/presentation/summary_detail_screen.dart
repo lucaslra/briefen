@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' hide Summary;
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:briefen/l10n/generated/app_localizations.dart';
@@ -389,6 +390,14 @@ class _SummaryDetailScreenState extends ConsumerState<SummaryDetailScreen> {
                   data: summary.summary,
                   selectable: true,
                   styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)),
+                  onTapLink: (_, href, __) {
+                    if (href != null) {
+                      launchUrl(
+                        Uri.parse(href),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    }
+                  },
                 ),
                 // Length adjustment (only for URL-based summaries)
                 if (summary.url != null) ...[
@@ -541,20 +550,6 @@ class _SummaryDetailScreenState extends ConsumerState<SummaryDetailScreen> {
   }
 
   String _formatFullDate(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+    return DateFormat('MMM d, y').format(date);
   }
 }

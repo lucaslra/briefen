@@ -11,6 +11,7 @@ import '../features/reading_list/presentation/reading_list_screen.dart';
 import '../features/reading_list/presentation/summary_detail_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/users/presentation/users_screen.dart';
+import '../l10n/generated/app_localizations.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -112,6 +113,7 @@ class ScaffoldWithNavBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unreadCount = ref.watch(unreadCountProvider).valueOrNull ?? 0;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: navigationShell,
@@ -124,10 +126,10 @@ class ScaffoldWithNavBar extends ConsumerWidget {
           );
         },
         destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.summarize_outlined),
-            selectedIcon: Icon(Icons.summarize),
-            label: 'Summarize',
+          NavigationDestination(
+            icon: const Icon(Icons.summarize_outlined),
+            selectedIcon: const Icon(Icons.summarize),
+            label: l10n.summarizeTab,
           ),
           NavigationDestination(
             icon: Badge(
@@ -140,12 +142,12 @@ class ScaffoldWithNavBar extends ConsumerWidget {
               label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
               child: const Icon(Icons.menu_book),
             ),
-            label: 'Reading List',
+            label: l10n.readingListTab,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: l10n.settingsTab,
           ),
         ],
       ),

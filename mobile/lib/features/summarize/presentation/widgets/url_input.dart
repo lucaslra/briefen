@@ -32,13 +32,21 @@ class _UrlInputState extends State<UrlInput> {
     super.dispose();
   }
 
-  void _submit() {
+  String? _error;
+
+  void _submit(AppLocalizations l10n) {
     final url = _controller.text.trim();
     if (url.isEmpty) return;
 
     final uri = Uri.tryParse(url);
-    if (uri == null || !uri.hasScheme || !uri.hasAuthority) return;
+    if (uri == null ||
+        !uri.hasAuthority ||
+        (uri.scheme != 'http' && uri.scheme != 'https')) {
+      setState(() => _error = l10n.urlInvalid);
+      return;
+    }
 
+    setState(() => _error = null);
     widget.onSubmit(url);
   }
 
@@ -53,13 +61,14 @@ class _UrlInputState extends State<UrlInput> {
           controller: _controller,
           decoration: InputDecoration(
             hintText: l10n.summarizeHint,
+            errorText: _error,
             prefixIcon: const Icon(Icons.link),
             suffixIcon: _controller.text.isNotEmpty
                 ? IconButton(
                     icon: const Icon(Icons.clear),
                     onPressed: () {
                       _controller.clear();
-                      setState(() {});
+                      setState(() => _error = null);
                     },
                   )
                 : null,
@@ -67,15 +76,15 @@ class _UrlInputState extends State<UrlInput> {
           keyboardType: TextInputType.url,
           autocorrect: false,
           textInputAction: TextInputAction.go,
-          onChanged: (_) => setState(() {}),
-          onSubmitted: (_) => _submit(),
+          onChanged: (_) => setState(() => _error = null),
+          onSubmitted: (_) => _submit(l10n),
           enabled: !widget.loading,
         ),
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: widget.loading ? null : _submit,
+            onPressed: widget.loading ? null : () => _submit(l10n),
             icon: widget.loading
                 ? const SizedBox(
                     height: 18,

@@ -382,6 +382,28 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get biometricNotAvailable => 'Não disponível neste dispositivo';
+
+  @override
+  String get recentSummaries => 'Recentes';
+
+  @override
+  String get summarizeTab => 'Resumir';
+
+  @override
+  String get readingListTab => 'Lista de Leitura';
+
+  @override
+  String get settingsTab => 'Configurações';
+
+  @override
+  String get urlInvalid =>
+      'Insira uma URL válida começando com http:// ou https://';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languagePortuguese => 'Português';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -762,4 +784,26 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get biometricNotAvailable => 'Não disponível neste dispositivo';
+
+  @override
+  String get recentSummaries => 'Recentes';
+
+  @override
+  String get summarizeTab => 'Resumir';
+
+  @override
+  String get readingListTab => 'Lista de Leitura';
+
+  @override
+  String get settingsTab => 'Configurações';
+
+  @override
+  String get urlInvalid =>
+      'Insira uma URL válida começando com http:// ou https://';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languagePortuguese => 'Português';
 }

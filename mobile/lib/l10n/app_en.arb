@@ -135,5 +135,12 @@
   "biometricAuth": "Biometric Authentication",
   "biometricAuthSubtitle": "Lock app when backgrounded",
   "biometricUnlock": "Unlock",
-  "biometricNotAvailable": "Not available on this device"
+  "biometricNotAvailable": "Not available on this device",
+  "recentSummaries": "Recent",
+  "summarizeTab": "Summarize",
+  "readingListTab": "Reading List",
+  "settingsTab": "Settings",
+  "urlInvalid": "Enter a valid URL starting with http:// or https://",
+  "languageEnglish": "English",
+  "languagePortuguese": "Português"
 }

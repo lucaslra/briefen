@@ -138,9 +138,15 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const Spacer(),
                   SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'en', label: Text('EN')),
-                      ButtonSegment(value: 'pt', label: Text('PT')),
+                    segments: [
+                      ButtonSegment(
+                        value: 'en',
+                        label: Text(l10n.languageEnglish),
+                      ),
+                      ButtonSegment(
+                        value: 'pt',
+                        label: Text(l10n.languagePortuguese),
+                      ),
                     ],
                     selected: {locale.languageCode},
                     onSelectionChanged: (selected) {

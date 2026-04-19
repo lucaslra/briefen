@@ -135,5 +135,12 @@
   "biometricAuth": "Autenticação Biométrica",
   "biometricAuthSubtitle": "Bloquear ao sair do app",
   "biometricUnlock": "Desbloquear",
-  "biometricNotAvailable": "Não disponível neste dispositivo"
+  "biometricNotAvailable": "Não disponível neste dispositivo",
+  "recentSummaries": "Recentes",
+  "summarizeTab": "Resumir",
+  "readingListTab": "Lista de Leitura",
+  "settingsTab": "Configurações",
+  "urlInvalid": "Insira uma URL válida começando com http:// ou https://",
+  "languageEnglish": "English",
+  "languagePortuguese": "Português"
 }

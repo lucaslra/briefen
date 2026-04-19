@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:briefen/l10n/generated/app_localizations.dart';
 
 import '../../providers.dart';
 
@@ -18,6 +19,7 @@ class _RecentSummariesState extends ConsumerState<RecentSummaries> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context)!;
     final recentAsync = ref.watch(recentSummariesProvider);
 
     return recentAsync.when(
@@ -37,7 +39,7 @@ class _RecentSummariesState extends ConsumerState<RecentSummaries> {
                 child: Row(
                   children: [
                     Text(
-                      'Recent',
+                      l10n.recentSummaries,
                       style: textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: colorScheme.onSurfaceVariant,
@@ -45,9 +47,7 @@ class _RecentSummariesState extends ConsumerState<RecentSummaries> {
                     ),
                     const SizedBox(width: 4),
                     Icon(
-                      _expanded
-                          ? Icons.expand_less
-                          : Icons.expand_more,
+                      _expanded ? Icons.expand_less : Icons.expand_more,
                       size: 20,
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -61,9 +61,7 @@ class _RecentSummariesState extends ConsumerState<RecentSummaries> {
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(
-                    summary.isRead
-                        ? Icons.check_circle_outline
-                        : Icons.circle,
+                    summary.isRead ? Icons.check_circle_outline : Icons.circle,
                     size: 12,
                     color: summary.isRead
                         ? colorScheme.outline
