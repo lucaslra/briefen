@@ -4,6 +4,7 @@ import com.briefen.dto.UserDto;
 import com.briefen.model.User;
 import com.briefen.persistence.UserPersistence;
 import com.briefen.security.BriefenUserDetails;
+import com.briefen.validation.PasswordValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,10 +25,13 @@ public class UserManagementController {
 
     private final UserPersistence userPersistence;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordValidator passwordValidator;
 
-    public UserManagementController(UserPersistence userPersistence, PasswordEncoder passwordEncoder) {
+    public UserManagementController(UserPersistence userPersistence, PasswordEncoder passwordEncoder,
+                                    PasswordValidator passwordValidator) {
         this.userPersistence = userPersistence;
         this.passwordEncoder = passwordEncoder;
+        this.passwordValidator = passwordValidator;
     }
 
     /** Returns the currently authenticated user (including their role). */
@@ -63,6 +67,10 @@ public class UserManagementController {
         }
         if (request.password() == null || request.password().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password is required");
+        }
+        var passwordErrors = passwordValidator.validate(request.password());
+        if (!passwordErrors.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.join("; ", passwordErrors));
         }
         if (userPersistence.existsByUsername(request.username().trim())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");

@@ -94,7 +94,7 @@ class UserManagementControllerTest {
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"newuser","password":"secret123","role":"USER"}
+                                {"username":"newuser","password":"Secret123!","role":"USER"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.username").value("newuser"))
@@ -108,7 +108,7 @@ class UserManagementControllerTest {
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"admin","password":"secret123","role":"USER"}
+                                {"username":"admin","password":"Secret123!","role":"USER"}
                                 """))
                 .andExpect(status().isConflict());
     }
@@ -118,7 +118,7 @@ class UserManagementControllerTest {
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"","password":"secret123","role":"USER"}
+                                {"username":"","password":"Secret123!","role":"USER"}
                                 """))
                 .andExpect(status().isBadRequest());
     }
@@ -136,12 +136,24 @@ class UserManagementControllerTest {
     }
 
     @Test
+    void shouldReturn400WhenPasswordIsTooWeak() throws Exception {
+        when(userPersistence.existsByUsername(anyString())).thenReturn(false);
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"newuser","password":"weakpassword","role":"USER"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @WithMockBriefenUser(role = "USER")
     void shouldReturn403WhenNonAdminCreatesUser() throws Exception {
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"newuser","password":"secret123","role":"USER"}
+                                {"username":"newuser","password":"Secret123!","role":"USER"}
                                 """))
                 .andExpect(status().isForbidden());
     }
