@@ -212,6 +212,7 @@ describe('Options page DOM integration', () => {
   const HTML = fs.readFileSync(path.resolve(__dirname, '../options.html'), 'utf8');
 
   function loadOptions() {
+    // codeql[js/bad-tag-filter,js/incomplete-multi-character-sanitization] - test-only: stripping script tags from fixture HTML for jsdom injection, not a security sanitizer
     document.documentElement.innerHTML =
       HTML.replace(/<script.*?<\/script>/gs, '');
     jest.isolateModules(() => { require('../options'); });

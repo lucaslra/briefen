@@ -175,7 +175,25 @@ public class ReadeckController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Readeck is not configured. Set both the Readeck URL and API key in Settings.");
         }
+        validateReadeckUrl(settings.getReadeckUrl());
         return settings;
+    }
+
+    /**
+     * Validates that the Readeck URL uses http or https to prevent non-HTTP SSRF.
+     * Users may legitimately configure a local network address (e.g. http://192.168.1.x)
+     * since Readeck is a self-hosted service — blocking private IPs would break normal use.
+     */
+    private static void validateReadeckUrl(String url) {
+        try {
+            String scheme = URI.create(url).getScheme();
+            if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Readeck URL must use http or https.");
+            }
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Readeck URL.");
+        }
     }
 
     private String proxyGetWithRetry(String url, String apiKey) {
@@ -255,7 +273,9 @@ public class ReadeckController {
 
     private static String sanitizeUrlForLog(String url) {
         try {
-            return URI.create(url).getPath();
+            String path = URI.create(url).getPath();
+            // Strip control characters (newlines, ANSI escapes, etc.) to prevent log injection.
+            return path != null ? path.replaceAll("[\r\n\t\u0000-\u001F\u007F-\u009F]", "_") : "<no-path>";
         } catch (Exception e) {
             return "<malformed-url>";
         }

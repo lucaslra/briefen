@@ -32,6 +32,9 @@ public class SecurityConfig {
         http.headers(headers -> headers.disable());
 
         // CSRF protection is not applicable: stateless REST API with HTTP Basic Auth.
+        // The API has no session cookies — every request carries an Authorization header,
+        // so cross-site requests cannot be authenticated by a third-party page.
+        // codeql[java/spring-disabled-csrf-protection]
         http.csrf(csrf -> csrf.disable());
 
         http

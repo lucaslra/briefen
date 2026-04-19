@@ -292,6 +292,7 @@ describe('Popup DOM integration', () => {
 
   function loadPopup() {
     // jsdom parses innerHTML as a full document when assigned to documentElement
+    // codeql[js/bad-tag-filter,js/incomplete-multi-character-sanitization] - test-only: stripping script tags from fixture HTML for jsdom injection, not a security sanitizer
     document.documentElement.innerHTML =
       HTML.replace(/<script.*?<\/script>/gs, ''); // strip script tags; we load manually
     // Re-run the module in isolation so DOMContentLoaded wires up fresh each test

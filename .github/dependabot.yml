@@ -38,3 +38,12 @@ updates:
     labels:
       - "dependencies"
       - "docker"
+
+  # Mobile — Flutter/Dart (pub)
+  - package-ecosystem: "pub"
+    directory: "/mobile"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "mobile"

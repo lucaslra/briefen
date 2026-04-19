@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { setCredentials, clearCredentials, apiFetch } from '../apiFetch.js'
+import { setAuthHeader, clearCredentials, apiFetch } from '../apiFetch.js'
 
 const SESSION_KEY = 'briefen_auth'
 
@@ -16,17 +16,18 @@ function loadFromSession() {
 export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const stored = loadFromSession()
-    return !!(stored?.username && stored?.password)
+    return !!(stored?.username && stored?.authHeader)
   })
   const [username, setUsername] = useState(() => loadFromSession()?.username ?? null)
   const [userId, setUserId] = useState(() => loadFromSession()?.userId ?? null)
   const [role, setRole] = useState(() => loadFromSession()?.role ?? null)
 
   useEffect(() => {
-    // Restore credentials into the apiFetch singleton on mount
+    // Restore auth header into the apiFetch singleton on mount (safety net for HMR / edge cases;
+    // apiFetch already initializes itself from sessionStorage at module load time).
     const stored = loadFromSession()
-    if (stored?.username && stored?.password) {
-      setCredentials(stored.username, stored.password)
+    if (stored?.authHeader) {
+      setAuthHeader(stored.authHeader)
     }
 
     // Force logout when any request receives a 401
@@ -43,7 +44,8 @@ export function useAuth() {
   }, [])
 
   const login = useCallback(async (usernameInput, password) => {
-    setCredentials(usernameInput, password)
+    const computedAuthHeader = 'Basic ' + btoa(`${usernameInput}:${password}`)
+    setAuthHeader(computedAuthHeader)
     try {
       const res = await apiFetch('/api/settings')
       if (res.ok) {
@@ -61,7 +63,7 @@ export function useAuth() {
         }
         sessionStorage.setItem(SESSION_KEY, JSON.stringify({
           username: usernameInput,
-          password,
+          authHeader: computedAuthHeader,
           userId: fetchedUserId,
           role: fetchedRole,
         }))

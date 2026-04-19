@@ -4,15 +4,15 @@
  */
 
 // Initialize from sessionStorage so the header is available immediately on
-// module load — before useAuth.useEffect has a chance to call setCredentials().
+// module load — before useAuth.useEffect has a chance to call setAuthHeader().
 // This prevents child-component effects (e.g. useSummaries) from firing
 // unauthenticated requests during the very first render.
 function loadAuthFromSession() {
   try {
     const stored = sessionStorage.getItem('briefen_auth')
     if (stored) {
-      const { username, password } = JSON.parse(stored)
-      if (username && password) return 'Basic ' + btoa(`${username}:${password}`)
+      const { authHeader } = JSON.parse(stored)
+      if (authHeader) return authHeader
     }
   } catch {
     // sessionStorage unavailable or corrupted
@@ -24,6 +24,10 @@ let authHeader = loadAuthFromSession()
 
 export function setCredentials(username, password) {
   authHeader = 'Basic ' + btoa(`${username}:${password}`)
+}
+
+export function setAuthHeader(header) {
+  authHeader = header
 }
 
 export function clearCredentials() {

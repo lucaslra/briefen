@@ -91,7 +91,7 @@ Browser → Spring Boot (:8080, serves React static + API)
   - `ArticlesController` — `POST /api/articles` async queue endpoint (used by Firefox extension; returns 202)
   - `ModelsController` — `/api/models` lists available LLM providers and models
   - `SettingsController` — `/api/settings` read/update user preferences
-  - `ReadeckController` — `/api/readeck/*` proxies requests to a user-configured Readeck instance (API key stays server-side)
+  - `ReadeckController` — `/api/readeck/*` proxies requests to a user-configured Readeck instance (API key stays server-side); validates that the configured URL uses `http`/`https` before proxying (prevents non-HTTP SSRF); all user-controlled values passed to the logger go through `sanitizeUrlForLog()` which strips the path and removes control characters (prevents log injection)
   - `SetupController` — `/api/setup` first-run admin account creation (unauthenticated)
   - `UserManagementController` — `/api/admin/users` user management (admin only)
   - `VersionController` — `/api/version` build info
@@ -153,7 +153,7 @@ Full variable reference: `docs/environment-variables.md`
   - `useElapsedTime` — real-time elapsed timer for loading states
   - `useTheme` — dark/light theme toggle with localStorage persistence
   - `useNotification` — web notification permission and dispatch
-  - `useAuth` — HTTP Basic Auth state (login/logout, credential storage)
+  - `useAuth` — HTTP Basic Auth state (login/logout, credential storage); on login computes `'Basic ' + btoa(...)` once and stores the resulting `authHeader` value in `sessionStorage` — the raw password is never persisted; `apiFetch.js` reads `authHeader` directly from `sessionStorage` at module load so the header is available before any `useEffect` runs
   - `useSetup` — first-run setup flow state
   - `useUsers` — user management (admin)
 - **components/** — UI components; no component library, plain CSS + CSS modules
@@ -248,13 +248,13 @@ flutter analyze --no-fatal-infos  # Lint
 - `core/api/` — `ApiClient` (Dio + Basic Auth interceptor; per-request `Options(receiveTimeout:)` — 310 s for single-URL/text summarize, 10 min for batch), `api_exceptions.dart` (sealed: `AuthException`, `NetworkException`, `ApiTimeoutException`, etc.)
 - `core/auth/` — `AuthNotifier` (4 states: `unknown` → `unauthenticated` / `needsSetup` / `authenticated`), `AuthStorage` (secure storage wrapper), `BiometricService` (wraps `LocalAuthentication`), `BiometricEnabledNotifier` (`StateNotifierProvider<bool>` persisted to `SharedPreferences`)
 - `core/locale/` — `LocaleNotifier` (`NotifierProvider<Locale>`), persists language code in `SharedPreferences`
-- `core/router.dart` — GoRouter using `refreshListenable` (NOT `ref.watch`) to avoid remounting screens on auth state changes; `ScaffoldWithNavBar` reads `unreadCountProvider` for badge
+- `core/router.dart` — GoRouter using `refreshListenable` (NOT `ref.watch`) to avoid remounting screens on auth state changes; `ScaffoldWithNavBar` reads `unreadCountProvider` for badge and uses localized nav labels (`l10n.summarizeTab`, `l10n.readingListTab`, `l10n.settingsTab`)
 - `core/notifications/` — `NotificationService` wrapping `FlutterLocalNotificationsPlugin`
 - `core/theme/` — Material 3 seed color `#5b50e8` (matches web app primary purple), `ThemeMode` stored in `SharedPreferences`
-- `features/summarize/` — `SummarizeScreen` is a `ConsumerStatefulWidget` with a manual `TabController` (URL/Text/Batch/Readeck); `sharedUrlProvider` (`StateProvider<String?>`) holds incoming share-intent URLs and triggers tab switch + `UrlInput` pre-fill via `ref.listen`; `SummarizeActionNotifier._run()` shared path for URL/Text; `BatchSummarizeNotifier` for sequential multi-URL with foreground service + 10-min per-article timeout + background notification on complete; `RecentSummaries` collapsible; `SummaryDisplay` tappable card
-- `features/reading_list/` — paginated list with load-more (`ReadingListNotifier` is an `AutoDisposeAsyncNotifier` that accumulates pages; `loadMore()` appends next page, rolls back page counter on failure; filter/search/tag change resets to page 0); filter chips, swipe gestures (with haptics), staggered item animations, skeleton loading, offline banner; `ReadingListCache` (`SharedPreferences`-backed, per-filter, falls back on network error); `SummaryDetailScreen` (cache-first → `GET /api/summaries/{id}` fallback, auto-marks read with `_disposed` guard, inline notes/tags editing, Make shorter/longer/Regenerate buttons for URL-based summaries, tag chips navigate to filtered reading list, `MarkdownBody.onTapLink` wired to `url_launcher` so links open in browser, date formatted via `intl` `DateFormat('MMM d, y')`); all error paths (toggle-read, delete, bulk actions, load-more) catch and show snackbars
+- `features/summarize/` — `SummarizeScreen` is a `ConsumerStatefulWidget` with a manual `TabController` (URL/Text/Batch/Readeck); `sharedUrlProvider` (`StateProvider<String?>`) holds incoming share-intent URLs and triggers tab switch + `UrlInput` pre-fill via `ref.listen`; `SummarizeActionNotifier._run()` shared path for URL/Text; `BatchSummarizeNotifier` for sequential multi-URL with foreground service + 10-min per-article timeout + background notification on complete; `RecentSummaries` collapsible (uses `l10n.recentSummaries` header); `SummaryDisplay` tappable card
+- `features/reading_list/` — paginated list with load-more (`ReadingListNotifier` is an `AutoDisposeAsyncNotifier` that accumulates pages; `loadMore()` appends next page, rolls back page counter on failure; filter/search/tag change resets to page 0); filter chips, swipe gestures (with haptics), staggered item animations, skeleton loading, offline banner; `ReadingListCache` (`SharedPreferences`-backed, per-filter, falls back on network error); `SummaryDetailScreen` (cache-first → `GET /api/summaries/{id}` fallback, auto-marks read with `_disposed` guard, inline notes/tags editing, Make shorter/longer/Regenerate buttons for URL-based summaries, tag chips navigate to filtered reading list, `MarkdownBody.onTapLink` wired to `url_launcher` so links open in browser, date formatted via `intl` `DateFormat('MMM d, y')`, share via `SharePlus.instance.share(ShareParams(text: ...))` — share_plus v11 API); all error paths (toggle-read, delete, bulk actions, load-more) catch and show snackbars
 - `features/setup/` — first-run setup + login screens; both show the Briefen SVG logo (`assets/images/logo.svg`) via `flutter_svg`, colored with `colorScheme.primary`
-- `features/settings/` — `domain/user_settings.dart` + `domain/llm_models.dart`; `SettingsNotifier` (`AsyncNotifierProvider<UserSettings>`) with `save(patch)` for partial updates; `modelsProvider` fetches `GET /api/models`; screen has 6 sections: Account (+ "Manage Users" tile for admins), Summarization (length/model/custom prompt), Integrations (API keys + URLs via edit dialogs; Readeck URL + API key combined into one `_ReadeckTile` dialog), Appearance (theme + language + biometric toggle, hidden if unavailable), About, Logout
+- `features/settings/` — `domain/user_settings.dart` + `domain/llm_models.dart`; `SettingsNotifier` (`AsyncNotifierProvider<UserSettings>`) with `save(patch)` for partial updates; `modelsProvider` fetches `GET /api/models`; screen has 6 sections: Account (+ "Manage Users" tile for admins), Summarization (length/model/custom prompt), Integrations (API keys + URLs via edit dialogs; Readeck URL + API key combined into one `_ReadeckTile` dialog), Appearance (theme toggle + language `SegmentedButton` with `l10n.languageEnglish`/`l10n.languagePortuguese` + biometric toggle hidden if unavailable), About, Logout
 - `features/users/` — `AppUser` domain model; `UsersRepository` (`GET/POST/DELETE /api/users`); `usersProvider` (`FutureProvider.autoDispose`); `UsersScreen` with FAB to create, delete button hidden for self/mainAdmin; `/settings/users` route pushed over root navigator (admin-only)
 - `l10n/` — ARB-based i18n: `app_en.arb` (source), `app_pt.arb`, `app_pt_BR.arb`; generated output in `l10n/generated/`; all user-visible strings must be in the ARB files — no hardcoded strings in widgets
 - `assets/images/logo.svg` — Briefen lightning bolt mark; uses `currentColor` so `ColorFilter.mode(colorScheme.primary, BlendMode.srcIn)` recolors it for light/dark; **to regenerate app icons** after changing the logo: `qlmanage -t -s 1024 -o /tmp/ /tmp/briefen_icon.svg` (use a separate icon SVG with solid purple bg + white bolt, not this file) then `sips -z <size> <size> src.png --out dest.png` for each required size
@@ -291,6 +291,24 @@ flutter analyze --no-fatal-infos  # Lint
 - `unreadCountProvider` — stale-cache-on-user-switch regression risk
 - Widget tests for `SummarizeScreen`, `ReadingListScreen`, `SummaryDetailScreen`
 
+### CI/CD (`.github/`)
+
+| Workflow | Trigger | Jobs |
+|----------|---------|------|
+| `ci.yml` | push/PR → `main` (ignores `**.md`, `docs/**`, labeler/template files) | `secrets` (Gitleaks full-history), `backend` (Java 25 + Ollama service container), `frontend` (Node LTS + pnpm build/lint/test), `mobile` (Flutter stable — analyze + unit tests), `dependency-audit` (OWASP + pnpm, non-blocking), `ci-passed` gate |
+| `docker.yml` | tag `v*.*.*` + manual | Build & push multi-arch image (`linux/amd64,linux/arm64`) to `ghcr.io/lucaslra/briefen` |
+| `release.yml` | tag `v*.*.*` | git-cliff changelog → GitHub Release |
+| `codeql.yml` | push/PR → `main` + weekly | CodeQL `security-and-quality` for `java-kotlin` and `javascript-typescript` |
+| `labeler.yml` | PR open/sync/reopen | Auto-label by changed paths (`backend`, `frontend`, `mobile`, `extension`, `infra`, `docs`) |
+
+**Key conventions:**
+- All actions pinned to full commit SHAs with `# vN` comment
+- `ci-passed` is the single branch-protection check — add new required jobs to its `needs:` list
+- `dependency-audit` is `continue-on-error: true` (non-blocking); promote once triaged
+- `mobile` job uses `subosito/flutter-action@1a449444` (v2.23.0), `channel: stable`, with caching
+- Dependabot runs weekly for `github-actions`, `maven` (backend), `npm` (frontend), `docker`, and `pub` (mobile)
+- `NVD_API_KEY` secret is optional for OWASP scan; falls back to 6 s delay without it
+
 ### Documentation (`docs/`)
 - `docs/getting-started.md` — step-by-step self-hosting guide
 - `docs/environment-variables.md` — complete env var reference (single source of truth)
@@ -308,6 +326,7 @@ Project-specific agents invoked via `/command-name`:
 | `/mobile-api` | Mobile API layer — Dio client, repositories, data models, error handling |
 | `/mobile-ui` | Mobile presentation — screens, widgets, Material 3 theming, navigation |
 | `/mobile-test` | Mobile testing — unit, widget, and integration tests |
+| `/gha` | GitHub Actions specialist — CI/CD workflows, action pinning, secrets, matrix builds |
 | `/security` | Security audit specialist — SSRF, auth, CSP, input validation, secrets |
 | `/uiux` | UX/design review — layout, accessibility, mobile UX patterns |
 
@@ -323,4 +342,25 @@ Project-specific agents invoked via `/command-name`:
 - **pnpm** is the frontend package manager (not npm/yarn)
 - **New env vars** — when adding one, update all of: `application.yml`, `.env.example`, `docs/environment-variables.md`, and `docker-compose.sample.yml` (as a commented entry)
 - **Auth is always on** — `SecurityConfig` requires authentication on all routes except `/actuator/health` and `/api/setup/**`; the admin account is created through the browser-based first-run setup flow (`SetupService`)
+- **CSRF disabled intentionally** — `SecurityConfig` disables Spring CSRF protection; this is correct for a stateless REST API using HTTP Basic Auth (no session cookies, so cross-site requests cannot be authenticated by a third-party page); the `// codeql[java/spring-disabled-csrf-protection]` suppression comment documents this intent
 - **Hibernate ddl-auto** — schema is managed by `ddl-auto: update` (in `application.yml`) with a custom `SchemaInitializer` for SQLite-specific column migrations. No Flyway dependency exists in the project
+
+## Known Security Issues (pending remediation)
+
+Audit conducted 2026-04-17. GitHub code-scanning errors/warnings resolved 2026-04-19. Outstanding items:
+
+**Critical**
+- **PDF fetch follows redirects to internal IPs** — `ArticleFetcherService.java:83` uses `Redirect.NORMAL`, bypassing private-IP checks. Fix: change to `Redirect.NEVER`.
+- **Webhook SSRF** — `WebhookService.java:94-99` POSTs to a user-configured URL with no host validation. Fix: run URL through `UrlValidator` before delivery.
+- **No password validation on admin-created users** — `UserManagementController.java:71-73` skips `PasswordValidator`. Fix: call `passwordValidator.validate()` before persisting.
+
+**High**
+- **Error messages leak internals** — `GlobalExceptionHandler.java:29-88` returns raw exception messages (may include private IPs, service names). Fix: return generic messages.
+- **`anyRequest().permitAll()` catch-all** — `SecurityConfig.java:45` makes any unmapped route public. Fix: change to `anyRequest().authenticated()` or `.denyAll()`.
+
+**Medium**
+- No `@Size` on URL field in `SummarizeRequest.java:12`
+- `sourceUrl` not validated in `SummarizeRequest.java:19`
+- No max password length in `PasswordValidator.java`
+- No IPv6 cloud-metadata blocking in `UrlValidator.java:112-122`
+- Webhook URL logged in plaintext — `WebhookService.java:101`
