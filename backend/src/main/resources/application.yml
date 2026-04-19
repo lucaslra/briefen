@@ -26,6 +26,9 @@ ollama:
   base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
   model: ${OLLAMA_MODEL:gemma3:4b}
   timeout: 300s
+  num-predict-shorter: ${OLLAMA_NUM_PREDICT_SHORTER:384}
+  num-predict-default: ${OLLAMA_NUM_PREDICT_DEFAULT:1024}
+  num-predict-longer: ${OLLAMA_NUM_PREDICT_LONGER:2048}
 
 openai:
   base-url: https://api.openai.com

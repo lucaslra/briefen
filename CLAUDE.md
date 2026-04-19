@@ -91,7 +91,7 @@ Browser → Spring Boot (:8080, serves React static + API)
   - `ArticlesController` — `POST /api/articles` async queue endpoint (used by Firefox extension; returns 202)
   - `ModelsController` — `/api/models` lists available LLM providers and models
   - `SettingsController` — `/api/settings` read/update user preferences
-  - `ReadeckController` — `/api/readeck/*` proxies requests to a user-configured Readeck instance (API key stays server-side); validates that the configured URL uses `http`/`https` before proxying (prevents non-HTTP SSRF); all user-controlled values passed to the logger go through `sanitizeUrlForLog()` which strips the path and removes control characters (prevents log injection)
+  - `ReadeckController` — `/api/readeck/*` thin dispatcher; all proxy logic lives in `ReadeckService`
   - `SetupController` — `/api/setup` first-run admin account creation (unauthenticated)
   - `UserManagementController` — `/api/admin/users` user management (admin only)
   - `VersionController` — `/api/version` build info
@@ -102,6 +102,7 @@ Browser → Spring Boot (:8080, serves React static + API)
   - `OllamaSummarizerService` / `OpenAiSummarizerService` / `AnthropicSummarizerService` — LLM summarizers
   - `SummarizerErrorHandler` — package-private utility: shared timeout detection, HTTP error mapping, and fallback handling for all three LLM summarizer services
   - `SummaryService` — orchestration: cache lookup, fetching, summarizing, persisting
+  - `ReadeckService` — all Readeck proxy logic: settings loading, HTTP client, URL validation (`validateReadeckUrl`), ID sanitization (`sanitizeId`), log sanitization (`sanitizeUrlForLog`); referenced by thin `ReadeckController`
   - `WebhookService` — fire-and-forget POST on summary save (virtual thread)
   - `UserBootstrapService` — migrates pre-multi-user data and seeds cloud LLM API keys from env vars on startup
   - `SetupService` — handles browser-based first-run admin account creation
@@ -126,6 +127,9 @@ server.forward-headers-strategy:${SERVER_FORWARD_HEADERS_STRATEGY:NONE}
 ollama.base-url:                ${OLLAMA_BASE_URL:http://localhost:11434}
 ollama.model:                   ${OLLAMA_MODEL:gemma3:4b}
 ollama.timeout:                 300s
+ollama.num-predict-shorter:     ${OLLAMA_NUM_PREDICT_SHORTER:384}
+ollama.num-predict-default:     ${OLLAMA_NUM_PREDICT_DEFAULT:1024}
+ollama.num-predict-longer:      ${OLLAMA_NUM_PREDICT_LONGER:2048}
 briefen.cors.allowed-origins:   ${BRIEFEN_CORS_ALLOWED_ORIGINS:}
 briefen.openai.api-key:         ${BRIEFEN_OPENAI_API_KEY:}
 briefen.anthropic.api-key:      ${BRIEFEN_ANTHROPIC_API_KEY:}
@@ -346,7 +350,7 @@ Project-specific agents invoked via `/command-name`:
 - **CSRF disabled intentionally** — `SecurityConfig` disables Spring CSRF protection; this is correct for a stateless REST API using HTTP Basic Auth (no session cookies, so cross-site requests cannot be authenticated by a third-party page); the `// codeql[java/spring-disabled-csrf-protection]` suppression comment documents this intent
 - **Hibernate ddl-auto** — schema is managed by `ddl-auto: update` (in `application.yml`) with a custom `SchemaInitializer` for SQLite-specific column migrations. No Flyway dependency exists in the project
 
-## Frontend Audit (completed 2026-04-19)
+## Frontend Audit (completed 2026-04-19, released as v0.0.21)
 
 Audit conducted 2026-04-19. All identified issues resolved:
 
@@ -360,6 +364,20 @@ Audit conducted 2026-04-19. All identified issues resolved:
 - Silent `/api/models` failure in `Settings.jsx` → `modelsError` state added; shows `SETTINGS_MODELS_ERROR` string
 - Missing ARIA on URL input error → added `id="url-input-error"` + `role="alert"` on error div; `aria-invalid` + `aria-describedby` on first URL input
 - State-during-render (adjust-state pattern) in `SummaryDisplay.jsx`, `Settings.jsx`, `ReadingList.jsx` — **intentional, not a bug**; React docs endorse this for resetting derived state when props change
+
+## Backend Audit (completed 2026-04-19)
+
+Audit conducted 2026-04-19. All identified issues resolved:
+
+- `SetupRequest` / `ReadStatusRequest` / `UpdateNotesRequest` / `UpdateTagsRequest` — added Jakarta Bean Validation annotations (`@NotBlank`, `@Size`, `@NotNull`)
+- `SetupController.setup()` / `SummarizeController.updateReadStatus()` / `updateNotes()` / `updateTags()` — added `@Valid`; removed now-redundant manual null check in `updateReadStatus`
+- `GlobalExceptionHandler` — added `IllegalArgumentException` → 400 handler
+- `ReadeckController` extracted to `ReadeckService` — controller is now a thin dispatcher (50 lines); all proxy/HTTP logic, settings loading, URL validation, and ID sanitization live in the service; `ReadeckControllerTest` updated to reference `ReadeckService` static methods
+- `SettingsController` — 4 repeated "if non-null, set (blank → null)" blocks replaced with `applyStringField(value, setter)` helper using `Consumer<String>`
+- `GlobalExceptionHandlerTest` — new unit test class covering all 9 exception handlers (404, 400 ×3, 502 ×2, 504, 403, 500)
+- `@EnableConfigurationProperties` consolidated in `BriefenApplication` for all four properties classes; removed from individual `@Configuration` classes (`RestClientConfig`, `OpenAiRestClientConfig`, `AnthropicRestClientConfig`)
+- `OllamaProperties` — added `numPredictShorter` (default 384), `numPredictDefault` (default 1024), `numPredictLonger` (default 2048); `OllamaSummarizerService` reads from properties; configurable via `OLLAMA_NUM_PREDICT_SHORTER/DEFAULT/LONGER` env vars
+- `OpenAiSummarizerService` / `AnthropicSummarizerService` — added `log.debug()` for token usage (`prompt_tokens`/`completion_tokens` and `input_tokens`/`output_tokens`); guarded by `log.isDebugEnabled()` to avoid map allocation in production
 
 ## Security Audit (completed 2026-04-19)
 

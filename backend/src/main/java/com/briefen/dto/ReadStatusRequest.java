@@ -1,3 +1,5 @@
 package com.briefen.dto;
 
-public record ReadStatusRequest(Boolean isRead) {}
+import jakarta.validation.constraints.NotNull;
+
+public record ReadStatusRequest(@NotNull Boolean isRead) {}

@@ -4,6 +4,7 @@ import com.briefen.dto.SetupRequest;
 import com.briefen.dto.SetupStatusResponse;
 import com.briefen.dto.UserDto;
 import com.briefen.service.SetupService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +29,7 @@ public class SetupController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto setup(@RequestBody SetupRequest request) {
+    public UserDto setup(@Valid @RequestBody SetupRequest request) {
         var user = setupService.createInitialAdmin(request.username(), request.password());
         return UserDto.from(user);
     }

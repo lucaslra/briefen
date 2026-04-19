@@ -11,6 +11,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.function.Consumer;
+
 @RestController
 @RequestMapping("/api/settings")
 public class SettingsController {
@@ -56,15 +58,9 @@ public class SettingsController {
         if (dto.notificationsEnabled() != null) {
             settings.setNotificationsEnabled(dto.notificationsEnabled());
         }
-        if (dto.openaiApiKey() != null) {
-            settings.setOpenaiApiKey(dto.openaiApiKey().isBlank() ? null : dto.openaiApiKey());
-        }
-        if (dto.anthropicApiKey() != null) {
-            settings.setAnthropicApiKey(dto.anthropicApiKey().isBlank() ? null : dto.anthropicApiKey());
-        }
-        if (dto.readeckApiKey() != null) {
-            settings.setReadeckApiKey(dto.readeckApiKey().isBlank() ? null : dto.readeckApiKey());
-        }
+        applyStringField(dto.openaiApiKey(), settings::setOpenaiApiKey);
+        applyStringField(dto.anthropicApiKey(), settings::setAnthropicApiKey);
+        applyStringField(dto.readeckApiKey(), settings::setReadeckApiKey);
         if (dto.readeckUrl() != null) {
             if (dto.readeckUrl().isBlank()) {
                 settings.setReadeckUrl(null);
@@ -91,10 +87,15 @@ public class SettingsController {
                 }
             }
         }
-        if (dto.customPrompt() != null) {
-            settings.setCustomPrompt(dto.customPrompt().isBlank() ? null : dto.customPrompt());
-        }
+        applyStringField(dto.customPrompt(), settings::setCustomPrompt);
 
         return UserSettingsDto.fromMasked(settingsPersistence.save(settings));
+    }
+
+    /** Sets the field to null when blank, otherwise applies the trimmed value. */
+    private void applyStringField(String value, Consumer<String> setter) {
+        if (value != null) {
+            setter.accept(value.isBlank() ? null : value);
+        }
     }
 }

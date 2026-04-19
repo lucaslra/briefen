@@ -139,10 +139,7 @@ public class SummarizeController {
     public SummarizeResponse updateReadStatus(
             @AuthenticationPrincipal BriefenUserDetails userDetails,
             @PathVariable String id,
-            @RequestBody ReadStatusRequest request) {
-        if (request.isRead() == null) {
-            throw new InvalidUrlException("isRead field is required");
-        }
+            @Valid @RequestBody ReadStatusRequest request) {
         return SummarizeResponse.from(summaryService.updateReadStatus(userDetails.userId(), id, request.isRead()));
     }
 
@@ -160,7 +157,7 @@ public class SummarizeController {
     public SummarizeResponse updateNotes(
             @AuthenticationPrincipal BriefenUserDetails userDetails,
             @PathVariable String id,
-            @RequestBody UpdateNotesRequest request) {
+            @Valid @RequestBody UpdateNotesRequest request) {
         return SummarizeResponse.from(summaryService.updateNotes(userDetails.userId(), id, request.notes()));
     }
 
@@ -168,7 +165,7 @@ public class SummarizeController {
     public SummarizeResponse updateTags(
             @AuthenticationPrincipal BriefenUserDetails userDetails,
             @PathVariable String id,
-            @RequestBody UpdateTagsRequest request) {
+            @Valid @RequestBody UpdateTagsRequest request) {
         return SummarizeResponse.from(summaryService.updateTags(userDetails.userId(), id, request.tags()));
     }
 

@@ -87,6 +87,12 @@ public class OpenAiSummarizerService {
             }
 
             log.info("OpenAI summary generated successfully ({} chars)", summary.length());
+            if (log.isDebugEnabled() && response.containsKey("usage")) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> usage = (Map<String, Object>) response.get("usage");
+                log.debug("OpenAI token usage — prompt: {}, completion: {}, total: {}",
+                        usage.get("prompt_tokens"), usage.get("completion_tokens"), usage.get("total_tokens"));
+            }
             return summary;
 
         } catch (HttpClientErrorException e) {

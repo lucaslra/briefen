@@ -49,9 +49,9 @@ public class OllamaSummarizerService {
     private String doSummarize(String articleText, String lengthHint, String model,
                                String customPrompt, String deploymentPrompt) {
         int numPredict = switch (lengthHint != null ? lengthHint.toLowerCase() : "") {
-            case "shorter" -> 384;
-            case "longer" -> 2048;
-            default -> 1024;
+            case "shorter" -> properties.numPredictShorter();
+            case "longer" -> properties.numPredictLonger();
+            default -> properties.numPredictDefault();
         };
 
         String systemPrompt = PromptBuilder.build(customPrompt, deploymentPrompt, lengthHint);

@@ -49,7 +49,7 @@ class SummaryServiceTest {
 
     @BeforeEach
     void setUp() {
-        ollamaProperties = new OllamaProperties("http://localhost:11434", "gemma3:4b", java.time.Duration.ofSeconds(300));
+        ollamaProperties = new OllamaProperties("http://localhost:11434", "gemma3:4b", java.time.Duration.ofSeconds(300), null, null, null);
         briefenProperties = new BriefenProperties(null);
         summaryService = new SummaryService(
                 urlValidator, articleFetcher, ollamaSummarizer, openAiSummarizer,

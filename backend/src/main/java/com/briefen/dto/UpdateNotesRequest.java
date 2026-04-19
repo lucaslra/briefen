@@ -1,3 +1,5 @@
 package com.briefen.dto;
 
-public record UpdateNotesRequest(String notes) {}
+import jakarta.validation.constraints.Size;
+
+public record UpdateNotesRequest(@Size(max = 10_000) String notes) {}

@@ -77,6 +77,12 @@ public class AnthropicSummarizerService {
             }
 
             log.info("Anthropic summary generated successfully ({} chars)", summary.length());
+            if (log.isDebugEnabled() && response.containsKey("usage")) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> usage = (Map<String, Object>) response.get("usage");
+                log.debug("Anthropic token usage — input: {}, output: {}",
+                        usage.get("input_tokens"), usage.get("output_tokens"));
+            }
             return summary;
 
         } catch (HttpClientErrorException e) {

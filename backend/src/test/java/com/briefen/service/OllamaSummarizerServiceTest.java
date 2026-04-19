@@ -30,7 +30,8 @@ class OllamaSummarizerServiceTest {
         OllamaProperties properties = new OllamaProperties(
                 "http://localhost:" + wireMock.port(),
                 "gemma3:4b",
-                Duration.ofSeconds(30)
+                Duration.ofSeconds(30),
+                null, null, null
         );
 
         // Force HTTP/1.1 — WireMock's default listener does not perform an H2 upgrade
