@@ -80,7 +80,7 @@ public class ArticleFetcherService {
         try {
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofMillis(fetchTimeoutMs))
-                    .followRedirects(HttpClient.Redirect.NORMAL)
+                    .followRedirects(HttpClient.Redirect.NEVER)
                     .build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))

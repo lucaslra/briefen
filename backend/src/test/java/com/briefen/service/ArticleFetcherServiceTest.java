@@ -203,6 +203,19 @@ class ArticleFetcherServiceTest {
                 .hasMessageContaining("too short");
     }
 
+    @Test
+    void shouldNotFollowRedirectsForPdf() throws Exception {
+        // PDF fetch must NOT follow redirects — a redirect could bypass the private-IP check
+        // performed on the original URL and land on an internal host.
+        wireMock.stubFor(get(urlEqualTo("/redirected.pdf"))
+                .willReturn(aResponse()
+                        .withStatus(301)
+                        .withHeader("Location", "http://localhost:" + wireMock.port() + "/other.pdf")));
+
+        assertThatThrownBy(() -> articleFetcherService.fetch("http://localhost:" + wireMock.port() + "/redirected.pdf"))
+                .isInstanceOf(ArticleFetchException.class);
+    }
+
     /** Creates a minimal single-page PDF with the given title (metadata) and body text. */
     private byte[] buildPdf(String title, String bodyText) throws Exception {
         try (PDDocument doc = new PDDocument();
