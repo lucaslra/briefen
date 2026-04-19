@@ -19,22 +19,12 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 public class SummaryService {
 
     private static final Logger log = LoggerFactory.getLogger(SummaryService.class);
 
-    private static final Set<String> OPENAI_MODELS = Set.of(
-            "gpt-4o-mini", "gpt-4o", "gpt-4.1-nano", "gpt-4.1-mini",
-            "gpt-4.5-preview", "gpt-5-mini",
-            "o3-mini", "o4-mini"
-    );
-
-    private static final Set<String> ANTHROPIC_MODELS = Set.of(
-            "claude-opus-4-5", "claude-sonnet-4-5", "claude-haiku-4-5"
-    );
 
     private final UrlValidator urlValidator;
     private final ArticleFetcherService articleFetcher;
@@ -317,15 +307,14 @@ public class SummaryService {
     }
 
     private boolean isOpenAiModel(String model) {
-        return model != null && (OPENAI_MODELS.contains(model)
-                || model.startsWith("gpt-")
+        return model != null && (model.startsWith("gpt-")
                 || model.startsWith("o3-")
-                || model.startsWith("o4-"));
+                || model.startsWith("o4-")
+                || model.startsWith("o1-"));
     }
 
     private boolean isAnthropicModel(String model) {
-        return model != null && (ANTHROPIC_MODELS.contains(model)
-                || model.startsWith("claude-"));
+        return model != null && model.startsWith("claude-");
     }
 
     private String loadCustomPrompt(String userId) {
