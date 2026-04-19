@@ -184,7 +184,7 @@ public class ReadeckController {
      * Users may legitimately configure a local network address (e.g. http://192.168.1.x)
      * since Readeck is a self-hosted service — blocking private IPs would break normal use.
      */
-    private static void validateReadeckUrl(String url) {
+    static void validateReadeckUrl(String url) {
         try {
             String scheme = URI.create(url).getScheme();
             if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
@@ -271,11 +271,15 @@ public class ReadeckController {
         return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
     }
 
-    private static String sanitizeUrlForLog(String url) {
+    static String sanitizeUrlForLog(String url) {
         try {
-            String path = URI.create(url).getPath();
-            // Strip control characters (newlines, ANSI escapes, etc.) to prevent log injection.
-            return path != null ? path.replaceAll("[\r\n\t\u0000-\u001F\u007F-\u009F]", "_") : "<no-path>";
+            URI uri = URI.create(url);
+            // Log only scheme + host — never path/query which may carry credentials or
+            // user-controlled content that could enable log injection.
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            if (scheme == null || host == null) return "<malformed-url>";
+            return scheme + "://" + host;
         } catch (Exception e) {
             return "<malformed-url>";
         }
