@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -113,18 +114,22 @@ public class SchemaInitializer implements ApplicationRunner {
     }
 
     private boolean tableExists(Connection conn, String tableName) throws Exception {
-        try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(
-                     "SELECT 1 FROM sqlite_master WHERE type='table' AND name='" + tableName + "'")) {
-            return rs.next();
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?")) {
+            ps.setString(1, tableName);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 
     private String getSummariesCreateSql(Connection conn) throws Exception {
-        try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(
-                     "SELECT sql FROM sqlite_master WHERE type='table' AND name='summaries'")) {
-            return rs.next() ? rs.getString("sql") : null;
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name=?")) {
+            ps.setString(1, "summaries");
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString("sql") : null;
+            }
         }
     }
 }
