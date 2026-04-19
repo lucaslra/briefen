@@ -1,8 +1,10 @@
 package com.briefen.service;
 
+import com.briefen.exception.InvalidUrlException;
 import com.briefen.model.Summary;
 import com.briefen.model.UserSettings;
 import com.briefen.persistence.SettingsPersistence;
+import com.briefen.validation.UrlValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +13,7 @@ import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -39,13 +42,16 @@ public class WebhookService {
 
     private final String envWebhookUrl;
     private final SettingsPersistence settingsPersistence;
+    private final UrlValidator urlValidator;
     private final RestClient restClient;
 
     public WebhookService(
             @Value("${briefen.webhook.url:}") String envWebhookUrl,
-            SettingsPersistence settingsPersistence) {
+            SettingsPersistence settingsPersistence,
+            UrlValidator urlValidator) {
         this.envWebhookUrl = envWebhookUrl;
         this.settingsPersistence = settingsPersistence;
+        this.urlValidator = urlValidator;
 
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
@@ -83,6 +89,15 @@ public class WebhookService {
 
     private void deliver(Summary summary, String webhookUrl) {
         try {
+            urlValidator.validate(webhookUrl);
+        } catch (InvalidUrlException e) {
+            log.warn("Webhook delivery skipped — invalid or disallowed URL ({}): {}",
+                    sanitizeForLog(webhookUrl), e.getMessage());
+            return;
+        }
+
+        String safeUrl = sanitizeForLog(webhookUrl);
+        try {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("event",     "summary.completed");
             payload.put("id",        summary.getId()        != null ? summary.getId()        : "");
@@ -99,11 +114,24 @@ public class WebhookService {
                     .toBodilessEntity();
 
             log.debug("Webhook delivered successfully to {} for summary '{}'",
-                    webhookUrl, summary.getTitle());
+                    safeUrl, summary.getTitle());
 
         } catch (Exception e) {
             log.warn("Webhook delivery to {} failed (summary '{}'): {}",
-                    webhookUrl, summary.getTitle(), e.getMessage());
+                    safeUrl, summary.getTitle(), e.getMessage());
+        }
+    }
+
+    /** Returns only scheme://host to avoid leaking paths or credentials in logs. */
+    private static String sanitizeForLog(String url) {
+        try {
+            URI uri = URI.create(url);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            if (scheme == null || host == null) return "<malformed-url>";
+            return scheme + "://" + host;
+        } catch (Exception e) {
+            return "<malformed-url>";
         }
     }
 }
