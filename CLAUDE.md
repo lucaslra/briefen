@@ -257,6 +257,7 @@ flutter analyze --no-fatal-infos  # Lint
 - After summarize (single or batch): invalidate both `unreadCountProvider` and `readingListProvider`
 - Network errors at app startup do NOT force-logout — `AuthNotifier` only clears credentials on `AuthException`; other errors keep the user authenticated with stored credentials
 - `import 'package:flutter/foundation.dart' hide Summary` in `summary_detail_screen.dart` — Flutter's `foundation` exports a `Summary` annotation that conflicts with the domain model
+- `unreadCountProvider` watches `authProvider.username` — returns 0 immediately when `username` is null (unauthenticated or user switch) and refetches for the new user; without this, the badge shows the previous user's stale count after login
 
 **Platform notes:**
 - Android: core library desugaring enabled (`isCoreLibraryDesugaringEnabled = true`); permissions: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`; `android:hasFragileUserData="true"` prompts user to keep data on uninstall; `ACTION_SEND text/plain` intent filter enables share-from-browser; `MainActivity` handles `onNewIntent` + `configureFlutterEngine` for the `dev.azurecoder.briefen/share` MethodChannel
