@@ -351,9 +351,9 @@ Project-specific agents invoked via `/command-name`:
 Audit conducted 2026-04-17. GitHub code-scanning errors/warnings resolved 2026-04-19. Backend hardening completed 2026-04-19 (tag validation, log injection, SQL injection, `anyRequest` catch-all). Outstanding items:
 
 **Critical**
-- **PDF fetch follows redirects to internal IPs** — `ArticleFetcherService.java:83` uses `Redirect.NORMAL`, bypassing private-IP checks. Fix: change to `Redirect.NEVER`.
-- **Webhook SSRF** — `WebhookService.java:94-99` POSTs to a user-configured URL with no host validation. Fix: run URL through `UrlValidator` before delivery.
-- **No password validation on admin-created users** — `UserManagementController.java:71-73` skips `PasswordValidator`. Fix: call `passwordValidator.validate()` before persisting.
+- **PDF fetch follows redirects to internal IPs** — `ArticleFetcherService.fetchPdf():83` uses `Redirect.NORMAL`, bypassing private-IP checks. (`fetchHtml()` already uses `followRedirects(false)`.) Fix: change to `Redirect.NEVER`.
+- **Webhook SSRF** — `WebhookService.java:84-99` POSTs to a user-configured URL with no host validation. Fix: run URL through `UrlValidator` before delivery.
+- **No password policy on admin-created users** — `UserManagementController.java:72` calls `passwordEncoder.encode()` directly without invoking `PasswordValidator`, so admins can create accounts with weak or empty passwords. Fix: call `passwordValidator.validate()` before encoding.
 
 **High**
 - **Error messages leak internals** — `GlobalExceptionHandler.java:29-88` returns raw exception messages (may include private IPs, service names). Fix: return generic messages.
