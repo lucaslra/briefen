@@ -230,9 +230,11 @@ flutter analyze --no-fatal-infos  # Lint
 - Light/dark theme toggle (persisted)
 - Settings: summarization defaults (length, model, custom prompt), integrations (OpenAI/Anthropic/Readeck/webhook keys), language selector (EN/PT, persisted)
 - Batch notifications: local push when batch completes in background ("N/M articles ready")
+- User management: admin-only screen to list, create (with role selector), and delete users; "Manage Users" entry visible only to admins in Settings
+- Android share intent: share a URL from any app → Briefen opens, switches to URL tab, pre-fills the field (cold start via `getInitialUrl` MethodChannel; warm start via `onNewIntent` push)
 
 **Structure (`mobile/lib/`):**
-- `main.dart` — entry point; initializes notifications, `ProviderScope`
+- `main.dart` — entry point; initializes notifications; uses `ProviderContainer` + `UncontrolledProviderScope` (not `ProviderScope`) so the share MethodChannel can update providers before the widget tree builds
 - `app.dart` — `MaterialApp.router` with localization delegates, GoRouter, and `localeProvider` for runtime locale switching
 - `core/api/` — `ApiClient` (Dio + Basic Auth interceptor; per-request `Options(receiveTimeout:)` — 310 s for single-URL/text summarize, 10 min for batch), `api_exceptions.dart` (sealed: `AuthException`, `NetworkException`, `ApiTimeoutException`, etc.)
 - `core/auth/` — `AuthNotifier` (4 states: `unknown` → `unauthenticated` / `needsSetup` / `authenticated`), `AuthStorage` (secure storage wrapper)
@@ -240,10 +242,11 @@ flutter analyze --no-fatal-infos  # Lint
 - `core/router.dart` — GoRouter using `refreshListenable` (NOT `ref.watch`) to avoid remounting screens on auth state changes; `ScaffoldWithNavBar` reads `unreadCountProvider` for badge
 - `core/notifications/` — `NotificationService` wrapping `FlutterLocalNotificationsPlugin`
 - `core/theme/` — Material 3 seed color `#1a73e8`, `ThemeMode` stored in `SharedPreferences`
-- `features/summarize/` — `DefaultTabController` with URL, Text, and Batch tabs; `SummarizeActionNotifier._run()` shared path for URL/Text; `BatchSummarizeNotifier` for sequential multi-URL with foreground service + 10-min per-article timeout + background notification on complete; `RecentSummaries` collapsible; `SummaryDisplay` tappable card
+- `features/summarize/` — `SummarizeScreen` is a `ConsumerStatefulWidget` with a manual `TabController` (URL/Text/Batch); `sharedUrlProvider` (`StateProvider<String?>`) holds incoming share-intent URLs and triggers tab switch + `UrlInput` pre-fill via `ref.listen`; `SummarizeActionNotifier._run()` shared path for URL/Text; `BatchSummarizeNotifier` for sequential multi-URL with foreground service + 10-min per-article timeout + background notification on complete; `RecentSummaries` collapsible; `SummaryDisplay` tappable card
 - `features/reading_list/` — paginated list, filter chips, swipe gestures, overflow menu (bulk + export); `SummaryDetailScreen` (cache-first → `GET /api/summaries/{id}` fallback, auto-marks read with `_disposed` guard, inline notes/tags editing, Make shorter/longer/Regenerate buttons for URL-based summaries, tag chips navigate to filtered reading list); `ReadingListActions` (all methods rethrow on failure — callers must handle errors)
 - `features/setup/` — first-run setup + login screens
-- `features/settings/` — `domain/user_settings.dart` + `domain/llm_models.dart`; `SettingsNotifier` (`AsyncNotifierProvider<UserSettings>`) with `save(patch)` for partial updates; `modelsProvider` fetches `GET /api/models`; screen has 6 sections: Account, Summarization (length/model/custom prompt), Integrations (API keys + URLs via edit dialogs), Appearance (theme + language), About, Logout
+- `features/settings/` — `domain/user_settings.dart` + `domain/llm_models.dart`; `SettingsNotifier` (`AsyncNotifierProvider<UserSettings>`) with `save(patch)` for partial updates; `modelsProvider` fetches `GET /api/models`; screen has 6 sections: Account (+ "Manage Users" tile for admins), Summarization (length/model/custom prompt), Integrations (API keys + URLs via edit dialogs), Appearance (theme + language), About, Logout
+- `features/users/` — `AppUser` domain model; `UsersRepository` (`GET/POST/DELETE /api/users`); `usersProvider` (`FutureProvider.autoDispose`); `UsersScreen` with FAB to create, delete button hidden for self/mainAdmin; `/settings/users` route pushed over root navigator (admin-only)
 - `l10n/` — ARB-based i18n: `app_en.arb` (source), `app_pt.arb`; generated output in `l10n/generated/`
 
 **State management patterns & known gotchas:**
@@ -256,7 +259,7 @@ flutter analyze --no-fatal-infos  # Lint
 - `import 'package:flutter/foundation.dart' hide Summary` in `summary_detail_screen.dart` — Flutter's `foundation` exports a `Summary` annotation that conflicts with the domain model
 
 **Platform notes:**
-- Android: core library desugaring enabled (`isCoreLibraryDesugaringEnabled = true`); permissions: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`; `android:hasFragileUserData="true"` prompts user to keep data on uninstall
+- Android: core library desugaring enabled (`isCoreLibraryDesugaringEnabled = true`); permissions: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`; `android:hasFragileUserData="true"` prompts user to keep data on uninstall; `ACTION_SEND text/plain` intent filter enables share-from-browser; `MainActivity` handles `onNewIntent` + `configureFlutterEngine` for the `dev.azurecoder.briefen/share` MethodChannel
 - iOS: standard Flutter defaults; bundle identifier set via `PRODUCT_BUNDLE_IDENTIFIER` at build time
 - Localization: `l10n.yaml` uses `output-dir: lib/l10n/generated` (no `synthetic-package`, removed in Flutter 3.41)
 - Hooks: `.claude/settings.local.json` auto-runs `dart format` on `.dart` edits, `flutter gen-l10n` on `.arb` edits, `eslint --fix` on `.js`/`.jsx` edits
