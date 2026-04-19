@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:briefen/core/auth/auth_provider.dart';
+import 'package:briefen/core/auth/biometric_provider.dart';
+import 'package:briefen/core/auth/biometric_service.dart';
 import 'package:briefen/core/locale/locale_provider.dart';
 import 'package:briefen/core/theme/theme_provider.dart';
 import 'package:briefen/features/settings/data/settings_repository.dart';
@@ -123,6 +125,7 @@ class SettingsScreen extends ConsumerWidget {
               value: isDark,
               onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
             ),
+            _BiometricTile(),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: Row(
@@ -701,6 +704,56 @@ class _ReadeckTile extends StatelessWidget {
       urlController.dispose();
       keyController.dispose();
     });
+  }
+}
+
+// ── Biometric toggle ────────────────────────────────────────────────────────
+
+class _BiometricTile extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_BiometricTile> createState() => _BiometricTileState();
+}
+
+class _BiometricTileState extends ConsumerState<_BiometricTile> {
+  bool? _available; // null = loading
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAvailability();
+  }
+
+  Future<void> _checkAvailability() async {
+    final service = ref.read(biometricServiceProvider);
+    final available = await service.isAvailable();
+    if (mounted) setState(() => _available = available);
+  }
+
+  Future<void> _toggle(bool value) async {
+    if (value) {
+      // Require a successful auth before enabling
+      final l10n = AppLocalizations.of(context)!;
+      final service = ref.read(biometricServiceProvider);
+      final success = await service.authenticate(l10n.biometricUnlock);
+      if (!success) return;
+    }
+    await ref.read(biometricEnabledProvider.notifier).setEnabled(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final enabled = ref.watch(biometricEnabledProvider);
+
+    if (_available == false) return const SizedBox.shrink();
+
+    return SwitchListTile(
+      secondary: const Icon(Icons.fingerprint),
+      title: Text(l10n.biometricAuth),
+      subtitle: Text(_available == null ? '...' : l10n.biometricAuthSubtitle),
+      value: enabled,
+      onChanged: _available == true ? _toggle : null,
+    );
   }
 }
 

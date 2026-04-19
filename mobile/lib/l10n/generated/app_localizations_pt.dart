@@ -370,6 +370,18 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get loadMore => 'Carregar mais';
+
+  @override
+  String get biometricAuth => 'Autenticação Biométrica';
+
+  @override
+  String get biometricAuthSubtitle => 'Bloquear ao sair do app';
+
+  @override
+  String get biometricUnlock => 'Desbloquear';
+
+  @override
+  String get biometricNotAvailable => 'Não disponível neste dispositivo';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).

@@ -131,5 +131,9 @@
   "offlineCached": "You're offline — showing cached content",
   "readeckTab": "Readeck",
   "readeckNotConfigured": "Readeck is not configured.\nSet the URL and API key in Settings.",
-  "loadMore": "Load more"
+  "loadMore": "Load more",
+  "biometricAuth": "Biometric Authentication",
+  "biometricAuthSubtitle": "Lock app when backgrounded",
+  "biometricUnlock": "Unlock",
+  "biometricNotAvailable": "Not available on this device"
 }

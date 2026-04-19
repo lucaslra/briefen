@@ -190,7 +190,7 @@ All `/api` requests go through Vite's dev proxy to the Spring Boot backend. Fetc
 
 ### Mobile App (`mobile/`)
 
-Flutter 3.x cross-platform client for Android and iOS. **Phases 1–3 complete.**
+Flutter 3.x cross-platform client for Android and iOS. **Phases 1–4 complete.**
 
 **Running:**
 ```bash
@@ -215,6 +215,7 @@ flutter analyze --no-fatal-infos  # Lint
 - `flutter_foreground_task: ^8.17.0` — keeps network alive while app is backgrounded
 - `share_plus: ^11.0.0` — native share sheet
 - `url_launcher: ^6.3.1` — open original articles in browser
+- `local_auth: ^2.3.0` — biometric / device PIN authentication
 
 **Implemented features:**
 - Login, first-run setup, auth persistence across reinstalls (`hasFragileUserData`)
@@ -237,20 +238,22 @@ flutter analyze --no-fatal-infos  # Lint
 - Skeleton loading: `SkeletonListView` replaces spinner while reading list loads; all cards pulse in sync via shared `AnimationController` passed through `InheritedWidget`
 - List item animations: staggered fade + slide-up per item (40 ms/item, capped at 200 ms) via `_AnimatedItem` / `TweenAnimationBuilder`
 - Offline reading cache: `ReadingListCache` persists first-page per-filter results to `SharedPreferences`; `readingListProvider` falls back to cache on any network error; `PaginatedSummaries.isOffline` flag drives an amber banner ("You're offline — showing cached content"); only active when no search/tag filter is set
+- Biometric auth: optional lock-on-background using `local_auth`; `BiometricService` wraps `LocalAuthentication`; `BiometricEnabledNotifier` persists toggle to `SharedPreferences`; `BriefenApp` (`ConsumerStatefulWidget` + `WidgetsBindingObserver`) sets `_locked = true` on `paused` and shows `_LockScreen` overlay until biometric success; enabling requires a passing auth challenge; toggle hidden on devices without biometrics
+- iOS share extension: `ShareExtension` target writes URL to App Group (`group.dev.azurecoder.briefen`) then opens `briefen://share`; `AppDelegate` reads the URL and passes it through the `dev.azurecoder.briefen/share` MethodChannel (**requires manual Xcode setup** — see below)
 
 **Structure (`mobile/lib/`):**
 - `main.dart` — entry point; initializes notifications; uses `ProviderContainer` + `UncontrolledProviderScope` (not `ProviderScope`) so the share MethodChannel can update providers before the widget tree builds
-- `app.dart` — `MaterialApp.router` with localization delegates, GoRouter, and `localeProvider` for runtime locale switching
+- `app.dart` — `ConsumerStatefulWidget` + `WidgetsBindingObserver`; `MaterialApp.router` with `builder` for biometric lock overlay; locks on `AppLifecycleState.paused`, auto-prompts on `resumed`
 - `core/api/` — `ApiClient` (Dio + Basic Auth interceptor; per-request `Options(receiveTimeout:)` — 310 s for single-URL/text summarize, 10 min for batch), `api_exceptions.dart` (sealed: `AuthException`, `NetworkException`, `ApiTimeoutException`, etc.)
-- `core/auth/` — `AuthNotifier` (4 states: `unknown` → `unauthenticated` / `needsSetup` / `authenticated`), `AuthStorage` (secure storage wrapper)
+- `core/auth/` — `AuthNotifier` (4 states: `unknown` → `unauthenticated` / `needsSetup` / `authenticated`), `AuthStorage` (secure storage wrapper), `BiometricService` (wraps `LocalAuthentication`), `BiometricEnabledNotifier` (`StateNotifierProvider<bool>` persisted to `SharedPreferences`)
 - `core/locale/` — `LocaleNotifier` (`NotifierProvider<Locale>`), persists language code in `SharedPreferences`
 - `core/router.dart` — GoRouter using `refreshListenable` (NOT `ref.watch`) to avoid remounting screens on auth state changes; `ScaffoldWithNavBar` reads `unreadCountProvider` for badge
 - `core/notifications/` — `NotificationService` wrapping `FlutterLocalNotificationsPlugin`
 - `core/theme/` — Material 3 seed color `#1a73e8`, `ThemeMode` stored in `SharedPreferences`
-- `features/summarize/` — `SummarizeScreen` is a `ConsumerStatefulWidget` with a manual `TabController` (URL/Text/Batch); `sharedUrlProvider` (`StateProvider<String?>`) holds incoming share-intent URLs and triggers tab switch + `UrlInput` pre-fill via `ref.listen`; `SummarizeActionNotifier._run()` shared path for URL/Text; `BatchSummarizeNotifier` for sequential multi-URL with foreground service + 10-min per-article timeout + background notification on complete; `RecentSummaries` collapsible; `SummaryDisplay` tappable card
-- `features/reading_list/` — paginated list, filter chips, swipe gestures (with haptics), staggered item animations, skeleton loading, offline banner; `ReadingListCache` (`SharedPreferences`-backed, per-filter, falls back on network error); `SummaryDetailScreen` (cache-first → `GET /api/summaries/{id}` fallback, auto-marks read with `_disposed` guard, inline notes/tags editing, Make shorter/longer/Regenerate buttons for URL-based summaries, tag chips navigate to filtered reading list); `ReadingListActions` (all methods rethrow on failure — callers must handle errors)
+- `features/summarize/` — `SummarizeScreen` is a `ConsumerStatefulWidget` with a manual `TabController` (URL/Text/Batch/Readeck); `sharedUrlProvider` (`StateProvider<String?>`) holds incoming share-intent URLs and triggers tab switch + `UrlInput` pre-fill via `ref.listen`; `SummarizeActionNotifier._run()` shared path for URL/Text; `BatchSummarizeNotifier` for sequential multi-URL with foreground service + 10-min per-article timeout + background notification on complete; `RecentSummaries` collapsible; `SummaryDisplay` tappable card
+- `features/reading_list/` — paginated list with load-more (`ReadingListNotifier` is an `AutoDisposeAsyncNotifier` that accumulates pages; `loadMore()` appends next page, rolls back page counter on failure; filter/search/tag change resets to page 0); filter chips, swipe gestures (with haptics), staggered item animations, skeleton loading, offline banner; `ReadingListCache` (`SharedPreferences`-backed, per-filter, falls back on network error); `SummaryDetailScreen` (cache-first → `GET /api/summaries/{id}` fallback, auto-marks read with `_disposed` guard, inline notes/tags editing, Make shorter/longer/Regenerate buttons for URL-based summaries, tag chips navigate to filtered reading list); all error paths (toggle-read, delete, bulk actions, load-more) catch and show snackbars
 - `features/setup/` — first-run setup + login screens
-- `features/settings/` — `domain/user_settings.dart` + `domain/llm_models.dart`; `SettingsNotifier` (`AsyncNotifierProvider<UserSettings>`) with `save(patch)` for partial updates; `modelsProvider` fetches `GET /api/models`; screen has 6 sections: Account (+ "Manage Users" tile for admins), Summarization (length/model/custom prompt), Integrations (API keys + URLs via edit dialogs; Readeck URL + API key combined into one `_ReadeckTile` dialog), Appearance (theme + language), About, Logout
+- `features/settings/` — `domain/user_settings.dart` + `domain/llm_models.dart`; `SettingsNotifier` (`AsyncNotifierProvider<UserSettings>`) with `save(patch)` for partial updates; `modelsProvider` fetches `GET /api/models`; screen has 6 sections: Account (+ "Manage Users" tile for admins), Summarization (length/model/custom prompt), Integrations (API keys + URLs via edit dialogs; Readeck URL + API key combined into one `_ReadeckTile` dialog), Appearance (theme + language + biometric toggle, hidden if unavailable), About, Logout
 - `features/users/` — `AppUser` domain model; `UsersRepository` (`GET/POST/DELETE /api/users`); `usersProvider` (`FutureProvider.autoDispose`); `UsersScreen` with FAB to create, delete button hidden for self/mainAdmin; `/settings/users` route pushed over root navigator (admin-only)
 - `l10n/` — ARB-based i18n: `app_en.arb` (source), `app_pt.arb`; generated output in `l10n/generated/`
 
@@ -258,17 +261,23 @@ flutter analyze --no-fatal-infos  # Lint
 - `summaryDetailProvider` uses `ref.read(readingListProvider)` (sync cache hit) then falls back to `GET /api/summaries/{id}` — never `ref.watch` the filtered list, or auto-mark-read will cause "No results found" when the summary leaves the `unread` filter
 - `TextEditingController` disposal in dialogs must use `Future.delayed(400ms, controller.dispose)` — `addPostFrameCallback` fires before the dialog exit animation finishes, causing `_dependents.isEmpty` assertion crash
 - Auto-mark-read timer guard: `_disposed = true` set in `dispose()` before `super.dispose()`; always check `if (_disposed) return` inside the timer callback
-- `ReadingListActions` methods all rethrow — call sites must wrap in try/catch and show snackbars on failure
+- `ReadingListActions` methods all rethrow — all call sites in `reading_list_screen.dart` wrap in try/catch and show snackbars (toggle-read, delete, bulk actions, load-more)
 - After summarize (single or batch): invalidate both `unreadCountProvider` and `readingListProvider`
 - Network errors at app startup do NOT force-logout — `AuthNotifier` only clears credentials on `AuthException`; other errors keep the user authenticated with stored credentials
 - `import 'package:flutter/foundation.dart' hide Summary` in `summary_detail_screen.dart` — Flutter's `foundation` exports a `Summary` annotation that conflicts with the domain model
 - `unreadCountProvider` watches `authProvider.username` — returns 0 immediately when `username` is null (unauthenticated or user switch) and refetches for the new user; without this, the badge shows the previous user's stale count after login
 
 **Platform notes:**
-- Android: core library desugaring enabled (`isCoreLibraryDesugaringEnabled = true`); permissions: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`; `android:hasFragileUserData="true"` prompts user to keep data on uninstall; `ACTION_SEND text/plain` intent filter enables share-from-browser; `MainActivity` handles `onNewIntent` + `configureFlutterEngine` for the `dev.azurecoder.briefen/share` MethodChannel
-- iOS: standard Flutter defaults; bundle identifier set via `PRODUCT_BUNDLE_IDENTIFIER` at build time
+- Android: core library desugaring enabled (`isCoreLibraryDesugaringEnabled = true`); permissions: `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `USE_BIOMETRIC`; `android:hasFragileUserData="true"` prompts user to keep data on uninstall; `ACTION_SEND text/plain` intent filter enables share-from-browser; `MainActivity` handles `onNewIntent` + `configureFlutterEngine` for the `dev.azurecoder.briefen/share` MethodChannel
+- iOS: bundle identifier set via `PRODUCT_BUNDLE_IDENTIFIER`; `NSFaceIDUsageDescription` in Info.plist; `briefen://` URL scheme registered; App Group `group.dev.azurecoder.briefen` in both `Runner.entitlements` and `ShareExtension.entitlements`; **iOS Share Extension** — target `dev.azurecoder.briefen.ShareExtension` fully configured in `project.pbxproj`: entitlements, Info.plist, bundle ID all set; `Base.lproj/` empty (storyboard removed); `NSExtensionPrincipalClass` set to `$(PRODUCT_MODULE_NAME).ShareViewController`; remaining step: register the App Group in Apple Developer Portal and enable it via Xcode Signing & Capabilities on both targets (required for `UserDefaults(suiteName:)` to work at runtime)
 - Localization: `l10n.yaml` uses `output-dir: lib/l10n/generated` (no `synthetic-package`, removed in Flutter 3.41)
 - Hooks: `.claude/settings.local.json` auto-runs `dart format` on `.dart` edits, `flutter gen-l10n` on `.arb` edits, `eslint --fix` on `.js`/`.jsx` edits
+
+**Tests (`test/`):**
+- `test/features/reading_list/reading_list_notifier_test.dart` — 8 unit tests for `ReadingListNotifier`: initial load, `loadMore` appends + no-op on last page + rollback on failure, filter change resets, offline cache fallback + rethrow when no cache
+- `test/features/settings/biometric_notifier_test.dart` — 5 unit tests for `BiometricEnabledNotifier`: starts false, persists true/false to SharedPreferences, restores on new notifier instance; note: `pumpEventQueue()` needed after provider read to let `_load()` complete; must read provider before draining queue (lazy init)
+- `test/features/users/users_screen_test.dart` — 5 widget tests for `UsersScreen`: renders user rows, empty state, FAB, retry on error, app bar title; uses `_FakeAuthNotifier` that sets state via `Future.microtask` to avoid running real credential check
+- `test/helpers/test_app.dart` — `buildTestApp()` helper wraps widget in `ProviderScope` + `MaterialApp` with localizations
 
 ### Documentation (`docs/`)
 - `docs/getting-started.md` — step-by-step self-hosting guide

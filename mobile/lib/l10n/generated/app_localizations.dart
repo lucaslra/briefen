@@ -794,6 +794,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Load more'**
   String get loadMore;
+
+  /// No description provided for @biometricAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric Authentication'**
+  String get biometricAuth;
+
+  /// No description provided for @biometricAuthSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock app when backgrounded'**
+  String get biometricAuthSubtitle;
+
+  /// No description provided for @biometricUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get biometricUnlock;
+
+  /// No description provided for @biometricNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available on this device'**
+  String get biometricNotAvailable;
 }
 
 class _AppLocalizationsDelegate

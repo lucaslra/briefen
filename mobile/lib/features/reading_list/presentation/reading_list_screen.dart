@@ -50,11 +50,27 @@ class _ReadingListScreenState extends ConsumerState<ReadingListScreen> {
     Future<void> Function() action,
   ) async {
     HapticFeedback.mediumImpact();
-    await action();
+    try {
+      await action();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.bulkUpdated)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.unknownError)));
+      }
+    }
+  }
+
+  void _showError(AppLocalizations l10n) {
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.bulkUpdated)));
+      ).showSnackBar(SnackBar(content: Text(l10n.unknownError)));
     }
   }
 
@@ -158,6 +174,9 @@ class _ReadingListScreenState extends ConsumerState<ReadingListScreen> {
                   );
                 }
 
+                // +1 slot for the load-more button when there are more pages.
+                final itemCount = data.content.length + (data.last ? 0 : 1);
+
                 return Column(
                   children: [
                     // Offline banner
@@ -195,8 +214,23 @@ class _ReadingListScreenState extends ConsumerState<ReadingListScreen> {
                         },
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          itemCount: data.content.length,
+                          itemCount: itemCount,
                           itemBuilder: (context, index) {
+                            // Load-more button at the end
+                            if (index == data.content.length) {
+                              return _LoadMoreButton(
+                                onPressed: () async {
+                                  try {
+                                    await ref
+                                        .read(readingListActionsProvider)
+                                        .loadMore();
+                                  } catch (_) {
+                                    _showError(l10n);
+                                  }
+                                },
+                              );
+                            }
+
                             final summary = data.content[index];
                             return _AnimatedItem(
                               index: index,
@@ -205,10 +239,17 @@ class _ReadingListScreenState extends ConsumerState<ReadingListScreen> {
                                 onTap: () {
                                   context.push('/reading-list/${summary.id}');
                                 },
-                                onToggleRead: () {
-                                  ref
-                                      .read(readingListActionsProvider)
-                                      .toggleRead(summary.id, !summary.isRead);
+                                onToggleRead: () async {
+                                  try {
+                                    await ref
+                                        .read(readingListActionsProvider)
+                                        .toggleRead(
+                                          summary.id,
+                                          !summary.isRead,
+                                        );
+                                  } catch (_) {
+                                    _showError(l10n);
+                                  }
                                 },
                                 onDelete: () async {
                                   HapticFeedback.heavyImpact();
@@ -237,9 +278,13 @@ class _ReadingListScreenState extends ConsumerState<ReadingListScreen> {
                                     ),
                                   );
                                   if (confirmed == true && mounted) {
-                                    await ref
-                                        .read(readingListActionsProvider)
-                                        .delete(summary.id);
+                                    try {
+                                      await ref
+                                          .read(readingListActionsProvider)
+                                          .delete(summary.id);
+                                    } catch (_) {
+                                      _showError(l10n);
+                                    }
                                   }
                                 },
                               ),
@@ -268,6 +313,42 @@ class _ReadingListScreenState extends ConsumerState<ReadingListScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LoadMoreButton extends StatefulWidget {
+  final Future<void> Function() onPressed;
+  const _LoadMoreButton({required this.onPressed});
+
+  @override
+  State<_LoadMoreButton> createState() => _LoadMoreButtonState();
+}
+
+class _LoadMoreButtonState extends State<_LoadMoreButton> {
+  bool _loading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: _loading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : FilledButton.tonal(
+                onPressed: () async {
+                  setState(() => _loading = true);
+                  await widget.onPressed();
+                  if (mounted) setState(() => _loading = false);
+                },
+                child: Text(l10n.loadMore),
+              ),
       ),
     );
   }

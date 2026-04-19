@@ -370,4 +370,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loadMore => 'Load more';
+
+  @override
+  String get biometricAuth => 'Biometric Authentication';
+
+  @override
+  String get biometricAuthSubtitle => 'Lock app when backgrounded';
+
+  @override
+  String get biometricUnlock => 'Unlock';
+
+  @override
+  String get biometricNotAvailable => 'Not available on this device';
 }

@@ -3,7 +3,6 @@ import 'package:briefen/l10n/generated/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../domain/summary.dart';
 import '../../providers.dart';
 
 class BatchInput extends ConsumerStatefulWidget {
