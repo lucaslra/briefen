@@ -274,15 +274,15 @@ flutter analyze --no-fatal-infos  # Lint
 - Hooks: `.claude/settings.local.json` auto-runs `dart format` on `.dart` edits, `flutter gen-l10n` on `.arb` edits, `eslint --fix` on `.js`/`.jsx` edits
 
 **Tests (`test/`):**
+- `test/core/auth/auth_notifier_test.dart` — 5 unit tests for `AuthNotifier`: no credentials→unauthenticated, valid credentials→authenticated, 401→unauthenticated+cleared, network error→stays authenticated (graceful degradation), logout; uses `FakeAuthStorage` + `MockApiClient` (mocktail); `_checkSetupStatus` uses unreachable URL so it silently returns false, keeping tests focused on auth logic
 - `test/features/reading_list/reading_list_notifier_test.dart` — 8 unit tests for `ReadingListNotifier`: initial load, `loadMore` appends + no-op on last page + rollback on failure, filter change resets, offline cache fallback + rethrow when no cache
 - `test/features/settings/biometric_notifier_test.dart` — 5 unit tests for `BiometricEnabledNotifier`: starts false, persists true/false to SharedPreferences, restores on new notifier instance; note: `pumpEventQueue()` needed after provider read to let `_load()` complete; must read provider before draining queue (lazy init)
+- `test/features/settings/settings_notifier_test.dart` — 3 unit tests for `SettingsNotifier`: build loads settings, `save(patch)` updates only patched fields, save exposes server response as new state; uses `FakeSettingsRepository`
 - `test/features/users/users_screen_test.dart` — 5 widget tests for `UsersScreen`: renders user rows, empty state, FAB, retry on error, app bar title; uses `_FakeAuthNotifier` that sets state via `Future.microtask` to avoid running real credential check
 - `test/helpers/test_app.dart` — `buildTestApp()` helper wraps widget in `ProviderScope` + `MaterialApp` with localizations
 
 **Test coverage gaps (known, by priority):**
-- `AuthNotifier` — login, 401→logout, setup detection (highest risk: entire auth flow untested)
-- `ApiClient` — Basic Auth header injection, error type mapping (401→`AuthException`, timeout→`ApiTimeoutException`)
-- `SettingsNotifier` — `save(patch)` partial update logic; wrong merge = data loss
+- `ApiClient` — error type mapping (401→`AuthException`, timeout→`ApiTimeoutException`); hard to unit test without a mock HTTP adapter package
 - `SummarizeActionNotifier` — URL vs text paths, timeout handling
 - `BatchSummarizeNotifier` — sequential processing, foreground service lifecycle
 - `unreadCountProvider` — stale-cache-on-user-switch regression risk
