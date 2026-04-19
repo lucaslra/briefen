@@ -100,6 +100,7 @@ Browser → Spring Boot (:8080, serves React static + API)
 - **service/** — core logic:
   - `ArticleFetcherService` — Jsoup HTML fetcher with DNS rebinding protection, PDFBox for PDFs, MDX/JSX source parser
   - `OllamaSummarizerService` / `OpenAiSummarizerService` / `AnthropicSummarizerService` — LLM summarizers
+  - `SummarizerErrorHandler` — package-private utility: shared timeout detection, HTTP error mapping, and fallback handling for all three LLM summarizer services
   - `SummaryService` — orchestration: cache lookup, fetching, summarizing, persisting
   - `WebhookService` — fire-and-forget POST on summary save (virtual thread)
   - `UserBootstrapService` — migrates pre-multi-user data and seeds cloud LLM API keys from env vars on startup
@@ -347,7 +348,7 @@ Project-specific agents invoked via `/command-name`:
 
 ## Known Security Issues (pending remediation)
 
-Audit conducted 2026-04-17. GitHub code-scanning errors/warnings resolved 2026-04-19. Outstanding items:
+Audit conducted 2026-04-17. GitHub code-scanning errors/warnings resolved 2026-04-19. Backend hardening completed 2026-04-19 (tag validation, log injection, SQL injection, `anyRequest` catch-all). Outstanding items:
 
 **Critical**
 - **PDF fetch follows redirects to internal IPs** — `ArticleFetcherService.java:83` uses `Redirect.NORMAL`, bypassing private-IP checks. Fix: change to `Redirect.NEVER`.
@@ -356,7 +357,6 @@ Audit conducted 2026-04-17. GitHub code-scanning errors/warnings resolved 2026-0
 
 **High**
 - **Error messages leak internals** — `GlobalExceptionHandler.java:29-88` returns raw exception messages (may include private IPs, service names). Fix: return generic messages.
-- **`anyRequest().permitAll()` catch-all** — `SecurityConfig.java:45` makes any unmapped route public. Fix: change to `anyRequest().authenticated()` or `.denyAll()`.
 
 **Medium**
 - No `@Size` on URL field in `SummarizeRequest.java:12`
