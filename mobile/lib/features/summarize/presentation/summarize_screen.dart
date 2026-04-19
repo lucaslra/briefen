@@ -12,70 +12,112 @@ import 'widgets/summary_display.dart';
 import 'widgets/summary_loading.dart';
 import 'widgets/recent_summaries.dart';
 
-class SummarizeScreen extends ConsumerWidget {
+class SummarizeScreen extends ConsumerStatefulWidget {
   const SummarizeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SummarizeScreen> createState() => _SummarizeScreenState();
+}
+
+class _SummarizeScreenState extends ConsumerState<SummarizeScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  String? _sharedUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+
+    // Consume any URL that was shared into the app (cold start or warm start).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final url = ref.read(sharedUrlProvider);
+      if (url != null) {
+        _applySharedUrl(url);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _applySharedUrl(String url) {
+    setState(() => _sharedUrl = url);
+    _tabController.animateTo(0);
+    // Clear the provider so it doesn't re-trigger on rebuild.
+    ref.read(sharedUrlProvider.notifier).state = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final summarizeState = ref.watch(summarizeActionProvider);
     final isLoading = summarizeState.status == SummarizeStatus.loading;
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.appName),
-          actions: [
-            IconButton(
-              icon: Theme.of(context).brightness == Brightness.dark
-                  ? const Icon(Icons.light_mode_outlined)
-                  : const Icon(Icons.dark_mode_outlined),
-              onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
-            ),
-          ],
-          bottom: TabBar(
-            tabs: [
-              Tab(text: l10n.urlTab),
-              Tab(text: l10n.textTab),
-              Tab(text: l10n.batchTab),
-            ],
+    // React to URLs shared while the screen is mounted (warm start / onNewIntent).
+    ref.listen(sharedUrlProvider, (_, next) {
+      if (next != null) _applySharedUrl(next);
+    });
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.appName),
+        actions: [
+          IconButton(
+            icon: Theme.of(context).brightness == Brightness.dark
+                ? const Icon(Icons.light_mode_outlined)
+                : const Icon(Icons.dark_mode_outlined),
+            onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
           ),
-        ),
-        body: TabBarView(
-          children: [
-            _SummarizeTabContent(
-              isLoading: isLoading,
-              summarizeState: summarizeState,
-              input: UrlInput(
-                onSubmit: (url) {
-                  ref.read(summarizeActionProvider.notifier).summarize(url);
-                },
-                loading: isLoading,
-              ),
-            ),
-            _SummarizeTabContent(
-              isLoading: isLoading,
-              summarizeState: summarizeState,
-              input: TextInput(
-                onSubmit: (text, title) {
-                  ref
-                      .read(summarizeActionProvider.notifier)
-                      .summarizeText(text, title);
-                },
-                loading: isLoading,
-              ),
-            ),
-            // Batch tab has its own self-contained UI
-            SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: const [BatchInput()],
-              ),
-            ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: l10n.urlTab),
+            Tab(text: l10n.textTab),
+            Tab(text: l10n.batchTab),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _SummarizeTabContent(
+            isLoading: isLoading,
+            summarizeState: summarizeState,
+            input: UrlInput(
+              key: ValueKey(_sharedUrl),
+              initialUrl: _sharedUrl,
+              onSubmit: (url) {
+                ref.read(summarizeActionProvider.notifier).summarize(url);
+              },
+              loading: isLoading,
+            ),
+          ),
+          _SummarizeTabContent(
+            isLoading: isLoading,
+            summarizeState: summarizeState,
+            input: TextInput(
+              onSubmit: (text, title) {
+                ref
+                    .read(summarizeActionProvider.notifier)
+                    .summarizeText(text, title);
+              },
+              loading: isLoading,
+            ),
+          ),
+          // Batch tab has its own self-contained UI
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: const [BatchInput()],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -4,11 +4,13 @@ import 'package:briefen/l10n/generated/app_localizations.dart';
 class UrlInput extends StatefulWidget {
   final ValueChanged<String> onSubmit;
   final bool loading;
+  final String? initialUrl;
 
   const UrlInput({
     super.key,
     required this.onSubmit,
     this.loading = false,
+    this.initialUrl,
   });
 
   @override
@@ -16,7 +18,13 @@ class UrlInput extends StatefulWidget {
 }
 
 class _UrlInputState extends State<UrlInput> {
-  final _controller = TextEditingController();
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialUrl ?? '');
+  }
 
   @override
   void dispose() {
@@ -75,9 +83,7 @@ class _UrlInputState extends State<UrlInput> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.summarize),
-            label: Text(
-              widget.loading ? l10n.summarizing : l10n.summarize,
-            ),
+            label: Text(widget.loading ? l10n.summarizing : l10n.summarize),
           ),
         ),
       ],

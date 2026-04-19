@@ -7,6 +7,10 @@ import '../reading_list/providers.dart';
 import 'data/summarize_repository.dart';
 import 'domain/summary.dart';
 
+/// Holds a URL shared into Briefen from another app (Android share intent).
+/// Consumed by SummarizeScreen — cleared after use.
+final sharedUrlProvider = StateProvider<String?>((ref) => null);
+
 // Summarize action state
 enum SummarizeStatus { idle, loading, success, error }
 
