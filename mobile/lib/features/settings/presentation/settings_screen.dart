@@ -96,21 +96,13 @@ class SettingsScreen extends ConsumerWidget {
                 'anthropicApiKey': value,
               }),
             ),
-            _ApiKeyTile(
-              label: l10n.readeckUrl,
-              icon: Icons.link,
-              maskedValue: settings.readeckUrl,
-              obscure: false,
-              onSave: (value) =>
-                  _updateSetting(context, ref, l10n, {'readeckUrl': value}),
-            ),
-            _ApiKeyTile(
-              label: l10n.readeckApiKey,
-              icon: Icons.key,
-              maskedValue: settings.readeckApiKey,
-              obscure: true,
-              onSave: (value) =>
-                  _updateSetting(context, ref, l10n, {'readeckApiKey': value}),
+            _ReadeckTile(
+              url: settings.readeckUrl,
+              apiKey: settings.readeckApiKey,
+              onSave: (url, key) => _updateSetting(context, ref, l10n, {
+                'readeckUrl': url,
+                'readeckApiKey': key,
+              }),
             ),
             _ApiKeyTile(
               label: l10n.webhookUrl,
@@ -606,6 +598,109 @@ class _ApiKeyTile extends StatelessWidget {
       ),
     );
     Future.delayed(const Duration(milliseconds: 400), controller.dispose);
+  }
+}
+
+// ── Readeck combined tile ───────────────────────────────────────────────────
+
+class _ReadeckTile extends StatelessWidget {
+  final String? url;
+  final String? apiKey;
+  final Future<void> Function(String url, String key) onSave;
+
+  const _ReadeckTile({
+    required this.url,
+    required this.apiKey,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final configured =
+        (url?.isNotEmpty ?? false) && (apiKey?.isNotEmpty ?? false);
+
+    return ListTile(
+      leading: const Icon(Icons.bookmark_outline),
+      title: const Text('Readeck'),
+      subtitle: Text(configured ? (url ?? '') : l10n.keyNotSet),
+      trailing: IconButton(
+        icon: const Icon(Icons.edit_outlined),
+        onPressed: () => _showDialog(context, l10n),
+      ),
+      onTap: () => _showDialog(context, l10n),
+    );
+  }
+
+  Future<void> _showDialog(BuildContext context, AppLocalizations l10n) async {
+    final urlController = TextEditingController(text: url ?? '');
+    final keyController = TextEditingController();
+    bool obscureKey = true;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('Readeck'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: urlController,
+                decoration: InputDecoration(
+                  labelText: l10n.readeckUrl,
+                  hintText: 'https://readeck.example.com',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.link),
+                ),
+                keyboardType: TextInputType.url,
+                autocorrect: false,
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: keyController,
+                obscureText: obscureKey,
+                decoration: InputDecoration(
+                  labelText: l10n.readeckApiKey,
+                  hintText: l10n.keyNotSet,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.key),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscureKey ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () => setState(() => obscureKey = !obscureKey),
+                  ),
+                ),
+                autocorrect: false,
+                textInputAction: TextInputAction.done,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final u = urlController.text.trim();
+                final k = keyController.text.trim();
+                Navigator.of(ctx).pop();
+                await onSave(u, k);
+              },
+              child: Text(l10n.saveNotes),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      urlController.dispose();
+      keyController.dispose();
+    });
   }
 }
 
