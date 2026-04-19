@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/auth/auth_provider.dart';
 import '../../core/notifications/notification_service.dart';
 import '../reading_list/providers.dart';
 import 'data/summarize_repository.dart';
@@ -241,8 +242,10 @@ final recentSummariesProvider = FutureProvider.autoDispose<PaginatedSummaries>((
   return repo.getSummaries(page: 0, size: 5);
 });
 
-// Unread count
+// Unread count — watches auth so it resets to 0 and refetches on user change.
 final unreadCountProvider = FutureProvider<int>((ref) async {
+  final username = ref.watch(authProvider).username;
+  if (username == null) return 0;
   final repo = ref.read(summarizeRepositoryProvider);
   return repo.getUnreadCount();
 });
