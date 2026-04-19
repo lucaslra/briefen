@@ -4,13 +4,11 @@ import com.briefen.config.OllamaProperties;
 import com.briefen.exception.SummarizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
-import java.net.http.HttpTimeoutException;
 import java.util.Map;
 
 @Service
@@ -89,36 +87,14 @@ public class OllamaSummarizerService {
             return summary;
 
         } catch (ResourceAccessException e) {
-            if (isTimeoutCause(e)) {
-                log.error("Ollama request timed out", e);
-                throw new SummarizationException("Summarization timed out. The article may be too long or the model is still loading.", e, true);
-            }
-            log.error("Failed to reach Ollama", e);
-            throw new SummarizationException("Could not connect to Ollama: " + e.getMessage(), e, false);
+            throw SummarizerErrorHandler.handleResourceAccessException(e, "Ollama", log);
         } catch (HttpServerErrorException e) {
-            if (e.getStatusCode() == HttpStatus.GATEWAY_TIMEOUT) {
-                log.error("Ollama gateway timed out (504)", e);
-                throw new SummarizationException("Summarization timed out. The article may be too long or the model is overloaded.", e, true);
-            }
-            log.error("Ollama server error: {}", e.getStatusCode(), e);
-            throw new SummarizationException("Ollama returned a server error: " + e.getStatusCode(), e, false);
+            throw SummarizerErrorHandler.handleHttpServerErrorException(e, "Ollama", log);
         } catch (SummarizationException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Unexpected error during summarization", e);
-            throw new SummarizationException("Summarization failed: " + e.getMessage(), e, false);
+            throw SummarizerErrorHandler.handleUnexpectedException(e, "Ollama", log);
         }
-    }
-
-    private boolean isTimeoutCause(Throwable e) {
-        Throwable cause = e;
-        while (cause != null) {
-            if (cause instanceof HttpTimeoutException || cause instanceof java.net.SocketTimeoutException) {
-                return true;
-            }
-            cause = cause.getCause();
-        }
-        return false;
     }
 
 }

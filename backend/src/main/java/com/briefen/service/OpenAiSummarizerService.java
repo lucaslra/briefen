@@ -8,7 +8,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
-import java.net.http.HttpTimeoutException;
 import java.util.List;
 import java.util.Map;
 
@@ -91,38 +90,14 @@ public class OpenAiSummarizerService {
             return summary;
 
         } catch (HttpClientErrorException e) {
-            log.error("OpenAI API error: {} {}", e.getStatusCode(), e.getResponseBodyAsString());
-            if (e.getStatusCode().value() == 401) {
-                throw new SummarizationException("Invalid OpenAI API key. Please check your key in Settings.", false);
-            }
-            if (e.getStatusCode().value() == 429) {
-                throw new SummarizationException("OpenAI rate limit exceeded. Please wait a moment and try again.", e, true);
-            }
-            throw new SummarizationException("OpenAI request failed with status " + e.getStatusCode().value() + ". Check server logs for details.", e, false);
+            throw SummarizerErrorHandler.handleHttpClientErrorException(e, "OpenAI", log);
         } catch (ResourceAccessException e) {
-            if (isTimeoutCause(e)) {
-                log.error("OpenAI request timed out", e);
-                throw new SummarizationException("OpenAI request timed out. The article may be too long.", e, true);
-            }
-            log.error("Failed to reach OpenAI", e);
-            throw new SummarizationException("Could not connect to OpenAI: " + e.getMessage(), e, false);
+            throw SummarizerErrorHandler.handleResourceAccessException(e, "OpenAI", log);
         } catch (SummarizationException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Unexpected error during OpenAI summarization", e);
-            throw new SummarizationException("OpenAI summarization failed: " + e.getMessage(), e, false);
+            throw SummarizerErrorHandler.handleUnexpectedException(e, "OpenAI", log);
         }
-    }
-
-    private boolean isTimeoutCause(Throwable e) {
-        Throwable cause = e;
-        while (cause != null) {
-            if (cause instanceof HttpTimeoutException || cause instanceof java.net.SocketTimeoutException) {
-                return true;
-            }
-            cause = cause.getCause();
-        }
-        return false;
     }
 
 }
