@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:briefen/l10n/generated/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/auth/auth_provider.dart';
 
@@ -32,7 +33,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     setState(() => _loading = true);
 
-    await ref.read(authProvider.notifier).login(
+    await ref
+        .read(authProvider.notifier)
+        .login(
           _serverUrlController.text.trim(),
           _usernameController.text.trim(),
           _passwordController.text,
@@ -57,17 +60,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.summarize,
-                    size: 64,
-                    color: colorScheme.primary,
+                  SvgPicture.asset(
+                    'assets/images/logo.svg',
+                    width: 56,
+                    height: 56,
+                    colorFilter: ColorFilter.mode(
+                      colorScheme.primary,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     l10n.appName,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 32),
                   TextFormField(
@@ -112,11 +119,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       labelText: l10n.password,
                       prefixIcon: const Icon(Icons.lock_outlined),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined),
-                        onPressed: () =>
-                            setState(() => _obscurePassword = !_obscurePassword),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                     ),
                     obscureText: _obscurePassword,

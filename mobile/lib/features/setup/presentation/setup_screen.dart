@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:briefen/l10n/generated/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/auth/auth_provider.dart';
 import '../../../core/auth/auth_storage.dart';
@@ -44,19 +45,19 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
       final username = _usernameController.text.trim();
       final password = _passwordController.text;
 
-      await ref.read(setupRepositoryProvider).createAdmin(
-            serverUrl,
-            username,
-            password,
-          );
+      await ref
+          .read(setupRepositoryProvider)
+          .createAdmin(serverUrl, username, password);
 
       // Store credentials and log in
       final storage = ref.read(authStorageProvider);
-      await storage.saveCredentials(Credentials(
-        serverUrl: serverUrl,
-        username: username,
-        password: password,
-      ));
+      await storage.saveCredentials(
+        Credentials(
+          serverUrl: serverUrl,
+          username: username,
+          password: password,
+        ),
+      );
 
       ref.read(authProvider.notifier).markSetupComplete();
     } catch (e) {
@@ -95,24 +96,28 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.admin_panel_settings,
-                    size: 64,
-                    color: colorScheme.primary,
+                  SvgPicture.asset(
+                    'assets/images/logo.svg',
+                    width: 56,
+                    height: 56,
+                    colorFilter: ColorFilter.mode(
+                      colorScheme.primary,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     l10n.setupTitle,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     l10n.setupSubtitle,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 32),
                   TextFormField(
@@ -136,11 +141,14 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                       labelText: l10n.password,
                       prefixIcon: const Icon(Icons.lock_outlined),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined),
-                        onPressed: () =>
-                            setState(() => _obscurePassword = !_obscurePassword),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                     ),
                     obscureText: _obscurePassword,
@@ -167,8 +175,8 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                     child: Text(
                       l10n.passwordRequirements,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                   if (_error != null) ...[

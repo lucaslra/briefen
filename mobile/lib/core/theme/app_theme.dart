@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const _seedColor = Color(0xFF1a73e8);
+  // Matches the web app's primary purple (#5b50e8)
+  static const _seedColor = Color(0xFF5b50e8);
 
   static ThemeData light() {
     return ThemeData(
