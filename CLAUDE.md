@@ -346,21 +346,19 @@ Project-specific agents invoked via `/command-name`:
 - **CSRF disabled intentionally** — `SecurityConfig` disables Spring CSRF protection; this is correct for a stateless REST API using HTTP Basic Auth (no session cookies, so cross-site requests cannot be authenticated by a third-party page); the `// codeql[java/spring-disabled-csrf-protection]` suppression comment documents this intent
 - **Hibernate ddl-auto** — schema is managed by `ddl-auto: update` (in `application.yml`) with a custom `SchemaInitializer` for SQLite-specific column migrations. No Flyway dependency exists in the project
 
-## Known Security Issues (pending remediation)
+## Security Audit (completed 2026-04-19)
 
-Audit conducted 2026-04-17. GitHub code-scanning errors/warnings resolved 2026-04-19. Backend hardening completed 2026-04-19 (tag validation, log injection, SQL injection, `anyRequest` catch-all). Outstanding items:
+Full audit conducted 2026-04-17. All identified issues resolved by 2026-04-19:
 
-**Critical**
-- **PDF fetch follows redirects to internal IPs** — `ArticleFetcherService.fetchPdf():83` uses `Redirect.NORMAL`, bypassing private-IP checks. (`fetchHtml()` already uses `followRedirects(false)`.) Fix: change to `Redirect.NEVER`.
-- **Webhook SSRF** — `WebhookService.java:84-99` POSTs to a user-configured URL with no host validation. Fix: run URL through `UrlValidator` before delivery.
-- **No password policy on admin-created users** — `UserManagementController.java:72` calls `passwordEncoder.encode()` directly without invoking `PasswordValidator`, so admins can create accounts with weak or empty passwords. Fix: call `passwordValidator.validate()` before encoding.
-
-**High**
-- **Error messages leak internals** — `GlobalExceptionHandler.java:29-88` returns raw exception messages (may include private IPs, service names). Fix: return generic messages.
-
-**Medium**
-- No `@Size` on URL field in `SummarizeRequest.java:12`
-- `sourceUrl` not validated in `SummarizeRequest.java:19`
-- No max password length in `PasswordValidator.java`
-- No IPv6 cloud-metadata blocking in `UrlValidator.java:112-122`
-- Webhook URL logged in plaintext — `WebhookService.java:101`
+- GitHub code-scanning errors/warnings (log injection, CSRF suppression, SQL injection, cleartext credential storage)
+- Tag length/count validation (`SummaryService.updateTags`)
+- `ReadeckController`: log only `scheme://host`, reject non-http/https scheme
+- `SchemaInitializer`: `PreparedStatement` to prevent SQL injection
+- `SecurityConfig`: `anyRequest().authenticated()` default-deny
+- `ArticleFetcherService.fetchPdf()`: `Redirect.NEVER` to prevent SSRF via redirects
+- `WebhookService`: validate URL with `UrlValidator` before POSTing; log only `scheme://host`
+- `UserManagementController`: enforce `PasswordValidator` on admin-created users
+- `GlobalExceptionHandler`/`SummarizerErrorHandler`: strip internal details from error responses; log full cause server-side
+- `SummarizeRequest`: `@Size` constraints on `url`, `sourceUrl`, `title`
+- `PasswordValidator`: `MAX_LENGTH = 128` to prevent bcrypt timing attacks
+- `UrlValidator`: block IPv6 ULA (`fc00::/7`) including AWS IMDSv2 endpoint `fd00:ec2::254`
