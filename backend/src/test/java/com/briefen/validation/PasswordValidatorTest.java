@@ -73,4 +73,18 @@ class PasswordValidatorTest {
         List<String> errors = validator.validate("Aa1!xxxx");
         assertThat(errors).isEmpty();
     }
+
+    @Test
+    void shouldRejectPasswordExceedingMaxLength() {
+        String tooLong = "Aa1!" + "x".repeat(125); // 129 chars
+        List<String> errors = validator.validate(tooLong);
+        assertThat(errors).anyMatch(e -> e.contains("128"));
+    }
+
+    @Test
+    void shouldAcceptPasswordAtMaxLength() {
+        String atMax = "Aa1!" + "x".repeat(124); // exactly 128 chars
+        List<String> errors = validator.validate(atMax);
+        assertThat(errors).isEmpty();
+    }
 }

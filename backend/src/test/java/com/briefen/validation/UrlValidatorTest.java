@@ -133,4 +133,25 @@ class UrlValidatorTest {
                 .isInstanceOf(InvalidUrlException.class)
                 .hasMessageContaining("empty");
     }
+
+    // ---- IPv6 cloud-metadata / ULA blocking ----
+
+    @Test
+    void shouldBlockIpv6UlaAddress() {
+        // fd00::/8 is ULA (Unique Local Address) — not blocked by Java's isSiteLocalAddress()
+        // but should be blocked to prevent SSRF via IPv6 ULA ranges including fd00:ec2::254
+        assertThatThrownBy(() -> urlValidator.checkResolvedAddress(
+                java.net.InetAddress.getByName("fd12:3456::1")))
+                .isInstanceOf(InvalidUrlException.class)
+                .hasMessageContaining("private");
+    }
+
+    @Test
+    void shouldBlockIpv6FcAddress() {
+        // fc00::/7 covers both fc00::/8 and fd00::/8
+        assertThatThrownBy(() -> urlValidator.checkResolvedAddress(
+                java.net.InetAddress.getByName("fc00::1")))
+                .isInstanceOf(InvalidUrlException.class)
+                .hasMessageContaining("private");
+    }
 }

@@ -13,6 +13,7 @@ import java.util.List;
 public class PasswordValidator {
 
     private static final int MIN_LENGTH = 8;
+    private static final int MAX_LENGTH = 128;
 
     /**
      * Validates the given password against the security policy.
@@ -24,6 +25,9 @@ public class PasswordValidator {
 
         if (password == null || password.length() < MIN_LENGTH) {
             errors.add("Password must be at least " + MIN_LENGTH + " characters long");
+        }
+        if (password != null && password.length() > MAX_LENGTH) {
+            errors.add("Password must not exceed " + MAX_LENGTH + " characters");
         }
         if (password == null) {
             return errors;

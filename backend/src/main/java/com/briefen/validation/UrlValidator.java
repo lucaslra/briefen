@@ -106,8 +106,13 @@ public class UrlValidator {
     }
 
     /**
-     * Blocks the well-known cloud metadata endpoint (169.254.169.254)
-     * which is technically link-local but deserves an explicit check.
+     * Blocks cloud metadata endpoints and IPv6 Unique Local Addresses (ULA, fc00::/7).
+     *
+     * Explicit checks:
+     *   IPv4  169.254.169.254           — AWS/GCP/Azure IMDSv1 (also caught by isLinkLocalAddress)
+     *   IPv6  fd00:ec2::254             — AWS EC2 IMDSv2 over IPv6
+     *   IPv6  fc00::/7 (ULA)            — not blocked by Java's isSiteLocalAddress (which only covers
+     *                                     deprecated fec0::/10), so we check the prefix explicitly
      */
     private boolean isCloudMetadata(InetAddress address) {
         byte[] bytes = address.getAddress();
@@ -117,6 +122,10 @@ public class UrlValidator {
                     && (bytes[1] & 0xFF) == 254
                     && (bytes[2] & 0xFF) == 169
                     && (bytes[3] & 0xFF) == 254;
+        }
+        // IPv6: ULA fc00::/7 — covers fd00:ec2::254 (AWS IMDSv2) and all unique-local ranges
+        if (bytes.length == 16) {
+            return (bytes[0] & 0xFE) == 0xFC; // matches fc00::/7
         }
         return false;
     }
