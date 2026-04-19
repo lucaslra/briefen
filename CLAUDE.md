@@ -279,6 +279,15 @@ flutter analyze --no-fatal-infos  # Lint
 - `test/features/users/users_screen_test.dart` — 5 widget tests for `UsersScreen`: renders user rows, empty state, FAB, retry on error, app bar title; uses `_FakeAuthNotifier` that sets state via `Future.microtask` to avoid running real credential check
 - `test/helpers/test_app.dart` — `buildTestApp()` helper wraps widget in `ProviderScope` + `MaterialApp` with localizations
 
+**Test coverage gaps (known, by priority):**
+- `AuthNotifier` — login, 401→logout, setup detection (highest risk: entire auth flow untested)
+- `ApiClient` — Basic Auth header injection, error type mapping (401→`AuthException`, timeout→`ApiTimeoutException`)
+- `SettingsNotifier` — `save(patch)` partial update logic; wrong merge = data loss
+- `SummarizeActionNotifier` — URL vs text paths, timeout handling
+- `BatchSummarizeNotifier` — sequential processing, foreground service lifecycle
+- `unreadCountProvider` — stale-cache-on-user-switch regression risk
+- Widget tests for `SummarizeScreen`, `ReadingListScreen`, `SummaryDetailScreen`
+
 ### Documentation (`docs/`)
 - `docs/getting-started.md` — step-by-step self-hosting guide
 - `docs/environment-variables.md` — complete env var reference (single source of truth)
