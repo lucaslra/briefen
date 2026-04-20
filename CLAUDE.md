@@ -385,7 +385,7 @@ Full audit conducted 2026-04-17. All identified issues resolved by 2026-04-19:
 
 - GitHub code-scanning errors/warnings (log injection, CSRF suppression, SQL injection, cleartext credential storage)
 - Tag length/count validation (`SummaryService.updateTags`)
-- `ReadeckController`: log only `scheme://host`, reject non-http/https scheme
+- `ReadeckService`: log only `scheme://host`, reject non-http/https scheme
 - `SchemaInitializer`: `PreparedStatement` to prevent SQL injection
 - `SecurityConfig`: `anyRequest().authenticated()` default-deny
 - `ArticleFetcherService.fetchPdf()`: `Redirect.NEVER` to prevent SSRF via redirects
