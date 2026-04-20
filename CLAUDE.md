@@ -304,6 +304,7 @@ flutter analyze --no-fatal-infos  # Lint
 | `docker.yml` | tag `v*.*.*` + manual | Build & push multi-arch image (`linux/amd64,linux/arm64`) to `ghcr.io/lucaslra/briefen` |
 | `release.yml` | tag `v*.*.*` | git-cliff changelog → GitHub Release |
 | `codeql.yml` | push/PR → `main` + weekly | CodeQL `security-and-quality` for `java-kotlin` and `javascript-typescript` |
+| `pages.yml` | push → `main` (`docs/**`) + manual | Jekyll build of `docs/` → deploy to `https://lucaslra.github.io/briefen/`; uses `actions/jekyll-build-pages` + `actions/deploy-pages`; `docs/_config.yml` sets Cayman theme |
 | `labeler.yml` | PR open/sync/reopen | Auto-label by changed paths (`backend`, `frontend`, `mobile`, `extension`, `infra`, `docs`) |
 
 **Key conventions:**
@@ -315,6 +316,7 @@ flutter analyze --no-fatal-infos  # Lint
 - `NVD_API_KEY` secret is optional for OWASP scan; falls back to 6 s delay without it
 
 ### Documentation (`docs/`)
+- Published at `https://lucaslra.github.io/briefen/` via `pages.yml` (GitHub Actions → `actions/jekyll-build-pages`); do **not** re-add a custom domain or remove `docs/_config.yml`
 - `docs/getting-started.md` — step-by-step self-hosting guide
 - `docs/environment-variables.md` — complete env var reference (single source of truth)
 - `docs/reverse-proxy.md` — Nginx, Caddy, Traefik configuration examples
