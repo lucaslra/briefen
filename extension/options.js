@@ -1,5 +1,5 @@
 const DEFAULT_BRIEFEN_URL = 'http://localhost:8080';
-const TIMEOUT_MS = 8_000;
+const TEST_TIMEOUT_MS = 8_000; // health check should respond quickly; shorter than send
 
 async function getStoredUrl() {
   const result = await browser.storage.local.get('briefenUrl');
@@ -11,7 +11,7 @@ async function saveUrl(url) {
 }
 
 async function getStoredCredentials() {
-  const result = await browser.storage.local.get(['briefenUsername', 'briefenPassword']);
+  const result = await browser.storage.session.get(['briefenUsername', 'briefenPassword']);
   return {
     username: result.briefenUsername || '',
     password: result.briefenPassword || '',
@@ -19,7 +19,7 @@ async function getStoredCredentials() {
 }
 
 async function saveCredentials(username, password) {
-  await browser.storage.local.set({ briefenUsername: username, briefenPassword: password });
+  await browser.storage.session.set({ briefenUsername: username, briefenPassword: password });
 }
 
 function showFeedback(el, type, message) {
@@ -35,7 +35,7 @@ function hideFeedback(el) {
 async function testConnection(url, credentials) {
   const normalizedUrl = url.replace(/\/$/, '');
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), TEST_TIMEOUT_MS);
 
   const headers = {};
   if (credentials?.username && credentials?.password) {
@@ -99,6 +99,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    if (usernameInput.value.trim().includes(':')) {
+      showFeedback(feedbackEl, 'error', 'Username must not contain a colon (:).');
+      return;
+    }
+
     await saveUrl(url.replace(/\/$/, ''));
     await saveCredentials(usernameInput.value.trim(), passwordInput.value);
     showFeedback(feedbackEl, 'success', 'Settings saved.');
@@ -132,5 +137,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Export pure/async functions for unit testing.
 // `module` is undefined in the browser extension context, so this block is a no-op at runtime.
 if (typeof module !== 'undefined') {
-  module.exports = { DEFAULT_BRIEFEN_URL, TIMEOUT_MS, getStoredUrl, saveUrl, getStoredCredentials, saveCredentials, showFeedback, hideFeedback, testConnection };
+  module.exports = { DEFAULT_BRIEFEN_URL, TEST_TIMEOUT_MS, getStoredUrl, saveUrl, getStoredCredentials, saveCredentials, showFeedback, hideFeedback, testConnection };
 }

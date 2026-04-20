@@ -7,6 +7,10 @@ global.browser = {
       get: jest.fn(),
       set: jest.fn(),
     },
+    session: {
+      get: jest.fn(),
+      set: jest.fn(),
+    },
   },
   tabs: {
     query: jest.fn(),

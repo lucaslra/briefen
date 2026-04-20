@@ -1,5 +1,5 @@
 const DEFAULT_BRIEFEN_URL = 'http://localhost:8080';
-const TIMEOUT_MS = 10_000;
+const SEND_TIMEOUT_MS = 10_000; // article POST can be slow if the backend is under load
 
 // Unsupported URL schemes — can't summarize browser internals
 const UNSUPPORTED_SCHEMES = ['about:', 'moz-extension:', 'chrome:', 'file:'];
@@ -10,7 +10,7 @@ async function getStoredUrl() {
 }
 
 async function getStoredCredentials() {
-  const result = await browser.storage.local.get(['briefenUsername', 'briefenPassword']);
+  const result = await browser.storage.session.get(['briefenUsername', 'briefenPassword']);
   return {
     username: result.briefenUsername || '',
     password: result.briefenPassword || '',
@@ -39,7 +39,7 @@ function truncateUrl(url, maxLen = 48) {
 
 async function sendToBriefen(tabUrl, briefenUrl, credentials) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
 
   const headers = { 'Content-Type': 'application/json' };
   if (credentials?.username && credentials?.password) {
@@ -73,7 +73,7 @@ async function sendToBriefen(tabUrl, briefenUrl, credentials) {
       throw new Error(message);
     }
 
-    return await response.json();
+    return await response.json().catch(() => null); // 2xx with no/invalid body is still success
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === 'AbortError') {
@@ -150,5 +150,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Export pure/async functions for unit testing.
 // `module` is undefined in the browser extension context, so this block is a no-op at runtime.
 if (typeof module !== 'undefined') {
-  module.exports = { DEFAULT_BRIEFEN_URL, TIMEOUT_MS, getStoredUrl, getStoredCredentials, getCurrentTab, isUnsupportedUrl, truncateUrl, sendToBriefen };
+  module.exports = { DEFAULT_BRIEFEN_URL, SEND_TIMEOUT_MS, getStoredUrl, getStoredCredentials, getCurrentTab, isUnsupportedUrl, truncateUrl, sendToBriefen };
 }

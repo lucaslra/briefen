@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/auth_provider.dart';
+import '../../core/foreground_task/foreground_task_service.dart';
 import '../../core/notifications/notification_service.dart';
 import '../reading_list/providers.dart';
 import 'data/summarize_repository.dart';
@@ -52,7 +52,8 @@ class SummarizeActionNotifier extends Notifier<SummarizeState> {
 
   Future<void> _run(Future<Summary> Function() fetch) async {
     state = const SummarizeState(status: SummarizeStatus.loading);
-    await _startForegroundTask();
+    final foregroundTask = ref.read(foregroundTaskServiceProvider);
+    await foregroundTask.start('Summarizing article...');
 
     try {
       final notifications = ref.read(notificationServiceProvider);
@@ -74,37 +75,8 @@ class SummarizeActionNotifier extends Notifier<SummarizeState> {
         error: e.toString(),
       );
     } finally {
-      await _stopForegroundTask();
+      await foregroundTask.stop();
     }
-  }
-
-  Future<void> _startForegroundTask() async {
-    FlutterForegroundTask.init(
-      androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'briefen_summarize',
-        channelName: 'Summarizing',
-        channelDescription: 'Shown while an article is being summarized',
-        channelImportance: NotificationChannelImportance.DEFAULT,
-        priority: NotificationPriority.DEFAULT,
-      ),
-      iosNotificationOptions: const IOSNotificationOptions(),
-      foregroundTaskOptions: ForegroundTaskOptions(
-        eventAction: ForegroundTaskEventAction.nothing(),
-        autoRunOnBoot: false,
-        autoRunOnMyPackageReplaced: false,
-        allowWakeLock: true,
-        allowWifiLock: true,
-      ),
-    );
-
-    await FlutterForegroundTask.startService(
-      notificationTitle: 'Briefen',
-      notificationText: 'Summarizing article...',
-    );
-  }
-
-  Future<void> _stopForegroundTask() async {
-    await FlutterForegroundTask.stopService();
   }
 
   void reset() {
@@ -158,7 +130,8 @@ class BatchSummarizeNotifier extends Notifier<BatchSummarizeState> {
       results: [],
     );
 
-    await _startForegroundTask(urls.length);
+    final foregroundTask = ref.read(foregroundTaskServiceProvider);
+    await foregroundTask.start('Summarizing ${urls.length} articles...');
 
     final repo = ref.read(summarizeRepositoryProvider);
     final results = <BatchResult>[];
@@ -182,7 +155,7 @@ class BatchSummarizeNotifier extends Notifier<BatchSummarizeState> {
         }
       }
     } finally {
-      await FlutterForegroundTask.stopService();
+      await foregroundTask.stop();
     }
 
     state = BatchSummarizeState(
@@ -204,31 +177,6 @@ class BatchSummarizeNotifier extends Notifier<BatchSummarizeState> {
         '$succeeded/${urls.length} articles ready',
       );
     }
-  }
-
-  Future<void> _startForegroundTask(int total) async {
-    FlutterForegroundTask.init(
-      androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'briefen_summarize',
-        channelName: 'Summarizing',
-        channelDescription: 'Shown while articles are being summarized',
-        channelImportance: NotificationChannelImportance.DEFAULT,
-        priority: NotificationPriority.DEFAULT,
-      ),
-      iosNotificationOptions: const IOSNotificationOptions(),
-      foregroundTaskOptions: ForegroundTaskOptions(
-        eventAction: ForegroundTaskEventAction.nothing(),
-        autoRunOnBoot: false,
-        autoRunOnMyPackageReplaced: false,
-        allowWakeLock: true,
-        allowWifiLock: true,
-      ),
-    );
-
-    await FlutterForegroundTask.startService(
-      notificationTitle: 'Briefen',
-      notificationText: 'Summarizing $total articles...',
-    );
   }
 
   void reset() => state = const BatchSummarizeState();

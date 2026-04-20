@@ -1,5 +1,5 @@
 const DEFAULT_BRIEFEN_URL = 'http://localhost:8080';
-const TIMEOUT_MS = 8_000;
+const TEST_TIMEOUT_MS = 8_000; // health check should respond quickly; shorter than send
 
 async function getStoredUrl() {
   const result = await chrome.storage.local.get('briefenUrl');
@@ -11,7 +11,7 @@ async function saveUrl(url) {
 }
 
 async function getStoredCredentials() {
-  const result = await chrome.storage.local.get(['briefenUsername', 'briefenPassword']);
+  const result = await chrome.storage.session.get(['briefenUsername', 'briefenPassword']);
   return {
     username: result.briefenUsername || '',
     password: result.briefenPassword || '',
@@ -19,7 +19,7 @@ async function getStoredCredentials() {
 }
 
 async function saveCredentials(username, password) {
-  await chrome.storage.local.set({ briefenUsername: username, briefenPassword: password });
+  await chrome.storage.session.set({ briefenUsername: username, briefenPassword: password });
 }
 
 function showFeedback(el, type, message) {
@@ -35,7 +35,7 @@ function hideFeedback(el) {
 async function testConnection(url, credentials) {
   const normalizedUrl = url.replace(/\/$/, '');
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), TEST_TIMEOUT_MS);
 
   const headers = {};
   if (credentials?.username && credentials?.password) {
@@ -96,6 +96,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       new URL(url); // validate format
     } catch {
       showFeedback(feedbackEl, 'error', 'Enter a valid URL, e.g. http://localhost:8080');
+      return;
+    }
+
+    if (usernameInput.value.trim().includes(':')) {
+      showFeedback(feedbackEl, 'error', 'Username must not contain a colon (:).');
       return;
     }
 

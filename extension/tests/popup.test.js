@@ -3,7 +3,7 @@ const path = require('path');
 
 const {
   DEFAULT_BRIEFEN_URL,
-  TIMEOUT_MS,
+  SEND_TIMEOUT_MS,
   getStoredUrl,
   getStoredCredentials,
   getCurrentTab,
@@ -112,12 +112,12 @@ describe('getStoredUrl', () => {
 
 describe('getStoredCredentials', () => {
   test('returns stored username and password', async () => {
-    browser.storage.local.get.mockResolvedValueOnce({ briefenUsername: 'alice', briefenPassword: 'secret' });
+    browser.storage.session.get.mockResolvedValueOnce({ briefenUsername: 'alice', briefenPassword: 'secret' });
     await expect(getStoredCredentials()).resolves.toEqual({ username: 'alice', password: 'secret' });
   });
 
   test('returns empty strings when nothing is stored', async () => {
-    browser.storage.local.get.mockResolvedValueOnce({});
+    browser.storage.session.get.mockResolvedValueOnce({});
     await expect(getStoredCredentials()).resolves.toEqual({ username: '', password: '' });
   });
 });
@@ -219,6 +219,14 @@ describe('sendToBriefen', () => {
     await expect(sendToBriefen(TAB_URL, BRIEFEN_URL)).resolves.toEqual(payload);
   });
 
+  test('returns null when success response body is not parseable JSON', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.reject(new SyntaxError('Unexpected token')),
+    });
+    await expect(sendToBriefen(TAB_URL, BRIEFEN_URL)).resolves.toBeNull();
+  });
+
   test('throws "Endpoint not found" on 404', async () => {
     mockError(404);
     await expect(sendToBriefen(TAB_URL, BRIEFEN_URL)).rejects.toThrow('Endpoint not found');
@@ -266,7 +274,7 @@ describe('sendToBriefen', () => {
     await expect(sendToBriefen(TAB_URL, BRIEFEN_URL)).rejects.toThrow('Could not reach Briefen');
   });
 
-  test('aborts the request after TIMEOUT_MS via the AbortController signal', async () => {
+  test('aborts the request after SEND_TIMEOUT_MS via the AbortController signal', async () => {
     jest.useFakeTimers();
     fetch.mockImplementationOnce((_url, { signal }) =>
       new Promise((_res, rej) => {
@@ -277,7 +285,7 @@ describe('sendToBriefen', () => {
     );
 
     const promise = sendToBriefen(TAB_URL, BRIEFEN_URL);
-    jest.advanceTimersByTime(TIMEOUT_MS);
+    jest.advanceTimersByTime(SEND_TIMEOUT_MS);
     await expect(promise).rejects.toThrow('Request timed out');
     jest.useRealTimers();
   });
@@ -318,9 +326,8 @@ describe('Popup DOM integration', () => {
 
   test('transitions to "success" state after a successful send', async () => {
     browser.tabs.query.mockResolvedValueOnce([{ url: 'https://example.com/article' }]);
-    browser.storage.local.get
-      .mockResolvedValueOnce({})   // getStoredUrl
-      .mockResolvedValueOnce({});  // getStoredCredentials
+    browser.storage.local.get.mockResolvedValueOnce({});    // getStoredUrl
+    browser.storage.session.get.mockResolvedValueOnce({});  // getStoredCredentials
     fetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ id: '1', status: 'QUEUED', message: 'Queued' }),
@@ -338,9 +345,8 @@ describe('Popup DOM integration', () => {
 
   test('transitions to "error" state and shows message on failure', async () => {
     browser.tabs.query.mockResolvedValueOnce([{ url: 'https://example.com/article' }]);
-    browser.storage.local.get
-      .mockResolvedValueOnce({})   // getStoredUrl
-      .mockResolvedValueOnce({});  // getStoredCredentials
+    browser.storage.local.get.mockResolvedValueOnce({});    // getStoredUrl
+    browser.storage.session.get.mockResolvedValueOnce({});  // getStoredCredentials
     fetch.mockResolvedValueOnce({ ok: false, status: 404, json: () => Promise.resolve({}) });
 
     loadPopup();
