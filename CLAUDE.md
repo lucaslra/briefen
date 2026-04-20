@@ -247,6 +247,8 @@ flutter analyze --no-fatal-infos  # Lint
 - Biometric auth: optional lock-on-background using `local_auth`; `BiometricService` wraps `LocalAuthentication`; `BiometricEnabledNotifier` persists toggle to `SharedPreferences`; `BriefenApp` (`ConsumerStatefulWidget` + `WidgetsBindingObserver`) sets `_locked = true` on `paused` and shows `_LockScreen` overlay until biometric success; enabling requires a passing auth challenge; toggle hidden on devices without biometrics
 - iOS share extension: `ShareExtension` target writes URL to App Group (`group.dev.azurecoder.briefen`) then opens `briefen://share`; `AppDelegate` reads the URL and passes it through the `dev.azurecoder.briefen/share` MethodChannel; fully configured in `project.pbxproj` — no manual Xcode steps needed beyond registering the App Group in Apple Developer Portal
 
+**Feature structure** — each feature follows a three-layer layout: `data/` (repository + cache implementations, the actual API/storage calls), `domain/` (plain Dart models and interfaces, no Flutter deps), `presentation/` (screens and widgets). `providers.dart` at the feature root wires them together. The `data/` directories were previously mismatched by an overly broad `.gitignore` rule — they are now properly tracked.
+
 **Structure (`mobile/lib/`):**
 - `main.dart` — entry point; initializes notifications; uses `ProviderContainer` + `UncontrolledProviderScope` (not `ProviderScope`) so the share MethodChannel can update providers before the widget tree builds
 - `app.dart` — `ConsumerStatefulWidget` + `WidgetsBindingObserver`; `MaterialApp.router` with `builder` for biometric lock overlay; locks on `AppLifecycleState.paused`, auto-prompts on `resumed`
