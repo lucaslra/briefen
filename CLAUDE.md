@@ -349,6 +349,8 @@ Project-specific agents invoked via `/command-name`:
 - **Auth is always on** — `SecurityConfig` requires authentication on all routes except `/actuator/health` and `/api/setup/**`; the admin account is created through the browser-based first-run setup flow (`SetupService`)
 - **CSRF disabled intentionally** — `SecurityConfig` disables Spring CSRF protection; this is correct for a stateless REST API using HTTP Basic Auth (no session cookies, so cross-site requests cannot be authenticated by a third-party page); the `// codeql[java/spring-disabled-csrf-protection]` suppression comment documents this intent
 - **Hibernate ddl-auto** — schema is managed by `ddl-auto: update` (in `application.yml`) with a custom `SchemaInitializer` for SQLite-specific column migrations. No Flyway dependency exists in the project
+- **`.gitignore` `data/` rule** — written as `/data/` (leading slash) to anchor it to the repo root; without the slash it would also ignore `mobile/lib/features/*/data/` directories — never remove the slash
+- **`useAuth` session format** — `sessionStorage` key `briefen_auth` stores `{ username, authHeader, userId, role }`; `authHeader` is the pre-computed `Basic <base64>` string, never the raw password; tests must set `authHeader`, not `password`
 
 ## Frontend Audit (completed 2026-04-19, released as v0.0.21)
 
