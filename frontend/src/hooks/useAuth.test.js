@@ -37,7 +37,7 @@ describe('useAuth', () => {
   it('should restore authentication from sessionStorage', () => {
     sessionStorage.setItem(SESSION_KEY, JSON.stringify({
       username: 'admin',
-      password: 'pass',
+      authHeader: 'Basic ' + btoa('admin:pass'),
       userId: '42',
       role: 'ADMIN',
     }))

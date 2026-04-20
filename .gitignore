@@ -41,8 +41,8 @@ Thumbs.db
 # Claude Code local settings (may contain private hostnames/IPs)
 .claude/settings.local.json
 
-# SQLite database
-data/
+# SQLite database (leading slash anchors to repo root only, not mobile/lib/features/*/data/)
+/data/
 *.db
 *.db-shm
 *.db-wal
