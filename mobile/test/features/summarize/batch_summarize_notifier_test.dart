@@ -1,14 +1,11 @@
 import 'package:briefen/core/foreground_task/foreground_task_service.dart';
 import 'package:briefen/core/notifications/notification_service.dart';
-import 'package:briefen/features/reading_list/providers.dart';
 import 'package:briefen/features/summarize/data/summarize_repository.dart';
 import 'package:briefen/features/summarize/domain/summary.dart';
 import 'package:briefen/features/summarize/providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-
-import '../../helpers/fixtures.dart';
 
 // ── Mocks / Fakes ─────────────────────────────────────────────────────────────
 
