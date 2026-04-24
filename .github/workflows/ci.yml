@@ -3,20 +3,19 @@
 # =============================================================================
 #
 # What it does:
-#   Builds and tests both the Java/Spring Boot backend and the React/Vite
-#   frontend on every push and pull request targeting `main`. The backend job
-#   spins up a real Ollama service container so integration tests run against
-#   actual dependencies. A final `ci-passed` gate job provides a single
-#   required status check for branch protection.
+#   A changes-detection job identifies which parts of the codebase were
+#   modified. Backend, frontend, and mobile jobs only run when their own
+#   source tree changed. The dependency-audit job only runs when lock files
+#   change. A final `ci-passed` gate treats skipped jobs as passing so branch
+#   protection always has a result to check.
 #
 # How to extend:
 #   - Change the Java version: update `java-version` in the backend job and
-#     `<java.version>` in backend/pom.xml. If eclipse-temurin doesn't ship the
-#     version yet, try `distribution: 'zulu'`.
-#   - Add a new test suite: add a step in the appropriate job. If it needs
-#     another service container, add it under `services:`.
-#   - Add end-to-end tests: create a new job that depends on both backend and
-#     frontend, start both services, and run Playwright or similar.
+#     `<java.version>` in backend/pom.xml.
+#   - Add a new test suite: add a step in the appropriate job.
+#   - Add a new source tree: add an entry in the `changes` job filters, add a
+#     corresponding job with `if: needs.changes.outputs.<name> == 'true'`, and
+#     add it to the `ci-passed` needs list.
 # =============================================================================
 
 name: CI
@@ -45,6 +44,37 @@ concurrency:
 
 jobs:
   # ---------------------------------------------------------------------------
+  # Changes detection — determines which jobs need to run
+  # ---------------------------------------------------------------------------
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend:  ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      mobile:   ${{ steps.filter.outputs.mobile }}
+      deps:     ${{ steps.filter.outputs.deps }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
+
+      - name: Filter changed paths
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590  # v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+              - 'e2e/**'
+            mobile:
+              - 'mobile/**'
+            deps:
+              - 'backend/pom.xml'
+              - 'frontend/pnpm-lock.yaml'
+
+  # ---------------------------------------------------------------------------
   # Secret scanning — Gitleaks across full history
   # ---------------------------------------------------------------------------
   secrets:
@@ -52,7 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
         with:
           fetch-depth: 0   # full history so Gitleaks can scan all commits
 
@@ -66,6 +96,8 @@ jobs:
   # ---------------------------------------------------------------------------
   backend:
     name: Backend (Java 25, Maven)
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
 
     services:
@@ -88,7 +120,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
 
       - name: Set up Java 25 (Temurin) with Maven cache
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  # v5
@@ -97,11 +129,6 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
           cache-dependency-path: backend/pom.xml
-
-      # TODO: If integration tests require a specific Ollama model, add a step
-      # here to pull it, e.g.:
-      #   - name: Pull Ollama model
-      #     run: curl -s http://localhost:11434/api/pull -d '{"name":"gemma2:2b"}'
 
       - name: Build and verify
         run: ./mvnw --batch-mode verify
@@ -127,6 +154,8 @@ jobs:
   # ---------------------------------------------------------------------------
   frontend:
     name: Frontend (Node LTS, pnpm)
+    needs: [changes]
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
 
     defaults:
@@ -135,7 +164,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
 
       - name: Set up pnpm
         uses: pnpm/action-setup@a8198c4bff370c8506180b035930dea56dbd5288  # v5
@@ -176,18 +205,50 @@ jobs:
           if-no-files-found: ignore
 
   # ---------------------------------------------------------------------------
-  # Dependency audit — OWASP + pnpm audit (non-blocking)
+  # Mobile — Flutter analyze + unit tests
+  # ---------------------------------------------------------------------------
+  mobile:
+    name: Mobile (Flutter, stable)
+    needs: [changes]
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
+
+      - name: Set up Flutter (stable channel)
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2  # v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test
+
+  # ---------------------------------------------------------------------------
+  # Dependency audit — OWASP + pnpm audit (only when lock files change)
   # ---------------------------------------------------------------------------
   dependency-audit:
     name: Dependency Audit
+    needs: [changes]
+    if: needs.changes.outputs.deps == 'true'
     runs-on: ubuntu-latest
-    # Non-blocking: failures are visible but don't prevent merging.
-    # Promote to a required check after the first triage pass.
     continue-on-error: true
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
 
       # ---- Backend: OWASP Dependency-Check ----
       - name: Set up Java 25 (Temurin) with Maven cache
@@ -242,36 +303,6 @@ jobs:
         continue-on-error: true
 
   # ---------------------------------------------------------------------------
-  # Mobile — Flutter analyze + unit tests
-  # ---------------------------------------------------------------------------
-  mobile:
-    name: Mobile (Flutter, stable)
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: mobile
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
-
-      - name: Set up Flutter (stable channel)
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2  # v2.23.0
-        with:
-          channel: stable
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos
-
-      - name: Run tests
-        run: flutter test
-
-  # ---------------------------------------------------------------------------
   # Gate — single required status check for branch protection
   # ---------------------------------------------------------------------------
   ci-passed:
@@ -282,15 +313,16 @@ jobs:
     steps:
       - name: Check job results
         run: |
-          if [[ "${{ needs.secrets.result }}" != "success" || \
-                "${{ needs.backend.result }}" != "success" || \
-                "${{ needs.frontend.result }}" != "success" || \
-                "${{ needs.mobile.result }}"  != "success" ]]; then
-            echo "One or more jobs failed:"
-            echo "  secrets:  ${{ needs.secrets.result }}"
-            echo "  backend:  ${{ needs.backend.result }}"
-            echo "  frontend: ${{ needs.frontend.result }}"
-            echo "  mobile:   ${{ needs.mobile.result }}"
-            exit 1
-          fi
-          echo "All jobs passed."
+          # A job result of "skipped" means its paths didn't match — that's fine.
+          # Only "failure" or "cancelled" should block the merge.
+          for result in \
+            "${{ needs.secrets.result }}" \
+            "${{ needs.backend.result }}" \
+            "${{ needs.frontend.result }}" \
+            "${{ needs.mobile.result }}"; do
+            if [[ "$result" != "success" && "$result" != "skipped" ]]; then
+              echo "Blocking result: $result"
+              exit 1
+            fi
+          done
+          echo "All jobs passed or were not applicable."
