@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Briefen — Local-first article summarizer</title>
+  <meta name="description" content="Paste a URL, get an AI summary. Self-hosted, local-first, no cloud dependencies. Powered by Ollama, OpenAI, or Anthropic.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://lucaslra.github.io/briefen/">
+  <meta property="og:title" content="Briefen — Local-first article summarizer">
+  <meta property="og:description" content="Paste a URL, get an AI summary. Self-hosted, local-first, no cloud dependencies.">
+  <meta property="og:image" content="https://lucaslra.github.io/briefen/images/screenshot.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Briefen — Local-first article summarizer">
+  <meta name="twitter:description" content="Paste a URL, get an AI summary. Self-hosted, local-first, no cloud dependencies.">
+  <meta name="twitter:image" content="https://lucaslra.github.io/briefen/images/screenshot.png">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- NAV -->
+  <header class="nav">
+    <div class="nav-inner">
+      <span class="nav-logo">Briefen</span>
+      <nav class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/lucaslra/briefen" class="btn btn-ghost">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <a href="https://github.com/lucaslra/briefen/releases/tag/v0.0.23" class="version-badge">v0.0.23</a>
+        <h1>Paste a URL.<br>Get a summary.</h1>
+        <p class="hero-sub">
+          Briefen is a local-first article summarizer. Paste a URL, Jsoup fetches the article, and a local or cloud LLM summarizes it — cached in SQLite. No cloud dependencies by default. Everything runs on your server.
+        </p>
+        <div class="hero-actions">
+          <a href="#install" class="btn btn-primary">Get started</a>
+          <a href="https://github.com/lucaslra/briefen" class="btn btn-outline">View on GitHub</a>
+        </div>
+        <p class="hero-note">Free and open source &mdash; MIT license &mdash; no account required</p>
+      </div>
+      <div class="hero-screenshot">
+        <img src="images/screenshot.png" alt="Briefen — paste a URL and get an AI-powered summary" width="600">
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="container">
+      <h2>Everything you need to stay on top of what you read</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">&#128279;</div>
+          <h3>URL &amp; text summarization</h3>
+          <p>Paste any URL or raw text. Jsoup extracts the article, PDFBox handles PDFs — then your chosen LLM summarizes it instantly.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#129302;</div>
+          <h3>Local LLM first</h3>
+          <p>Powered by Ollama out of the box — runs Gemma, Llama, and others entirely on your machine. No API key, no data leaving your server.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#9925;</div>
+          <h3>Cloud LLMs optional</h3>
+          <p>Plug in OpenAI or Anthropic with an API key when you want faster or higher-quality results. Switch models per summary.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128218;</div>
+          <h3>Reading list</h3>
+          <p>Every summary is saved. Filter by read/unread, search, add notes and tags, and export the full list to Markdown.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128241;</div>
+          <h3>Mobile app</h3>
+          <p>Flutter app for Android and iOS. Share URLs directly from any browser, summarize in the background, and get a push notification when it's ready.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#129431;</div>
+          <h3>Browser extensions</h3>
+          <p>One-click summarize from Firefox (MV2) or Chrome/Edge/Brave (MV3). Sends the current tab's URL to your Briefen instance.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128274;</div>
+          <h3>Always authenticated</h3>
+          <p>HTTP Basic Auth on every route. First-run browser setup creates the admin account. Multi-user with admin-managed accounts.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128296;</div>
+          <h3>Zero-dependency setup</h3>
+          <p>Single Docker image with embedded frontend. SQLite by default — no external services required. PostgreSQL available for larger deployments.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128203;</div>
+          <h3>Readeck integration</h3>
+          <p>Browse and summarize your Readeck bookmarks directly from the app. Configure once, access your full bookmark library.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTALL -->
+  <section class="install" id="install">
+    <div class="container">
+      <h2>Up and running in under a minute</h2>
+      <p class="install-sub">Requires Docker with Compose v2 (<code>docker compose</code>).</p>
+      <div class="code-block">
+        <pre><code>curl -o docker-compose.yml https://raw.githubusercontent.com/lucaslra/briefen/main/docker-compose.sample.yml
+docker compose up -d</code></pre>
+      </div>
+      <p class="install-note">
+        Open <strong>http://localhost:8080</strong> — on first access you'll be prompted to create the admin account.
+      </p>
+      <div class="install-links">
+        <a href="getting-started.html" class="btn btn-primary">Full deployment guide</a>
+        <a href="https://github.com/lucaslra/briefen/blob/main/CHANGELOG.md" class="btn btn-outline">Changelog</a>
+      </div>
+      <div class="install-alt">
+        <span class="install-alt-label">Or pull the pre-built image:</span>
+        <div class="code-block">
+          <pre><code>docker pull ghcr.io/lucaslra/briefen:latest</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STACK -->
+  <section class="stack">
+    <div class="container">
+      <h2>Built on proven, boring technology</h2>
+      <div class="stack-grid">
+        <div class="stack-item">
+          <strong>Java 25 + Spring Boot 4</strong>
+          <span>Jsoup &middot; PDFBox &middot; HTTP Basic Auth</span>
+        </div>
+        <div class="stack-item">
+          <strong>React 19 + Vite</strong>
+          <span>Plain CSS &middot; hooks pattern &middot; no UI framework</span>
+        </div>
+        <div class="stack-item">
+          <strong>SQLite / PostgreSQL</strong>
+          <span>File-based by default &middot; Hibernate ddl-auto</span>
+        </div>
+        <div class="stack-item">
+          <strong>Ollama / OpenAI / Anthropic</strong>
+          <span>Local-first &middot; cloud optional &middot; model picker</span>
+        </div>
+        <div class="stack-item">
+          <strong>Flutter 3</strong>
+          <span>Android &amp; iOS &middot; Riverpod &middot; go_router</span>
+        </div>
+        <div class="stack-item">
+          <strong>Docker</strong>
+          <span>Multi-stage build &middot; multi-arch &middot; embedded frontend</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-logo">Briefen</span>
+        <nav class="footer-links">
+          <a href="https://github.com/lucaslra/briefen">GitHub</a>
+          <a href="https://github.com/lucaslra/briefen/releases">Releases</a>
+          <a href="getting-started.html">Deployment</a>
+          <a href="environment-variables.html">Environment variables</a>
+          <a href="reverse-proxy.html">Reverse proxy</a>
+          <a href="https://github.com/lucaslra/briefen/blob/main/CONTRIBUTING.md">Contributing</a>
+          <a href="https://github.com/lucaslra/briefen/blob/main/SECURITY.md">Security</a>
+          <a href="https://github.com/lucaslra/briefen/blob/main/LICENSE">MIT License</a>
+        </nav>
+      </div>
+      <p class="footer-copy">Self-hosted &mdash; no telemetry &mdash; your data stays on your server.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
