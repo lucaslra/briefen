@@ -8,7 +8,7 @@
 # ---------------------------------------------------------------------------
 # Stage 1: Build the React frontend
 # ---------------------------------------------------------------------------
-FROM node:22-alpine AS frontend-build
+FROM node:26-alpine AS frontend-build
 
 # APP_BASE_PATH sets the Vite base URL baked into asset paths.
 # Must match SERVER_CONTEXT_PATH at runtime.
