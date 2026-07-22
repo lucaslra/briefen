@@ -56,7 +56,7 @@ jobs:
       deps:     ${{ steps.filter.outputs.deps }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v4
 
       - name: Filter changed paths
         uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590  # v3
@@ -82,7 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v4
         with:
           fetch-depth: 0   # full history so Gitleaks can scan all commits
 
@@ -120,7 +120,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v4
 
       - name: Set up Java 25 (Temurin) with Maven cache
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  # v5
@@ -164,7 +164,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v4
 
       - name: Set up pnpm
         uses: pnpm/action-setup@a8198c4bff370c8506180b035930dea56dbd5288  # v5
@@ -219,7 +219,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v4
 
       - name: Set up Flutter (stable channel)
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2  # v2.23.0
@@ -248,7 +248,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v4
 
       # ---- Backend: OWASP Dependency-Check ----
       - name: Set up Java 25 (Temurin) with Maven cache
