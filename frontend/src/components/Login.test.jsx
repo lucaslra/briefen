@@ -115,4 +115,42 @@ describe('Login', () => {
 
     expect(screen.getByRole('button', { name: /sign in/i })).toBeDisabled()
   })
+
+  describe('SSO / OIDC', () => {
+    it('should not show the SSO button when OIDC is disabled', () => {
+      renderLogin({ authConfig: { passwordLogin: true, oidc: { enabled: false } } })
+
+      expect(screen.queryByRole('link', { name: /sign in with/i })).not.toBeInTheDocument()
+      expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+    })
+
+    it('should show the SSO button with the provider name when OIDC is enabled', () => {
+      renderLogin({ authConfig: { passwordLogin: true, oidc: { enabled: true, providerName: 'Keycloak' } } })
+
+      const ssoLink = screen.getByRole('link', { name: /sign in with keycloak/i })
+      expect(ssoLink).toBeInTheDocument()
+      expect(ssoLink).toHaveAttribute('href', '/oauth2/authorization/briefen')
+      // Hybrid mode: password form still available.
+      expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+    })
+
+    it('should hide the password form when passwordLogin is false (SSO-only)', () => {
+      renderLogin({ authConfig: { passwordLogin: false, oidc: { enabled: true, providerName: 'SSO' } } })
+
+      expect(screen.getByRole('link', { name: /sign in with sso/i })).toBeInTheDocument()
+      expect(screen.queryByLabelText(/username/i)).not.toBeInTheDocument()
+      expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument()
+    })
+
+    it('should render a friendly message from ?auth_error and strip the param', () => {
+      window.history.replaceState(null, '', '/?auth_error=signup_disabled')
+
+      renderLogin({ authConfig: { passwordLogin: true, oidc: { enabled: true } } })
+
+      expect(screen.getByRole('alert')).toHaveTextContent(/not provisioned/i)
+      expect(window.location.search).not.toContain('auth_error')
+
+      window.history.replaceState(null, '', '/')
+    })
+  })
 })

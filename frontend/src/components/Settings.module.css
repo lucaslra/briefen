@@ -450,3 +450,55 @@
     flex: 1;
   }
 }
+
+/* ── Access tokens ── */
+.tokenReveal {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent-subtle, rgba(91, 80, 232, 0.08));
+}
+
+.tokenNotice {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.tokenValue {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
+.tokenList {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tokenItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.tokenName {
+  font-size: 0.9rem;
+  color: var(--text);
+  word-break: break-word;
+}

@@ -100,3 +100,41 @@
   background: var(--error-bg, rgba(224, 82, 82, 0.08));
   border-radius: 6px;
 }
+
+.ssoButton {
+  display: block;
+  padding: 10px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.ssoButton:hover {
+  background: var(--accent);
+  color: var(--color-on-accent);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}

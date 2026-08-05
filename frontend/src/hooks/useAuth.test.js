@@ -7,12 +7,18 @@ import { clearCredentials } from '../apiFetch.js'
 
 const SESSION_KEY = 'briefen_auth'
 
+let logoutCalls = 0
+
 const server = setupServer(
   http.get('/api/settings', () => {
     return HttpResponse.json({}, { status: 200 })
   }),
   http.get('/api/users/me', () => {
     return HttpResponse.json({ id: '42', role: 'ADMIN' })
+  }),
+  http.post('/api/auth/logout', () => {
+    logoutCalls++
+    return new HttpResponse(null, { status: 204 })
   })
 )
 
@@ -21,6 +27,8 @@ afterEach(() => {
   server.resetHandlers()
   sessionStorage.clear()
   clearCredentials()
+  logoutCalls = 0
+  window.history.replaceState(null, '', '/')
 })
 afterAll(() => server.close())
 
@@ -140,6 +148,39 @@ describe('useAuth', () => {
       expect(result.current.isAuthenticated).toBe(false)
     })
     expect(result.current.username).toBeNull()
+  })
+
+  it('should promote an SSO callback fragment into a Bearer session and strip the URL', () => {
+    window.history.replaceState(null, '', '/#sso_token=bfn_abc123&uid=7&role=USER&username=ssouser')
+
+    const { result } = renderHook(() => useAuth())
+
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.username).toBe('ssouser')
+    expect(result.current.userId).toBe('7')
+    expect(result.current.role).toBe('USER')
+
+    const stored = JSON.parse(sessionStorage.getItem(SESSION_KEY))
+    expect(stored.authHeader).toBe('Bearer bfn_abc123')
+
+    // Token stripped from the URL (no lingering fragment).
+    expect(window.location.hash).toBe('')
+  })
+
+  it('should POST /api/auth/logout to revoke the bearer session on logout', async () => {
+    const { result } = renderHook(() => useAuth())
+
+    await act(async () => {
+      await result.current.login('admin', 'secret')
+    })
+
+    await act(async () => {
+      result.current.logout()
+    })
+
+    await waitFor(() => expect(logoutCalls).toBe(1))
+    expect(result.current.isAuthenticated).toBe(false)
+    expect(sessionStorage.getItem(SESSION_KEY)).toBeNull()
   })
 
   it('should still login when /api/users/me fails', async () => {

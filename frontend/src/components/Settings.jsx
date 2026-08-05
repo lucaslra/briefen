@@ -6,6 +6,7 @@ import styles from './Settings.module.css'
 import { useNotification } from '../hooks/useNotification'
 import { apiFetch } from '../apiFetch.js'
 import { useUsers } from '../hooks/useUsers'
+import { useApiTokens } from '../hooks/useApiTokens'
 import { formatRelativeDate } from '../utils/relativeDate'
 
 function UsersTab({ currentUserId }) {
@@ -141,6 +142,94 @@ const LANGUAGE_OPTIONS = [
   { value: 'en', label: 'SETTINGS_LANGUAGE_EN' },
   { value: 'pt-BR', label: 'SETTINGS_LANGUAGE_PT_BR' },
 ]
+
+function AccessTokensSection() {
+  const { tokens, loading, error, createToken, revokeToken } = useApiTokens()
+  const [name, setName] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [newToken, setNewToken] = useState(null)
+  const [copied, setCopied] = useState(false)
+  const [createError, setCreateError] = useState(null)
+
+  async function handleCreate() {
+    if (!name.trim()) return
+    setCreating(true)
+    setCreateError(null)
+    setNewToken(null)
+    setCopied(false)
+    try {
+      const token = await createToken(name.trim())
+      setNewToken(token)
+      setName('')
+    } catch {
+      setCreateError(STRINGS.SETTINGS_TOKENS_CREATE_ERROR)
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(newToken)
+      setCopied(true)
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
+
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionTitle}>{STRINGS.SETTINGS_TOKENS_HEADING}</h3>
+      <p className={styles.sectionDesc}>{STRINGS.SETTINGS_TOKENS_SUBHEADING}</p>
+
+      <div className={styles.apiKeyGroup}>
+        <div className={styles.apiKeyRow}>
+          <input
+            type="text"
+            className={styles.apiKeyInput}
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder={STRINGS.SETTINGS_TOKENS_NAME_PLACEHOLDER}
+            maxLength={100}
+          />
+          <button className={styles.apiKeySaveBtn} onClick={handleCreate} disabled={!name.trim() || creating}>
+            {STRINGS.SETTINGS_TOKENS_CREATE}
+          </button>
+        </div>
+        {createError && <p className={styles.createError}>{createError}</p>}
+      </div>
+
+      {newToken && (
+        <div className={styles.tokenReveal} role="alert">
+          <p className={styles.tokenNotice}>{STRINGS.SETTINGS_TOKENS_CREATED_NOTICE}</p>
+          <div className={styles.apiKeyRow}>
+            <code className={styles.tokenValue}>{newToken}</code>
+            <button className={styles.apiKeySaveBtn} onClick={handleCopy}>
+              {copied ? STRINGS.SETTINGS_TOKENS_COPIED : STRINGS.SETTINGS_TOKENS_COPY}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!loading && error && <p className={styles.createError}>{error}</p>}
+      {!loading && !error && tokens.length === 0 && (
+        <p className={styles.sectionDesc}>{STRINGS.SETTINGS_TOKENS_EMPTY}</p>
+      )}
+      {tokens.length > 0 && (
+        <ul className={styles.tokenList}>
+          {tokens.map(t => (
+            <li key={t.id} className={styles.tokenItem}>
+              <span className={styles.tokenName}>{t.name}</span>
+              <button className={styles.apiKeyRemoveBtn} onClick={() => revokeToken(t.id)}>
+                {STRINGS.SETTINGS_TOKENS_REVOKE}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
 
 export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin = false, currentUserId = null }) {
   const { i18n } = useTranslation()
@@ -680,6 +769,8 @@ export function Settings({ settings, onUpdateSetting, onUpdateSettings, isAdmin 
               </label>
             )}
           </section>
+
+          <AccessTokensSection />
         </>
       )}
 

@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import { STRINGS } from './constants/strings'
 import { useTheme } from './hooks/useTheme'
 import { useAuth } from './hooks/useAuth'
+import { useAuthConfig } from './hooks/useAuthConfig'
 import { useSetup } from './hooks/useSetup'
 import { useSummarize } from './hooks/useSummarize'
 import { useBatchSummarize } from './hooks/useBatchSummarize'
@@ -146,6 +147,7 @@ export default function App() {
   const { theme, toggleTheme } = useTheme()
   const { setupRequired, loading: setupLoading, completeSetup } = useSetup()
   const { isAuthenticated, username, userId, role, login, logout } = useAuth()
+  const { authConfig } = useAuthConfig()
   const { settings, updateSetting, updateSettings } = useSettings()
   const { unreadCount, refreshUnreadCount } = useUnreadCount()
   const mainRef = useRef(null)
@@ -167,7 +169,7 @@ export default function App() {
   }
 
   if (!isAuthenticated) {
-    return <Login onLogin={login} />
+    return <Login onLogin={login} authConfig={authConfig} />
   }
 
   return (
