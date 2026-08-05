@@ -33,6 +33,10 @@ BRIEFEN_CORS_ALLOWED_ORIGINS: chrome-extension://*
 
 For local development, CORS is not required since `localhost` requests bypass CORS checks.
 
+## Authentication
+
+Enter your Briefen username and password in the extension Options, or — recommended for single sign-on (SSO) instances where there is no password — paste a **personal access token** into the *Access token* field. Create one in Briefen → Settings → Access tokens. When a token is set it is sent as `Authorization: Bearer bfn_…` instead of Basic auth.
+
 ## API Endpoints Used
 
 | Method | Endpoint | Purpose |

@@ -10,11 +10,21 @@ async function getStoredUrl() {
 }
 
 async function getStoredCredentials() {
-  const result = await browser.storage.session.get(['briefenUsername', 'briefenPassword']);
+  const result = await browser.storage.session.get(['briefenUsername', 'briefenPassword', 'briefenToken']);
   return {
     username: result.briefenUsername || '',
     password: result.briefenPassword || '',
+    token: result.briefenToken || '',
   };
+}
+
+// Prefer a personal access token (Bearer) over username/password (Basic).
+function buildAuthHeader(credentials) {
+  if (credentials?.token) return 'Bearer ' + credentials.token;
+  if (credentials?.username && credentials?.password) {
+    return 'Basic ' + btoa(`${credentials.username}:${credentials.password}`);
+  }
+  return null;
 }
 
 async function getCurrentTab() {
@@ -42,8 +52,9 @@ async function sendToBriefen(tabUrl, briefenUrl, credentials) {
   const timeoutId = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
 
   const headers = { 'Content-Type': 'application/json' };
-  if (credentials?.username && credentials?.password) {
-    headers['Authorization'] = 'Basic ' + btoa(`${credentials.username}:${credentials.password}`);
+  const authHeader = buildAuthHeader(credentials);
+  if (authHeader) {
+    headers['Authorization'] = authHeader;
   }
 
   try {
@@ -150,5 +161,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Export pure/async functions for unit testing.
 // `module` is undefined in the browser extension context, so this block is a no-op at runtime.
 if (typeof module !== 'undefined') {
-  module.exports = { DEFAULT_BRIEFEN_URL, SEND_TIMEOUT_MS, getStoredUrl, getStoredCredentials, getCurrentTab, isUnsupportedUrl, truncateUrl, sendToBriefen };
+  module.exports = { DEFAULT_BRIEFEN_URL, SEND_TIMEOUT_MS, getStoredUrl, getStoredCredentials, getCurrentTab, isUnsupportedUrl, truncateUrl, sendToBriefen, buildAuthHeader };
 }

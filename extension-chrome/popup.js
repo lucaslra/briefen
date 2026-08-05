@@ -10,11 +10,21 @@ async function getStoredUrl() {
 }
 
 async function getStoredCredentials() {
-  const result = await chrome.storage.session.get(['briefenUsername', 'briefenPassword']);
+  const result = await chrome.storage.session.get(['briefenUsername', 'briefenPassword', 'briefenToken']);
   return {
     username: result.briefenUsername || '',
     password: result.briefenPassword || '',
+    token: result.briefenToken || '',
   };
+}
+
+// Prefer a personal access token (Bearer) over username/password (Basic).
+function buildAuthHeader(credentials) {
+  if (credentials?.token) return 'Bearer ' + credentials.token;
+  if (credentials?.username && credentials?.password) {
+    return 'Basic ' + btoa(`${credentials.username}:${credentials.password}`);
+  }
+  return null;
 }
 
 async function getCurrentTab() {
@@ -42,8 +52,9 @@ async function sendToBriefen(tabUrl, briefenUrl, credentials) {
   const timeoutId = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
 
   const headers = { 'Content-Type': 'application/json' };
-  if (credentials?.username && credentials?.password) {
-    headers['Authorization'] = 'Basic ' + btoa(`${credentials.username}:${credentials.password}`);
+  const authHeader = buildAuthHeader(credentials);
+  if (authHeader) {
+    headers['Authorization'] = authHeader;
   }
 
   try {

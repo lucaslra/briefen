@@ -48,12 +48,12 @@ describe('saveUrl', () => {
 describe('getStoredCredentials', () => {
   test('returns stored username and password', async () => {
     browser.storage.session.get.mockResolvedValueOnce({ briefenUsername: 'alice', briefenPassword: 'secret' });
-    await expect(getStoredCredentials()).resolves.toEqual({ username: 'alice', password: 'secret' });
+    await expect(getStoredCredentials()).resolves.toEqual({ username: 'alice', password: 'secret', token: '' });
   });
 
   test('returns empty strings when nothing is stored', async () => {
     browser.storage.session.get.mockResolvedValueOnce({});
-    await expect(getStoredCredentials()).resolves.toEqual({ username: '', password: '' });
+    await expect(getStoredCredentials()).resolves.toEqual({ username: '', password: '', token: '' });
   });
 });
 
@@ -65,13 +65,19 @@ describe('saveCredentials', () => {
   test('persists username and password to session storage', async () => {
     browser.storage.session.set.mockResolvedValueOnce(undefined);
     await saveCredentials('alice', 'secret');
-    expect(browser.storage.session.set).toHaveBeenCalledWith({ briefenUsername: 'alice', briefenPassword: 'secret' });
+    expect(browser.storage.session.set).toHaveBeenCalledWith({ briefenUsername: 'alice', briefenPassword: 'secret', briefenToken: '' });
   });
 
   test('persists empty strings when credentials are cleared', async () => {
     browser.storage.session.set.mockResolvedValueOnce(undefined);
     await saveCredentials('', '');
-    expect(browser.storage.session.set).toHaveBeenCalledWith({ briefenUsername: '', briefenPassword: '' });
+    expect(browser.storage.session.set).toHaveBeenCalledWith({ briefenUsername: '', briefenPassword: '', briefenToken: '' });
+  });
+
+  test('persists a bearer token when provided', async () => {
+    browser.storage.session.set.mockResolvedValueOnce(undefined);
+    await saveCredentials('', '', 'bfn_abc');
+    expect(browser.storage.session.set).toHaveBeenCalledWith({ briefenUsername: '', briefenPassword: '', briefenToken: 'bfn_abc' });
   });
 });
 

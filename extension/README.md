@@ -55,6 +55,10 @@ BRIEFEN_CORS_ALLOWED_ORIGINS=moz-extension://*
 
 `moz-extension://*` allows any Firefox extension to call your Briefen instance. Since Briefen has no authentication, only run this on a trusted local network or behind a VPN.
 
+### Authentication
+
+Enter your Briefen username and password in the extension Options, or — recommended for single sign-on (SSO) instances where there is no password — paste a **personal access token** into the *Access token* field. Create one in Briefen → Settings → Access tokens. When a token is set it is sent as `Authorization: Bearer bfn_…` instead of Basic auth.
+
 ### API endpoints used
 
 | Method | Path | Purpose |

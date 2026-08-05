@@ -57,6 +57,21 @@
         >
       </div>
 
+      <div class="field">
+        <label for="briefen-token" class="label">
+          Access token
+          <span class="label-optional">(optional)</span>
+        </label>
+        <p class="hint">Use a personal access token instead of a password — required for single sign-on (SSO) instances. Create one in Briefen → Settings → Access tokens.</p>
+        <input
+          id="briefen-token"
+          type="password"
+          class="input"
+          placeholder="bfn_…"
+          autocomplete="off"
+        >
+      </div>
+
       <div class="actions">
         <button id="save-btn" class="btn btn-primary">Save</button>
         <button id="test-btn" class="btn btn-ghost">Test connection</button>

@@ -10,7 +10,20 @@ const {
   isUnsupportedUrl,
   truncateUrl,
   sendToBriefen,
+  buildAuthHeader,
 } = require('../popup');
+
+describe('buildAuthHeader', () => {
+  test('prefers a bearer token over username/password', () => {
+    expect(buildAuthHeader({ username: 'a', password: 'b', token: 'bfn_x' })).toBe('Bearer bfn_x');
+  });
+  test('falls back to Basic when only username/password are set', () => {
+    expect(buildAuthHeader({ username: 'alice', password: 'secret' })).toBe('Basic ' + btoa('alice:secret'));
+  });
+  test('returns null when nothing is set', () => {
+    expect(buildAuthHeader({ username: '', password: '', token: '' })).toBeNull();
+  });
+});
 
 // ---------------------------------------------------------------------------
 // truncateUrl
@@ -113,12 +126,12 @@ describe('getStoredUrl', () => {
 describe('getStoredCredentials', () => {
   test('returns stored username and password', async () => {
     browser.storage.session.get.mockResolvedValueOnce({ briefenUsername: 'alice', briefenPassword: 'secret' });
-    await expect(getStoredCredentials()).resolves.toEqual({ username: 'alice', password: 'secret' });
+    await expect(getStoredCredentials()).resolves.toEqual({ username: 'alice', password: 'secret', token: '' });
   });
 
   test('returns empty strings when nothing is stored', async () => {
     browser.storage.session.get.mockResolvedValueOnce({});
-    await expect(getStoredCredentials()).resolves.toEqual({ username: '', password: '' });
+    await expect(getStoredCredentials()).resolves.toEqual({ username: '', password: '', token: '' });
   });
 });
 

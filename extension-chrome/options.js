@@ -11,15 +11,29 @@ async function saveUrl(url) {
 }
 
 async function getStoredCredentials() {
-  const result = await chrome.storage.session.get(['briefenUsername', 'briefenPassword']);
+  const result = await chrome.storage.session.get(['briefenUsername', 'briefenPassword', 'briefenToken']);
   return {
     username: result.briefenUsername || '',
     password: result.briefenPassword || '',
+    token: result.briefenToken || '',
   };
 }
 
-async function saveCredentials(username, password) {
-  await chrome.storage.session.set({ briefenUsername: username, briefenPassword: password });
+async function saveCredentials(username, password, token) {
+  await chrome.storage.session.set({
+    briefenUsername: username,
+    briefenPassword: password,
+    briefenToken: token || '',
+  });
+}
+
+// Prefer a personal access token (Bearer) over username/password (Basic).
+function buildAuthHeader(credentials) {
+  if (credentials?.token) return 'Bearer ' + credentials.token;
+  if (credentials?.username && credentials?.password) {
+    return 'Basic ' + btoa(`${credentials.username}:${credentials.password}`);
+  }
+  return null;
 }
 
 function showFeedback(el, type, message) {
@@ -38,8 +52,9 @@ async function testConnection(url, credentials) {
   const timeoutId = setTimeout(() => controller.abort(), TEST_TIMEOUT_MS);
 
   const headers = {};
-  if (credentials?.username && credentials?.password) {
-    headers['Authorization'] = 'Basic ' + btoa(`${credentials.username}:${credentials.password}`);
+  const authHeader = buildAuthHeader(credentials);
+  if (authHeader) {
+    headers['Authorization'] = authHeader;
   }
 
   try {
@@ -68,6 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const urlInput = document.getElementById('briefen-url');
   const usernameInput = document.getElementById('briefen-username');
   const passwordInput = document.getElementById('briefen-password');
+  const tokenInput = document.getElementById('briefen-token');
   const saveBtn = document.getElementById('save-btn');
   const testBtn = document.getElementById('test-btn');
   const feedbackEl = document.getElementById('feedback');
@@ -77,10 +93,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const stored = await getStoredCredentials();
   usernameInput.value = stored.username;
   passwordInput.value = stored.password;
+  if (tokenInput) tokenInput.value = stored.token;
 
   // Clear feedback on any input change
-  for (const input of [urlInput, usernameInput, passwordInput]) {
-    input.addEventListener('input', () => hideFeedback(feedbackEl));
+  for (const input of [urlInput, usernameInput, passwordInput, tokenInput]) {
+    if (input) input.addEventListener('input', () => hideFeedback(feedbackEl));
   }
 
   // Save
@@ -105,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     await saveUrl(url.replace(/\/$/, ''));
-    await saveCredentials(usernameInput.value.trim(), passwordInput.value);
+    await saveCredentials(usernameInput.value.trim(), passwordInput.value, tokenInput ? tokenInput.value.trim() : '');
     showFeedback(feedbackEl, 'success', 'Settings saved.');
 
     setTimeout(() => hideFeedback(feedbackEl), 3000);
@@ -126,6 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const credentials = {
       username: usernameInput.value.trim(),
       password: passwordInput.value,
+      token: tokenInput ? tokenInput.value.trim() : '',
     };
     const result = await testConnection(url, credentials);
 
