@@ -24,14 +24,14 @@ class ApiClient {
     final creds = await storage.readCredentials();
     if (creds == null) throw const AuthException();
 
-    _dio = _createDio(creds.serverUrl, creds.username, creds.password);
+    _dio = _createDio(creds);
     return _dio!;
   }
 
-  Dio _createDio(String baseUrl, String username, String password) {
+  Dio _createDio(Credentials creds) {
     final dio = Dio(
       BaseOptions(
-        baseUrl: baseUrl,
+        baseUrl: creds.serverUrl,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(minutes: 6),
       ),
@@ -40,8 +40,14 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final encoded = base64Encode(utf8.encode('$username:$password'));
-          options.headers['Authorization'] = 'Basic $encoded';
+          // Bearer for SSO sessions, HTTP Basic for password auth.
+          if (creds.isBearer) {
+            options.headers['Authorization'] = 'Bearer ${creds.token}';
+          } else {
+            final encoded =
+                base64Encode(utf8.encode('${creds.username}:${creds.password}'));
+            options.headers['Authorization'] = 'Basic $encoded';
+          }
           handler.next(options);
         },
         onError: (error, handler) async {
@@ -64,7 +70,9 @@ class ApiClient {
 
   /// Create a temporary Dio for login validation (before credentials are stored).
   Dio createTempDio(String baseUrl, String username, String password) {
-    return _createDio(baseUrl, username, password);
+    return _createDio(
+      Credentials(serverUrl: baseUrl, username: username, password: password),
+    );
   }
 
   Future<Response<T>> get<T>(

@@ -167,6 +167,9 @@ void main() {
       when(
         () => api.get('/api/users/me'),
       ).thenAnswer((_) async => _ok('/api/users/me', data: {'role': 'ADMIN'}));
+      when(
+        () => api.post('/api/auth/logout'),
+      ).thenAnswer((_) async => _ok('/api/auth/logout'));
       when(() => api.reset()).thenAnswer((_) {});
 
       final c = _container(storage: storage, apiClient: api);
@@ -180,6 +183,8 @@ void main() {
 
       expect(c.read(authProvider).status, AuthStatus.unauthenticated);
       expect(storage.cleared, isTrue);
+      // Bearer session is revoked server-side on logout.
+      verify(() => api.post('/api/auth/logout')).called(1);
     });
   });
 }

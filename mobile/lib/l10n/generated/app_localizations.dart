@@ -147,6 +147,30 @@ abstract class AppLocalizations {
   /// **'Invalid credentials or server unreachable'**
   String get loginError;
 
+  /// No description provided for @loginWithSso.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with SSO'**
+  String get loginWithSso;
+
+  /// No description provided for @orDivider.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get orDivider;
+
+  /// No description provided for @ssoNotEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'SSO is not enabled on this server'**
+  String get ssoNotEnabled;
+
+  /// No description provided for @ssoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Single sign-on failed'**
+  String get ssoFailed;
+
   /// No description provided for @setupTitle.
   ///
   /// In en, this message translates to:

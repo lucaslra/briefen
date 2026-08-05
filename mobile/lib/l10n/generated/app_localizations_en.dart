@@ -33,6 +33,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginError => 'Invalid credentials or server unreachable';
 
   @override
+  String get loginWithSso => 'Sign in with SSO';
+
+  @override
+  String get orDivider => 'or';
+
+  @override
+  String get ssoNotEnabled => 'SSO is not enabled on this server';
+
+  @override
+  String get ssoFailed => 'Single sign-on failed';
+
+  @override
   String get setupTitle => 'Create Admin Account';
 
   @override

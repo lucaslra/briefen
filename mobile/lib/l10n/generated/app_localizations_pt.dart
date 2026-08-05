@@ -33,6 +33,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get loginError => 'Credenciais inválidas ou servidor inacessível';
 
   @override
+  String get loginWithSso => 'Entrar com SSO';
+
+  @override
+  String get orDivider => 'ou';
+
+  @override
+  String get ssoNotEnabled => 'O SSO não está ativado neste servidor';
+
+  @override
+  String get ssoFailed => 'Falha no login com SSO';
+
+  @override
   String get setupTitle => 'Criar Conta de Administrador';
 
   @override
@@ -433,6 +445,18 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get loginError => 'Credenciais inválidas ou servidor inacessível';
+
+  @override
+  String get loginWithSso => 'Entrar com SSO';
+
+  @override
+  String get orDivider => 'ou';
+
+  @override
+  String get ssoNotEnabled => 'O SSO não está ativado neste servidor';
+
+  @override
+  String get ssoFailed => 'Falha no login com SSO';
 
   @override
   String get setupTitle => 'Criar Conta de Administrador';

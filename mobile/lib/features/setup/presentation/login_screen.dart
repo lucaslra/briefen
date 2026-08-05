@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:briefen/l10n/generated/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,14 +19,78 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _loading = false;
+  bool _ssoLoading = false;
+  bool _serverUrlValid = false;
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _serverUrlController.addListener(_onServerUrlChanged);
+  }
+
+  @override
   void dispose() {
+    _serverUrlController.removeListener(_onServerUrlChanged);
     _serverUrlController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _onServerUrlChanged() {
+    final valid = _normalizedServerUrl() != null;
+    if (valid != _serverUrlValid) {
+      setState(() => _serverUrlValid = valid);
+    }
+  }
+
+  /// Returns the trimmed, trailing-slash-stripped server URL when it is a valid
+  /// absolute http(s) URL, or null otherwise.
+  String? _normalizedServerUrl() {
+    final url = _serverUrlController.text.trim();
+    if (url.isEmpty) return null;
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme || !uri.hasAuthority) return null;
+    return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+  }
+
+  Future<bool> _isSsoEnabled(String serverUrl) async {
+    try {
+      final dio = Dio(BaseOptions(
+        baseUrl: serverUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+      ));
+      final res = await dio.get('/api/auth/config');
+      final data = res.data as Map<String, dynamic>;
+      final oidc = data['oidc'];
+      return oidc is Map && oidc['enabled'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _signInWithSso() async {
+    final url = _normalizedServerUrl();
+    if (url == null) return;
+    final l10n = AppLocalizations.of(context)!;
+
+    setState(() => _ssoLoading = true);
+    try {
+      final enabled = await _isSsoEnabled(url);
+      if (!enabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.ssoNotEnabled)),
+          );
+        }
+        return;
+      }
+      await ref.read(authProvider.notifier).loginWithSso(url);
+    } finally {
+      if (mounted) setState(() => _ssoLoading = false);
+    }
   }
 
   Future<void> _submit() async {
@@ -149,7 +214,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: _loading ? null : _submit,
+                      onPressed: (_loading || _ssoLoading) ? null : _submit,
                       child: _loading
                           ? const SizedBox(
                               height: 20,
@@ -157,6 +222,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : Text(l10n.login),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          l10n.orDivider,
+                          style: TextStyle(color: colorScheme.outline),
+                        ),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: (_loading || _ssoLoading || !_serverUrlValid)
+                          ? null
+                          : _signInWithSso,
+                      icon: _ssoLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.shield_outlined),
+                      label: Text(l10n.loginWithSso),
                     ),
                   ),
                 ],
