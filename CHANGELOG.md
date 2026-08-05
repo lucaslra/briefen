@@ -10,6 +10,13 @@ Briefen uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.0.26] — 2026-08-05
+
+### Fixed
+- Docker image build — pin pnpm to `10.33.0` in the Dockerfile. The previous `pnpm@latest` drifted to pnpm 11, which turns ignored dependency build scripts into a hard `ERR_PNPM_IGNORED_BUILDS` error and broke the multi-arch image build. Contains the same application as 0.0.25.
+
+---
+
 ## [0.0.25] — 2026-08-05
 
 ### Added
