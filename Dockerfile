@@ -19,8 +19,10 @@ ENV VITE_APP_BASE_PATH=${APP_BASE_PATH}
 
 WORKDIR /app/frontend
 
-# Enable pnpm via corepack
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Enable pnpm via corepack. Pin the version (do NOT use pnpm@latest) so builds are
+# reproducible and immune to breaking changes in new pnpm releases (e.g. pnpm 11
+# turning ignored dependency build scripts into a hard ERR_PNPM_IGNORED_BUILDS error).
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 # Install dependencies first (layer caching)
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
