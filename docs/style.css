@@ -229,7 +229,7 @@ code {
   margin: 0 auto 24px;
   box-shadow: var(--shadow);
 }
-.code-block pre { margin: 0; }
+.code-block pre { margin: 0; overflow-x: auto; }
 .code-block code {
   background: none;
   border: none;
@@ -237,6 +237,10 @@ code {
   font-size: .9rem;
   color: var(--green);
   line-height: 1.8;
+  /* Wrap long commands (e.g. the curl URL) so they stay inside the box
+     instead of bleeding past its right edge. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .install-note {
   color: var(--text-muted);
