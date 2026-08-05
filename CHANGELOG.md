@@ -8,7 +8,15 @@ Briefen uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+---
+
+## [0.0.25] — 2026-08-05
+
 ### Added
+- **OpenID Connect (SSO)** — optional "Sign in with SSO" via any OIDC provider (Keycloak, Authentik, Auth0, Okta, Google, Entra ID). Authorization-code flow with PKCE, nonce, and a signed stateless handshake cookie; just-in-time provisioning, account linking (by verified email or username), and admin-group mapping synced on every login. Coexists with password login by default, or set `BRIEFEN_DISABLE_PASSWORD_LOGIN=true` for SSO-only. Enable with `BRIEFEN_OIDC_ISSUER` + `BRIEFEN_OIDC_CLIENT_ID` + `BRIEFEN_OIDC_CLIENT_SECRET`; see [docs/oidc.md](docs/oidc.md).
+- **Bearer-token sessions** — hybrid authentication: opaque `bfn_…` session tokens (stored hashed) authenticate alongside HTTP Basic. OIDC logins mint one of these; the web app carries it exactly like the existing credential. Tunable via `BRIEFEN_SESSION_TTL`. New `POST /api/auth/logout` revokes the caller's session; new public `GET /api/auth/config` advertises available sign-in methods.
+- **Personal access tokens** — create/revoke long-lived `bfn_…` tokens in Settings → Access tokens (`/api/auth/tokens`). The Firefox and Chrome extensions accept a token instead of a password, so they work on SSO-only instances. Lifetime via `BRIEFEN_API_TOKEN_TTL`.
+- **Auth endpoint rate limiting** — per-IP throttling of the OIDC handshake and first-run setup endpoints (the callback triggers an outbound token exchange, an unthrottled abuse vector). Configurable via `BRIEFEN_RATE_LIMIT_ENABLED` / `BRIEFEN_RATE_LIMIT_MAX_REQUESTS` / `BRIEFEN_RATE_LIMIT_WINDOW`.
 - HTTP Basic Auth with browser-based first-run setup — on first launch, the browser prompts you to create an admin account with a strong password (8+ chars, uppercase, lowercase, digit, special character). All routes except `/actuator/health` and `/api/setup/**` require authentication.
 - Outgoing webhook notifications — set `BRIEFEN_WEBHOOK_URL` to receive a JSON `summary.completed` event every time a summary is saved. Fire-and-forget on a virtual thread; failures are logged and do not affect summarization. Compatible with Home Assistant, ntfy, Gotify, and any HTTP endpoint.
 - Cloud LLM API key seeding via environment variables — set `BRIEFEN_OPENAI_API_KEY` or `BRIEFEN_ANTHROPIC_API_KEY` to pre-configure cloud providers at deploy time without logging into the UI. Keys are written into admin settings on first startup only; existing values in the database are never overwritten.
