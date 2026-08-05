@@ -35,7 +35,7 @@
   <section class="hero">
     <div class="hero-inner">
       <div class="hero-text">
-        <a href="https://github.com/lucaslra/briefen/releases/tag/v0.0.23" class="version-badge">v0.0.23</a>
+        <a href="https://github.com/lucaslra/briefen/releases/tag/v0.0.26" class="version-badge">v0.0.26</a>
         <h1>Paste a URL.<br>Get a summary.</h1>
         <p class="hero-sub">
           Briefen is a local-first article summarizer. Paste a URL, Jsoup fetches the article, and a local or cloud LLM summarizes it — cached in SQLite. No cloud dependencies by default. Everything runs on your server.
@@ -85,12 +85,17 @@
         <div class="feature-card">
           <div class="feature-icon">&#129431;</div>
           <h3>Browser extensions</h3>
-          <p>One-click summarize from Firefox (MV2) or Chrome/Edge/Brave (MV3). Sends the current tab's URL to your Briefen instance.</p>
+          <p>One-click summarize from Firefox or Chrome/Edge/Brave (both Manifest V3). Sends the current tab's URL to your Briefen instance &mdash; with password or access-token auth for SSO setups.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#128274;</div>
           <h3>Always authenticated</h3>
-          <p>HTTP Basic Auth on every route. First-run browser setup creates the admin account. Multi-user with admin-managed accounts.</p>
+          <p>Password login on every route, plus opaque bearer-token sessions. First-run browser setup creates the admin account. Multi-user with admin-managed accounts and personal access tokens.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128273;</div>
+          <h3>Single sign-on (SSO)</h3>
+          <p>Optional OpenID Connect login with any provider &mdash; Keycloak, Authentik, Auth0, Okta, Google, Entra ID. Authorization-code + PKCE, just-in-time provisioning, and admin-group mapping. Coexists with password login.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#128296;</div>
@@ -138,7 +143,7 @@ docker compose up -d</code></pre>
       <div class="stack-grid">
         <div class="stack-item">
           <strong>Java 25 + Spring Boot 4</strong>
-          <span>Jsoup &middot; PDFBox &middot; HTTP Basic Auth</span>
+          <span>Jsoup &middot; PDFBox &middot; Basic + OIDC SSO</span>
         </div>
         <div class="stack-item">
           <strong>React 19 + Vite</strong>
@@ -174,6 +179,7 @@ docker compose up -d</code></pre>
           <a href="https://github.com/lucaslra/briefen/releases">Releases</a>
           <a href="getting-started.html">Deployment</a>
           <a href="environment-variables.html">Environment variables</a>
+          <a href="oidc.html">SSO / OpenID Connect</a>
           <a href="reverse-proxy.html">Reverse proxy</a>
           <a href="https://github.com/lucaslra/briefen/blob/main/CONTRIBUTING.md">Contributing</a>
           <a href="https://github.com/lucaslra/briefen/blob/main/SECURITY.md">Security</a>

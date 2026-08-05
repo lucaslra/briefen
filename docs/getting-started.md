@@ -260,6 +260,16 @@ SERVER_FORWARD_HEADERS_STRATEGY: FRAMEWORK
 
 ---
 
+## Single sign-on (SSO)
+
+Briefen supports optional **OpenID Connect** login alongside password auth — sign in with Keycloak, Authentik, Auth0, Okta, Google, or Microsoft Entra ID. Set `BRIEFEN_OIDC_ISSUER`, `BRIEFEN_OIDC_CLIENT_ID`, and `BRIEFEN_OIDC_CLIENT_SECRET`, and a **"Sign in with SSO"** button appears on the login screen next to the password form. New users can be auto-provisioned, linked to existing accounts by verified email or username, and granted admin by group membership.
+
+Behind a reverse proxy, keep `SERVER_FORWARD_HEADERS_STRATEGY=FRAMEWORK` (above) so the OIDC redirect URL uses your external HTTPS host, and set `BRIEFEN_SECURE_COOKIES=true`. To require SSO and hide the password form, set `BRIEFEN_DISABLE_PASSWORD_LOGIN=true`.
+
+See the full **[OpenID Connect (SSO) guide](oidc.md)** for the complete variable reference, account-resolution order, the linking trust model, and a Keycloak example.
+
+---
+
 ## Backing up your data
 
 ### SQLite (default)
@@ -341,6 +351,7 @@ After installing either extension, open its options page and set:
 | **Briefen URL** | e.g. `http://localhost:8080` or `https://briefen.example.com` |
 | **Username** | Your Briefen username (created during first-run setup) |
 | **Password** | Your Briefen password |
+| **Access token** *(optional)* | A personal access token from **Settings → Access tokens** — use this instead of a username/password, and **required on SSO-only instances** where there is no password |
 
 If your Briefen instance is on a different origin than the extension (any remote deployment), add the following to the compose environment so CORS allows extension requests:
 
