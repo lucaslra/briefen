@@ -51,6 +51,36 @@ briefen:
   anthropic:
     api-key: ${BRIEFEN_ANTHROPIC_API_KEY:}
   default-prompt: ${BRIEFEN_DEFAULT_PROMPT:}
+  # Per-IP rate limiting for the OIDC handshake and first-run setup endpoints.
+  rate-limit:
+    enabled: ${BRIEFEN_RATE_LIMIT_ENABLED:true}
+    max-requests: ${BRIEFEN_RATE_LIMIT_MAX_REQUESTS:30}
+    window: ${BRIEFEN_RATE_LIMIT_WINDOW:60s}
+  # Bearer-token session lifetime (OIDC logins and API tokens).
+  session:
+    ttl: ${BRIEFEN_SESSION_TTL:30d}
+    # Personal access token lifetime (headless/extension use).
+    api-token-ttl: ${BRIEFEN_API_TOKEN_TTL:3650d}
+    # HMAC key for the OIDC handshake cookie. Optional — a random per-instance key is used when unset.
+    secret: ${BRIEFEN_SESSION_SECRET:}
+  cookies:
+    # Set true when serving over HTTPS so the OIDC handshake cookie is marked Secure.
+    secure: ${BRIEFEN_SECURE_COOKIES:false}
+  # OpenID Connect / SSO. Setting `issuer` enables "Sign in with SSO" alongside password login.
+  oidc:
+    issuer: ${BRIEFEN_OIDC_ISSUER:}
+    client-id: ${BRIEFEN_OIDC_CLIENT_ID:}
+    client-secret: ${BRIEFEN_OIDC_CLIENT_SECRET:}
+    redirect-uri: ${BRIEFEN_OIDC_REDIRECT_URL:}
+    scopes: ${BRIEFEN_OIDC_SCOPES:openid,profile,email}
+    provider-name: ${BRIEFEN_OIDC_PROVIDER_NAME:SSO}
+    username-claim: ${BRIEFEN_OIDC_USERNAME_CLAIM:preferred_username}
+    groups-claim: ${BRIEFEN_OIDC_GROUPS_CLAIM:groups}
+    admin-group: ${BRIEFEN_OIDC_ADMIN_GROUP:}
+    allow-signup: ${BRIEFEN_OIDC_ALLOW_SIGNUP:true}
+    link-by-email: ${BRIEFEN_OIDC_LINK_BY_EMAIL:true}
+    link-by-username: ${BRIEFEN_OIDC_LINK_BY_USERNAME:true}
+    disable-password-login: ${BRIEFEN_DISABLE_PASSWORD_LOGIN:false}
 
 logging:
   level:

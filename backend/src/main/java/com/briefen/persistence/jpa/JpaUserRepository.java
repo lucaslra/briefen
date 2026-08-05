@@ -9,6 +9,10 @@ public interface JpaUserRepository extends JpaRepository<JpaUserEntity, String> 
 
     Optional<JpaUserEntity> findByUsername(String username);
 
+    Optional<JpaUserEntity> findByOidcIssuerAndOidcSubject(String oidcIssuer, String oidcSubject);
+
+    Optional<JpaUserEntity> findFirstByEmailOrderByCreatedAtAsc(String email);
+
     boolean existsByUsername(String username);
 
     long countByRole(String role);

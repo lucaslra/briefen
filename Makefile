@@ -1,4 +1,4 @@
-.PHONY: up down backend frontend dev logs clean clean-all docker-build docker-up docker-down e2e
+.PHONY: up down backend frontend dev logs clean clean-all docker-build docker-up docker-down e2e e2e-managed e2e-oidc
 
 ROOT := $(shell pwd)
 
@@ -62,3 +62,8 @@ e2e:
 ##   Requires: Docker daemon running, Java (sdkman or JAVA_HOME set)
 e2e-managed:
 	E2E_MANAGED=true npx playwright test
+
+## Run managed E2E plus the OIDC/SSO suite against a mock identity provider.
+##   Additionally starts e2e/mock-oidc/server.mjs and enables hybrid SSO on the backend.
+e2e-oidc:
+	E2E_MANAGED=true E2E_OIDC=true npx playwright test

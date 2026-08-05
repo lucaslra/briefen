@@ -47,6 +47,8 @@ Supported `_FILE` variables:
 | `BRIEFEN_OPENAI_API_KEY` | `BRIEFEN_OPENAI_API_KEY_FILE` |
 | `BRIEFEN_ANTHROPIC_API_KEY` | `BRIEFEN_ANTHROPIC_API_KEY_FILE` |
 | `BRIEFEN_WEBHOOK_URL` | `BRIEFEN_WEBHOOK_URL_FILE` |
+| `BRIEFEN_OIDC_CLIENT_SECRET` | `BRIEFEN_OIDC_CLIENT_SECRET_FILE` |
+| `BRIEFEN_SESSION_SECRET` | `BRIEFEN_SESSION_SECRET_FILE` |
 
 > Setting both `VAR` and `VAR_FILE` for the same variable is an error — the app fails fast with a clear message. The file must exist, be readable, and contain a non-empty value (after trimming whitespace).
 
@@ -74,6 +76,26 @@ Supported `_FILE` variables:
 | [`BRIEFEN_LOG_LEVEL`](#briefen_log_level) | `INFO` | No |
 | [`BRIEFEN_LOG_FORMAT`](#briefen_log_format) | *(unset — human-readable)* | No |
 | [`BRIEFEN_DEFAULT_PROMPT`](#briefen_default_prompt) | *(unset — built-in prompt)* | No |
+| [`BRIEFEN_OIDC_ISSUER`](#briefen_oidc_issuer) | *(unset — SSO disabled)* | No |
+| [`BRIEFEN_OIDC_CLIENT_ID`](#briefen_oidc_client_id) | *(none)* | When SSO enabled |
+| [`BRIEFEN_OIDC_CLIENT_SECRET`](#briefen_oidc_client_secret) | *(none)* | When SSO enabled |
+| [`BRIEFEN_OIDC_REDIRECT_URL`](#briefen_oidc_redirect_url) | `{baseUrl}/login/oauth2/code/briefen` | No |
+| [`BRIEFEN_OIDC_PROVIDER_NAME`](#briefen_oidc_provider_name) | `SSO` | No |
+| [`BRIEFEN_OIDC_SCOPES`](#briefen_oidc_scopes) | `openid,profile,email` | No |
+| [`BRIEFEN_OIDC_USERNAME_CLAIM`](#briefen_oidc_username_claim) | `preferred_username` | No |
+| [`BRIEFEN_OIDC_GROUPS_CLAIM`](#briefen_oidc_groups_claim) | `groups` | No |
+| [`BRIEFEN_OIDC_ADMIN_GROUP`](#briefen_oidc_admin_group) | *(unset)* | No |
+| [`BRIEFEN_OIDC_ALLOW_SIGNUP`](#briefen_oidc_allow_signup) | `true` | No |
+| [`BRIEFEN_OIDC_LINK_BY_EMAIL`](#briefen_oidc_link_by_email) | `true` | No |
+| [`BRIEFEN_OIDC_LINK_BY_USERNAME`](#briefen_oidc_link_by_username) | `true` | No |
+| [`BRIEFEN_DISABLE_PASSWORD_LOGIN`](#briefen_disable_password_login) | `false` | No |
+| [`BRIEFEN_SESSION_TTL`](#briefen_session_ttl) | `30d` | No |
+| [`BRIEFEN_API_TOKEN_TTL`](#briefen_api_token_ttl) | `3650d` | No |
+| [`BRIEFEN_SESSION_SECRET`](#briefen_session_secret) | *(unset — ephemeral)* | No |
+| [`BRIEFEN_SECURE_COOKIES`](#briefen_secure_cookies) | `false` | No |
+| [`BRIEFEN_RATE_LIMIT_ENABLED`](#briefen_rate_limit_enabled) | `true` | No |
+| [`BRIEFEN_RATE_LIMIT_MAX_REQUESTS`](#briefen_rate_limit_max_requests) | `30` | No |
+| [`BRIEFEN_RATE_LIMIT_WINDOW`](#briefen_rate_limit_window) | `60s` | No |
 
 **Build-time only:**
 
@@ -521,6 +543,105 @@ BRIEFEN_DEFAULT_PROMPT: "You are an article summarizer. Write summaries in Spani
 ```
 
 > The built-in prompt instructs the LLM to produce an English summary with a markdown H1 title, 3–6 paragraphs, and a Key Quotes section. Override this when you need a different language, format, or style across your entire instance.
+
+---
+
+## Authentication / SSO (OpenID Connect)
+
+Setting `BRIEFEN_OIDC_ISSUER` enables **"Sign in with SSO"** alongside password login. See [OpenID Connect (SSO)](oidc.md) for a full walkthrough, account-linking rules, and a Keycloak example.
+
+### `BRIEFEN_OIDC_ISSUER`
+
+Issuer URL serving `/.well-known/openid-configuration`. Setting this turns on SSO.
+
+| | |
+|---|---|
+| **Type** | URL |
+| **Default** | *(unset — SSO disabled)* |
+| **Example** | `https://sso.example.com/realms/briefen` |
+
+### `BRIEFEN_OIDC_CLIENT_ID`
+
+OAuth2 client ID registered with your provider. **Required** when SSO is enabled.
+
+### `BRIEFEN_OIDC_CLIENT_SECRET`
+
+OAuth2 client secret. **Required** when SSO is enabled. Supports the `_FILE` suffix for Docker secrets.
+
+### `BRIEFEN_OIDC_REDIRECT_URL`
+
+Absolute callback URL registered at the provider. Must be `https://<your-host>/login/oauth2/code/briefen`.
+
+| | |
+|---|---|
+| **Type** | URL |
+| **Default** | `{baseUrl}/login/oauth2/code/briefen` (derived from the request) |
+
+> Behind a reverse proxy, set [`SERVER_FORWARD_HEADERS_STRATEGY`](#server_forward_headers_strategy)`=FRAMEWORK` so the callback URL is built with the external scheme/host.
+
+### `BRIEFEN_OIDC_PROVIDER_NAME`
+
+Label shown on the sign-in button ("Sign in with &lt;name&gt;"). Default: `SSO`.
+
+### `BRIEFEN_OIDC_SCOPES`
+
+Comma/space-separated scopes. `openid` is always included. Default: `openid,profile,email`.
+
+### `BRIEFEN_OIDC_USERNAME_CLAIM`
+
+ID-token claim used to derive the Briefen username. Default: `preferred_username`.
+
+### `BRIEFEN_OIDC_GROUPS_CLAIM`
+
+Claim holding the user's group memberships. Default: `groups`.
+
+### `BRIEFEN_OIDC_ADMIN_GROUP`
+
+When set, membership in this group grants admin — **synced on every login**. When unset, roles are never changed from group claims. Default: *(unset)*.
+
+### `BRIEFEN_OIDC_ALLOW_SIGNUP`
+
+Auto-create a Briefen account on first SSO login. Default: `true`.
+
+### `BRIEFEN_OIDC_LINK_BY_EMAIL`
+
+Link an SSO identity to an existing account by **verified** email. Default: `true`.
+
+### `BRIEFEN_OIDC_LINK_BY_USERNAME`
+
+Link an SSO identity to an existing account by username. Default: `true`.
+
+### `BRIEFEN_DISABLE_PASSWORD_LOGIN`
+
+SSO-only mode: hide and reject password login. **Ignored unless SSO is configured** (so you can never lock everyone out). Default: `false`.
+
+### `BRIEFEN_SESSION_TTL`
+
+Lifetime of the bearer-token session issued after an SSO login (Spring `Duration`, e.g. `30d`, `12h`). Default: `30d`.
+
+### `BRIEFEN_API_TOKEN_TTL`
+
+Lifetime of a **personal access token** (created in Settings → Access tokens for browser extensions / headless clients). Spring `Duration`. Default: `3650d` (~10 years).
+
+### `BRIEFEN_RATE_LIMIT_ENABLED`
+
+Enable per-IP rate limiting on the OIDC handshake (`/oauth2/authorization/**`, `/login/oauth2/code/**`) and first-run setup (`/api/setup`). Default: `true`.
+
+### `BRIEFEN_RATE_LIMIT_MAX_REQUESTS`
+
+Max requests allowed per IP per window for the rate-limited endpoints. Default: `30`.
+
+### `BRIEFEN_RATE_LIMIT_WINDOW`
+
+The rate-limit window (Spring `Duration`). Default: `60s`.
+
+### `BRIEFEN_SESSION_SECRET`
+
+HMAC key protecting the short-lived OIDC handshake cookie. Optional — a random per-instance key is generated when unset (a restart mid-login just makes the user click "Sign in" again). Set a stable value for multi-instance deployments. Supports the `_FILE` suffix.
+
+### `BRIEFEN_SECURE_COOKIES`
+
+Mark the OIDC handshake cookie `Secure` (send only over HTTPS). Set `true` in production behind TLS. Default: `false`.
 
 ---
 

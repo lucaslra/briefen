@@ -32,6 +32,20 @@ public class JpaUserPersistence implements UserPersistence {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<User> findByOidc(String issuer, String subject) {
+        if (issuer == null || subject == null) return Optional.empty();
+        return repository.findByOidcIssuerAndOidcSubject(issuer, subject).map(JpaUserEntity::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<User> findByEmail(String email) {
+        if (email == null || email.isBlank()) return Optional.empty();
+        return repository.findFirstByEmailOrderByCreatedAtAsc(email).map(JpaUserEntity::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<User> findAll() {
         return repository.findAll().stream().map(JpaUserEntity::toDomain).toList();
     }

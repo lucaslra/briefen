@@ -12,6 +12,11 @@ public class User {
     private Instant updatedAt;
     private boolean mainAdmin; // true only for the bootstrap/setup admin — never deletable
 
+    // OIDC / SSO identity. Null for password-only accounts.
+    private String email;       // from the `email` claim; used for account linking
+    private String oidcIssuer;  // set for SSO-linked accounts
+    private String oidcSubject; // stable per-user id from the identity provider
+
     public User() {}
 
     public User(String id, String username, String passwordHash, String role) {
@@ -43,4 +48,16 @@ public class User {
 
     public boolean isMainAdmin() { return mainAdmin; }
     public void setMainAdmin(boolean mainAdmin) { this.mainAdmin = mainAdmin; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getOidcIssuer() { return oidcIssuer; }
+    public void setOidcIssuer(String oidcIssuer) { this.oidcIssuer = oidcIssuer; }
+
+    public String getOidcSubject() { return oidcSubject; }
+    public void setOidcSubject(String oidcSubject) { this.oidcSubject = oidcSubject; }
+
+    /** True when this account is linked to an external OIDC identity. */
+    public boolean isOidcLinked() { return oidcSubject != null && !oidcSubject.isBlank(); }
 }

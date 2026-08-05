@@ -60,6 +60,44 @@ async function waitForHealth(url, { timeout = 120_000, interval = 1500 } = {}) {
   throw new Error(`Health check timed out at ${url}: ${lastError?.message ?? 'unknown'}`);
 }
 
+async function waitForUrl(url, { timeout = 30_000, interval = 500 } = {}) {
+  const deadline = Date.now() + timeout;
+  let lastError;
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
+      if (res.status === 200) return;
+    } catch (e) {
+      lastError = e;
+    }
+    await new Promise(r => setTimeout(r, interval));
+  }
+  throw new Error(`Timed out waiting for ${url}: ${lastError?.message ?? 'unknown'}`);
+}
+
+// ── Mock OIDC provider (opt-in via E2E_OIDC=true) ─────────────────────────────
+
+const MOCK_OIDC_PORT = process.env.MOCK_OIDC_PORT || '9000';
+const MOCK_OIDC_ISSUER = `http://localhost:${MOCK_OIDC_PORT}`;
+
+function startMockOidc() {
+  const proc = spawn('node', [join(process.cwd(), 'e2e', 'mock-oidc', 'server.mjs')], {
+    env: {
+      ...process.env,
+      PORT: MOCK_OIDC_PORT,
+      ISSUER: MOCK_OIDC_ISSUER,
+      OIDC_USERNAME: 'e2e-sso',
+      OIDC_GROUPS: 'briefen-admins',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: false,
+  });
+  proc.stdout.on('data', d => process.stdout.write(`[mock-oidc] ${d}`));
+  proc.stderr.on('data', d => process.stderr.write(`[mock-oidc] ${d}`));
+  proc.on('error', err => { throw err; });
+  return proc;
+}
+
 // ── WireMock stub helpers ─────────────────────────────────────────────────────
 
 async function addStub(adminUrl, stub) {
@@ -200,6 +238,23 @@ export default async function globalSetup() {
   const frontendDist = resolve(frontendDir, 'dist');
   console.log(`[e2e] Frontend built at ${frontendDist}`);
 
+  // 3b. Optionally start the mock OIDC provider and enable SSO on the backend.
+  const oidcEnabled = process.env.E2E_OIDC === 'true';
+  let mockOidcProc = null;
+  if (oidcEnabled) {
+    console.log('[e2e] Starting mock OIDC provider…');
+    mockOidcProc = startMockOidc();
+    await waitForUrl(`${MOCK_OIDC_ISSUER}/.well-known/openid-configuration`);
+    console.log(`[e2e] Mock OIDC provider running at ${MOCK_OIDC_ISSUER}`);
+    // Inject SSO config so the managed backend runs in hybrid (password + SSO) mode.
+    process.env.BRIEFEN_OIDC_ISSUER = MOCK_OIDC_ISSUER;
+    process.env.BRIEFEN_OIDC_CLIENT_ID = 'briefen-e2e';
+    process.env.BRIEFEN_OIDC_CLIENT_SECRET = 'e2e-secret';
+    process.env.BRIEFEN_OIDC_REDIRECT_URL = `${BASE_URL}/login/oauth2/code/briefen`;
+    process.env.BRIEFEN_OIDC_PROVIDER_NAME = 'Mock SSO';
+    process.env.BRIEFEN_OIDC_ADMIN_GROUP = 'briefen-admins';
+  }
+
   // 4. Find Java and start Spring Boot
   const javaHome = findJavaHome();
   console.log(`[e2e] Java at: ${javaHome}`);
@@ -220,6 +275,7 @@ export default async function globalSetup() {
   global.__E2E_WIREMOCK__ = wiremock;
   global.__E2E_BACKEND__ = backendProc;
   global.__E2E_DB_PATH__ = DB_PATH;
+  global.__E2E_MOCK_OIDC__ = mockOidcProc;
 
   // 8. Expose base URL and credentials for test files
   process.env.BASE_URL = BASE_URL;

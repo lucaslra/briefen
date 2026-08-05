@@ -229,6 +229,22 @@ services:
       #    "model":"gemma3:4b","createdAt":"2026-04-07T10:00:00Z"}
       # BRIEFEN_WEBHOOK_URL: ${BRIEFEN_WEBHOOK_URL:-}
 
+      # ── OpenID Connect / SSO (optional) ───────────────────────────
+      # Set BRIEFEN_OIDC_ISSUER to enable "Sign in with SSO" alongside password
+      # login. The redirect URL must be https://<your-host>/login/oauth2/code/briefen
+      # and be registered at your provider. Behind a reverse proxy, also set
+      # SERVER_FORWARD_HEADERS_STRATEGY: FRAMEWORK. Full guide: docs/oidc.md
+      # BRIEFEN_OIDC_ISSUER: ${BRIEFEN_OIDC_ISSUER:-}
+      # BRIEFEN_OIDC_CLIENT_ID: ${BRIEFEN_OIDC_CLIENT_ID:-}
+      # BRIEFEN_OIDC_CLIENT_SECRET: ${BRIEFEN_OIDC_CLIENT_SECRET:-}
+      # Or: BRIEFEN_OIDC_CLIENT_SECRET_FILE: /run/secrets/oidc_client_secret
+      # BRIEFEN_OIDC_REDIRECT_URL: https://briefen.example.com/login/oauth2/code/briefen
+      # BRIEFEN_OIDC_PROVIDER_NAME: "Company SSO"
+      # BRIEFEN_OIDC_ADMIN_GROUP: briefen-admins
+      # BRIEFEN_OIDC_ALLOW_SIGNUP: "true"
+      # BRIEFEN_DISABLE_PASSWORD_LOGIN: "false"
+      # BRIEFEN_SECURE_COOKIES: "true"     # when serving over HTTPS
+
     volumes:
       - briefen_data:/data
     depends_on:

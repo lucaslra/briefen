@@ -22,6 +22,13 @@ export default async function globalTeardown() {
     console.log('[e2e] Spring Boot stopped');
   }
 
+  // Stop the mock OIDC provider (if started)
+  const mockOidc = global.__E2E_MOCK_OIDC__;
+  if (mockOidc && !mockOidc.killed) {
+    mockOidc.kill('SIGTERM');
+    console.log('[e2e] Mock OIDC provider stopped');
+  }
+
   // Stop WireMock container
   const wiremock = global.__E2E_WIREMOCK__;
   if (wiremock) {

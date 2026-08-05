@@ -33,6 +33,16 @@ public class JpaUserEntity {
     @Column(name = "main_admin", nullable = false)
     private boolean mainAdmin;
 
+    // OIDC / SSO identity columns. Nullable — password-only accounts leave them empty.
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "oidc_issuer")
+    private String oidcIssuer;
+
+    @Column(name = "oidc_subject")
+    private String oidcSubject;
+
     public JpaUserEntity() {}
 
     public static JpaUserEntity fromDomain(User u) {
@@ -44,6 +54,9 @@ public class JpaUserEntity {
         entity.createdAt = u.getCreatedAt();
         entity.updatedAt = u.getUpdatedAt();
         entity.mainAdmin = u.isMainAdmin();
+        entity.email = u.getEmail();
+        entity.oidcIssuer = u.getOidcIssuer();
+        entity.oidcSubject = u.getOidcSubject();
         return entity;
     }
 
@@ -56,6 +69,9 @@ public class JpaUserEntity {
         u.setCreatedAt(createdAt);
         u.setUpdatedAt(updatedAt);
         u.setMainAdmin(mainAdmin);
+        u.setEmail(email);
+        u.setOidcIssuer(oidcIssuer);
+        u.setOidcSubject(oidcSubject);
         return u;
     }
 
@@ -79,4 +95,13 @@ public class JpaUserEntity {
 
     public boolean isMainAdmin() { return mainAdmin; }
     public void setMainAdmin(boolean mainAdmin) { this.mainAdmin = mainAdmin; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getOidcIssuer() { return oidcIssuer; }
+    public void setOidcIssuer(String oidcIssuer) { this.oidcIssuer = oidcIssuer; }
+
+    public String getOidcSubject() { return oidcSubject; }
+    public void setOidcSubject(String oidcSubject) { this.oidcSubject = oidcSubject; }
 }

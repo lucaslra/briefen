@@ -51,7 +51,9 @@ public class FileSecretsEnvironmentPostProcessor implements EnvironmentPostProce
             "BRIEFEN_DATASOURCE_PASSWORD",
             "BRIEFEN_OPENAI_API_KEY",
             "BRIEFEN_ANTHROPIC_API_KEY",
-            "BRIEFEN_WEBHOOK_URL"
+            "BRIEFEN_WEBHOOK_URL",
+            "BRIEFEN_OIDC_CLIENT_SECRET",
+            "BRIEFEN_SESSION_SECRET"
     );
 
     @Override

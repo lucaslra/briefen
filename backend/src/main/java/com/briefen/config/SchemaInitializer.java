@@ -41,6 +41,7 @@ public class SchemaInitializer implements ApplicationRunner {
         try (Connection conn = dataSource.getConnection()) {
             migrateSummariesConstraint(conn);
             addMainAdminColumnIfMissing(conn);
+            addOidcColumnsIfMissing(conn);
         }
     }
 
@@ -111,6 +112,43 @@ public class SchemaInitializer implements ApplicationRunner {
             stmt.execute("ALTER TABLE users ADD COLUMN main_admin BOOLEAN NOT NULL DEFAULT 0");
         }
         log.info("main_admin column added");
+    }
+
+    /**
+     * Adds the nullable OIDC identity columns (email, oidc_issuer, oidc_subject) to the
+     * users table if missing, plus a UNIQUE index on (oidc_issuer, oidc_subject).
+     *
+     * <p>Nullable columns are normally added by Hibernate's ddl-auto:update, but we add
+     * them defensively here (SQLite is quiet about failures) before creating the index.
+     * SQLite and Postgres both treat NULLs as distinct in unique indexes, so the many
+     * password-only rows with (NULL, NULL) never collide.
+     */
+    private void addOidcColumnsIfMissing(Connection conn) throws Exception {
+        if (!tableExists(conn, "users")) return;
+        addColumnIfMissing(conn, "users", "email", "ALTER TABLE users ADD COLUMN email VARCHAR");
+        addColumnIfMissing(conn, "users", "oidc_issuer", "ALTER TABLE users ADD COLUMN oidc_issuer VARCHAR");
+        addColumnIfMissing(conn, "users", "oidc_subject", "ALTER TABLE users ADD COLUMN oidc_subject VARCHAR");
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_oidc ON users(oidc_issuer, oidc_subject)");
+        }
+    }
+
+    private void addColumnIfMissing(Connection conn, String table, String column, String ddl) throws Exception {
+        if (columnExists(conn, table, column)) return;
+        log.info("Adding {} column to {} table", column, table);
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(ddl);
+        }
+    }
+
+    private boolean columnExists(Connection conn, String table, String column) throws Exception {
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("PRAGMA table_info(" + table + ")")) {
+            while (rs.next()) {
+                if (column.equals(rs.getString("name"))) return true;
+            }
+        }
+        return false;
     }
 
     private boolean tableExists(Connection conn, String tableName) throws Exception {
