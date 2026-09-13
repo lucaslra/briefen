@@ -20,7 +20,7 @@ frontend:
 
 ## Start Docker services, then launch backend + frontend in parallel
 dev: up
-	$(ROOT)/dev.sh
+	$(ROOT)/scripts/dev.sh
 
 ## Tail Docker service logs
 logs:
