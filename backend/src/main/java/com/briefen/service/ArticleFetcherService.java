@@ -198,7 +198,7 @@ public class ArticleFetcherService {
                 for (String fmKey : new String[]{"frontmatter", "frontMatter", "meta"}) {
                     JsonNode frontmatter = pageProps.path(fmKey);
                     if (!frontmatter.isMissingNode()) {
-                        String t = frontmatter.path("title").asText(null);
+                        String t = frontmatter.path("title").asString(null);
                         if (t != null && !t.isBlank()) return t.strip();
                     }
                 }
@@ -293,10 +293,10 @@ public class ArticleFetcherService {
             JsonNode pageProps = root.path("props").path("pageProps");
 
             // Strategy 1: MDX compiled source (common in Next.js MDX blogs)
-            String compiledSource = pageProps.path("mdxSource").path("compiledSource").asText(null);
+            String compiledSource = pageProps.path("mdxSource").path("compiledSource").asString(null);
             if (compiledSource == null) {
                 // Also check common alternative paths
-                compiledSource = pageProps.path("source").path("compiledSource").asText(null);
+                compiledSource = pageProps.path("source").path("compiledSource").asString(null);
             }
             if (compiledSource != null && !compiledSource.isBlank()) {
                 String text = extractTextFromCompiledMdx(compiledSource);
@@ -367,16 +367,16 @@ public class ArticleFetcherService {
         if (node == null || node.isMissingNode()) return null;
 
         JsonNode direct = node.get(fieldName);
-        if (direct != null && direct.isTextual()) {
-            return direct.asText();
+        if (direct != null && direct.isString()) {
+            return direct.asString();
         }
 
         // Search one level deeper
         for (JsonNode child : node) {
             if (child.isObject()) {
                 JsonNode found = child.get(fieldName);
-                if (found != null && found.isTextual()) {
-                    return found.asText();
+                if (found != null && found.isString()) {
+                    return found.asString();
                 }
             }
         }
