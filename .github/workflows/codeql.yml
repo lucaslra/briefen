@@ -57,6 +57,6 @@ jobs:
         run: cd backend && ./mvnw --batch-mode --quiet -DskipTests package
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@d4b3ca9fa7f69d38bfcd667bdc45bc373d16277e  # v4
+        uses: github/codeql-action/analyze@3ea37a44b6e4e6847c46edae209410d258d548d1  # v4
         with:
           category: /language:${{ matrix.language }}
